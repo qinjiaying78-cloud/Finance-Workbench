@@ -4,31 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>财务流程工作台 | 极简高级版</title>
-<!-- 引入 Excel 库和 GSAP 动画库 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-<!-- 引入 Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 
 <style>
-/* ================= 核心设计系统 (Anthropic 研报风格) ================= */
+/* ================= 核心设计系统 ================= */
 :root {
-  --bg: #F5F4ED;
-  --card: #FFFFFF;
-  --border: #E8E6DC;
-  --text-main: #141413;
-  --text-muted: #6B6A65;
-  --primary: #D97757;
-  --primary-hover: #C46545;
-  --accent-blue: #6B8CBA;
-  --input-bg: #F9F9F6;
-  --radius: 12px;
-
+  --bg: #F5F4ED; --card: #FFFFFF; --border: #E8E6DC;
+  --text-main: #141413; --text-muted: #6B6A65;
+  --primary: #D97757; --primary-hover: #C46545;
+  --accent-blue: #6B8CBA; --input-bg: #F9F9F6; --radius: 12px;
   --font-serif: "Playfair Display", "Georgia", "Tiempos Headline", serif;
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
-
   --match: #5D9C7A; --match-bg: #F0FDF4;
   --bank-only: #E0A25E; --bank-only-bg: #FFF7ED;
   --company-only: #6B8CBA; --company-only-bg: #EFF6FF;
@@ -38,41 +28,24 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  font-family: var(--font-sans);
-  background-color: var(--bg);
-  color: var(--text-main);
-  line-height: 1.6;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  font-family: var(--font-sans); background-color: var(--bg); color: var(--text-main);
+  line-height: 1.6; min-height: 100vh; display: flex; flex-direction: column;
   -webkit-font-smoothing: antialiased;
 }
-
-h1, h2, h3, .serif-title {
-  font-family: var(--font-serif);
-  font-weight: 400;
-  letter-spacing: -0.5px;
-}
+h1, h2, h3, .serif-title { font-family: var(--font-serif); font-weight: 400; letter-spacing: -0.5px; }
 p { color: var(--text-muted); }
 
-/* 顶部导航 */
 .app-header {
-  padding: 24px 48px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--border);
-  background-color: var(--bg);
+  padding: 24px 48px; display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--border); background-color: var(--bg);
   position: sticky; top: 0; z-index: 100;
 }
 .app-logo {
-  font-family: var(--font-serif);
-  font-size: 22px;
-  font-weight: 600;
+  font-family: var(--font-serif); font-size: 22px; font-weight: 600;
   display: flex; gap: 12px; align-items: center; cursor: pointer;
 }
 .app-logo span { color: var(--primary); font-size: 24px; }
-.nav-tabs { display: flex; gap: 8px; }
+.nav-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
 .nav-btn {
   padding: 8px 16px; border: none; background: transparent; font-size: 14px; font-weight: 500;
   color: var(--text-muted); cursor: pointer; border-radius: var(--radius);
@@ -81,11 +54,9 @@ p { color: var(--text-muted); }
 .nav-btn:hover { color: var(--text-main); background: var(--card); }
 .nav-btn.active { color: var(--text-main); background: var(--card); border: 1px solid var(--border); font-weight: 600; }
 
-/* 模块容器与动画 */
 .module { display: none; padding: 48px; max-width: 1400px; margin: 0 auto; width: 100%; flex: 1; opacity: 0; }
 .module.active { display: block; opacity: 1; }
 
-/* 按钮与输入框 */
 .btn {
   padding: 10px 24px; border-radius: var(--radius); border: none; cursor: pointer;
   font-weight: 500; font-size: 14px; font-family: var(--font-sans);
@@ -104,7 +75,6 @@ input, select, textarea {
 }
 input:focus, select:focus, textarea:focus { border-color: var(--primary); background: var(--card); }
 
-/* Toast */
 #toast {
   visibility: hidden; min-width: 250px; background: var(--text-main); color: var(--bg);
   text-align: center; border-radius: var(--radius); padding: 16px;
@@ -113,67 +83,39 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
   transform: translateX(-50%);
 }
 
-/* ================= 首页 ================= */
-.home-container {
-  display: flex; flex-direction: column;
-  justify-content: center; min-height: 75vh;
-  max-width: 1100px; margin: 0 auto;
-}
-
+/* 首页 */
+.home-container { display: flex; flex-direction: column; justify-content: center; min-height: 75vh; max-width: 1100px; margin: 0 auto; }
 .home-header-text { margin-bottom: 64px; }
 .home-subtitle-top {
   font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;
   color: var(--primary); margin-bottom: 16px;
 }
-.home-title {
-  font-size: 80px;
-  color: var(--text-main);
-  line-height: 1.05;
-  margin-bottom: 24px;
-  font-weight: 400;
-  letter-spacing: -1.5px;
-}
+.home-title { font-size: 80px; color: var(--text-main); line-height: 1.05; margin-bottom: 24px; font-weight: 400; letter-spacing: -1.5px; }
 .home-title i { font-style: italic; font-weight: 400; }
 .home-desc { font-size: 18px; color: var(--text-muted); max-width: 600px; line-height: 1.7; }
-
-.home-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 28px;
-  width: 100%;
-}
-
+.home-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 28px; width: 100%; }
 .home-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 4px; padding: 40px; cursor: pointer;
-  transition: all 0.3s ease; display: flex; flex-direction: column;
-  position: relative; overflow: hidden;
+  background: var(--card); border: 1px solid var(--border); border-radius: 4px;
+  padding: 40px; cursor: pointer; transition: all 0.3s ease;
+  display: flex; flex-direction: column; position: relative; overflow: hidden;
   box-shadow: 0 4px 24px rgba(0,0,0,0.02);
 }
 .home-card:hover { border-color: var(--primary); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.06); }
-
 .home-card-content { flex: 1; z-index: 2; position: relative; }
 .home-card h3 { font-size: 28px; color: var(--text-main); margin-bottom: 12px; }
 .home-card p { font-size: 14px; margin-bottom: 32px; max-width: 85%; line-height: 1.7; }
 .home-card .btn-enter {
-  background: var(--text-main); color: #fff; padding: 10px 20px; border-radius: 4px; border: none; font-weight: 500; cursor: pointer;
-  transition: background 0.2s;
+  background: var(--text-main); color: #fff; padding: 10px 20px; border-radius: 4px;
+  border: none; font-weight: 500; cursor: pointer; transition: background 0.2s;
 }
 .home-card:hover .btn-enter { background: var(--primary); }
-
 .card-svg-bg {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  width: 150px;
-  height: 150px;
-  z-index: 1;
-  opacity: 0.85;
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: absolute; bottom: 20px; right: 20px; width: 150px; height: 150px;
+  z-index: 1; opacity: 0.85; transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .home-card:hover .card-svg-bg { transform: scale(1.05) rotate(2deg); }
 
-/* ================= 对账模块 ================= */
+/* 对账 */
 #module-recon .upload-container { display: flex; gap: 32px; margin-bottom: 40px; }
 #module-recon .drop-zone {
   flex: 1; border: 1.5px dashed var(--border); border-radius: var(--radius);
@@ -204,17 +146,15 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 .status-tag.DIFF { color: var(--diff); border: 1px solid var(--diff); }
 .status-tag.ERROR { color: var(--error); border: 1px solid var(--error); }
 .missing-detail { font-size: 13px; line-height: 1.6; color: var(--text-main); }
-.missing-detail .label { color: var(--text-muted); display: inline-block; min-width: 72px; }
 .diff-amount { color: var(--diff); font-weight: 600; }
 
-/* ================= 开票模块 ================= */
+/* 开票 */
 #module-invoice .layout { display: flex; gap: 40px; align-items: flex-start; }
 #module-invoice .form-panel { flex: 1.2; background: var(--card); padding: 40px; border-radius: var(--radius); border: 1px solid var(--border); }
 #module-invoice .invoice-panel { flex: 1; background: var(--card); padding: 48px; border-radius: var(--radius); border: 1px solid var(--border); position: relative; box-shadow: 0 8px 32px rgba(0,0,0,0.04); }
 #module-invoice h2 { font-size: 24px; margin-bottom: 24px; }
 #module-invoice .form-group { margin-bottom: 20px; }
 #module-invoice .form-group label { display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-muted); }
-
 .additional-info { background: var(--bg); padding: 24px; border-radius: var(--radius); margin-bottom: 24px; margin-top: 40px; border: 1px solid var(--border); }
 .additional-info h3 { font-size: 18px; margin-bottom: 16px; }
 .upload-zone-mini { border: 1px dashed var(--border); border-radius: var(--radius); padding: 16px; text-align: center; cursor: pointer; background: var(--card); margin-bottom: 16px; }
@@ -223,7 +163,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 .attach-item { background: var(--card); border: 1px solid var(--border); padding: 6px 12px; border-radius: 20px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
 .attach-item button { background: transparent; border: none; color: var(--diff); cursor: pointer; font-size: 14px; }
 .additional-info textarea { resize: vertical; min-height: 100px; }
-
 #module-invoice .items-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; table-layout: fixed; }
 #module-invoice .items-table th { padding: 12px 8px; text-align: left; font-size: 13px; color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 500; }
 #module-invoice .items-table td { padding: 8px 4px; border-bottom: 1px solid var(--border); }
@@ -232,7 +171,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 #module-invoice .btn-add { background: var(--bg); color: var(--text-main); width: 100%; padding: 12px; margin-bottom: 24px; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer; font-weight: 500; }
 #module-invoice .btn-submit { width: 100%; padding: 16px; font-size: 16px; background: var(--primary); color: #fff; border: none; border-radius: var(--radius); cursor: pointer; font-weight: 500; }
 #module-invoice .btn-del { background: transparent; color: var(--diff); border: none; cursor: pointer; }
-
 #module-invoice .invoice-header { text-align: center; border-bottom: 2px solid var(--primary); padding-bottom: 24px; margin-bottom: 32px; }
 #module-invoice .invoice-header h1 { color: var(--primary); font-size: 32px; letter-spacing: 4px; }
 #module-invoice .invoice-meta { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
@@ -242,14 +180,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 #module-invoice .invoice-table th { color: var(--text-muted); font-weight: 500; }
 #module-invoice .invoice-total { text-align: right; font-size: 14px; line-height: 2; margin-bottom: 24px; color: var(--text-muted); }
 #module-invoice .total-amount { font-size: 28px; color: var(--text-main); margin-top: 8px; }
-
 #invoice-stamp-area {
   position: absolute; bottom: 60px; right: 60px; width: 140px; height: 140px;
-  display: flex; align-items: center; justify-content: center; opacity: 0.85;
-  pointer-events: none;
+  display: flex; align-items: center; justify-content: center; opacity: 0.85; pointer-events: none;
 }
 #invoice-stamp-area img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-
 #module-invoice .ledger-panel { margin-top: 40px; background: var(--card); padding: 40px; border-radius: var(--radius); border: 1px solid var(--border); }
 #module-invoice .ledger-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
 #module-invoice .filter-bar { display: flex; gap: 16px; margin-bottom: 24px; background: var(--bg); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); flex-wrap: wrap; }
@@ -260,7 +195,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 .btn-view-attach { background: var(--bg); color: var(--accent-blue); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); display: inline-block; text-decoration: none; }
 .btn-view-invoice { background: var(--bg); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); }
 
-/* ================= 出纳模块 ================= */
+/* 出纳 */
 #module-cashier .cashier-intro { margin-bottom: 32px; }
 #module-cashier .quick-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 28px; }
 #module-cashier .quick-card {
@@ -276,11 +211,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 }
 #module-cashier .quick-title { font-weight: 600; font-size: 15px; color: var(--text-main); }
 #module-cashier .quick-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-
-#module-cashier .entry-panel {
-  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 32px; margin-bottom: 28px;
-}
+#module-cashier .entry-panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; margin-bottom: 28px; }
 #module-cashier .entry-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
 #module-cashier .type-switch { display: flex; gap: 4px; background: var(--bg); padding: 4px; border-radius: 10px; }
 #module-cashier .type-btn {
@@ -292,48 +223,45 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 #module-cashier .cash-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
 #module-cashier .cf-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
 #module-cashier .cf-span-2 { grid-column: span 2; }
-
-/* 回单图片上传区 */
-#module-cashier .cash-receipt-upload {
-  margin-top: 20px; padding: 16px; background: var(--bg);
-  border-radius: var(--radius); border: 1px solid var(--border);
-}
-#module-cashier .cash-receipt-upload .upload-zone-mini {
-  margin-bottom: 0; background: var(--card);
-}
-#module-cashier .cash-receipt-upload .attachment-list {
-  margin-top: 10px; margin-bottom: 0;
-}
-
+#module-cashier .cash-receipt-upload { margin-top: 20px; padding: 16px; background: var(--bg); border-radius: var(--radius); border: 1px solid var(--border); }
+#module-cashier .cash-receipt-upload .upload-zone-mini { margin-bottom: 0; background: var(--card); }
+#module-cashier .cash-receipt-upload .attachment-list { margin-top: 10px; margin-bottom: 0; }
 #module-cashier .cash-output { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 #module-cashier .cash-tabs { display: flex; gap: 4px; padding: 0 20px; background: var(--bg); border-bottom: 1px solid var(--border); overflow-x: auto; }
 #module-cashier .cash-tab { padding: 14px 16px; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
 #module-cashier .cash-tab.active { color: var(--text-main); border-bottom-color: var(--primary); }
 #module-cashier .cash-tab-panel { display: none; padding: 24px; }
 #module-cashier .cash-tab-panel.active { display: block; }
-
 #module-cashier .cash-toolbar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
 #module-cashier .cash-toolbar input, #module-cashier .cash-toolbar select { width: auto; flex: 1; min-width: 120px; padding: 8px 12px; font-size: 13px; }
-
 #module-cashier .cash-table { width: 100%; border-collapse: collapse; }
 #module-cashier .cash-table th, #module-cashier .cash-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 13px; text-align: left; }
 #module-cashier .cash-table th { background: var(--bg); color: var(--text-muted); font-weight: 500; font-size: 12px; }
 
+/* 账户管理 */
+#module-cashier .account-manager {
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; margin-bottom: 24px;
+}
+#module-cashier .acc-manage-table { width: 100%; border-collapse: collapse; }
+#module-cashier .acc-manage-table th, #module-cashier .acc-manage-table td {
+  padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 13px; text-align: left;
+}
+#module-cashier .acc-manage-table th { color: var(--text-muted); font-weight: 500; font-size: 12px; }
+#module-cashier .acc-manage-table input, #module-cashier .acc-manage-table select { padding: 6px 8px; font-size: 12px; }
+
 .cash-in { color: var(--match); font-weight: 600; }
 .cash-out { color: var(--diff); font-weight: 600; }
-
 .status-pill { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; white-space: nowrap; }
 .status-pill.PENDING { background: #FFF7ED; color: #C2410C; }
 .status-pill.DONE { background: #EFF6FF; color: #1D4ED8; }
 .status-pill.POSTED { background: #F0FDF4; color: #15803D; }
-
+.status-pill.REJECTED { background: #FEE2E2; color: #B91C1C; }
 .btn-mini { padding: 5px 12px; border-radius: 6px; font-size: 12px; border: 1px solid var(--border); background: var(--card); cursor: pointer; color: var(--text-main); font-family: var(--font-sans); }
 .btn-mini:hover { background: var(--bg); }
 .btn-mini-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
 .btn-mini-primary:hover { background: var(--primary-hover); }
-
 .pair-tag { font-size: 10px; background: var(--company-only-bg); color: var(--company-only); padding: 1px 6px; border-radius: 8px; margin-left: 4px; }
-
 .daily-group { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
 .daily-head { display: flex; gap: 20px; align-items: center; padding: 14px 18px; background: var(--bg); cursor: pointer; font-size: 13px; flex-wrap: wrap; user-select: none; }
 .daily-head:hover { background: #F0EFE7; }
@@ -341,15 +269,157 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 .daily-group.open .arrow { transform: rotate(180deg); }
 .daily-body { display: none; padding: 8px 18px 16px; }
 .daily-group.open .daily-body { display: block; }
-
 .journal-account { margin-bottom: 32px; }
 .journal-account:last-child { margin-bottom: 0; }
 .journal-account h3 { font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
 .acc-kind { font-size: 11px; font-weight: 500; background: var(--bg); color: var(--text-muted); padding: 2px 8px; border-radius: 10px; font-family: var(--font-sans); }
 
+/* 制证 */
+#module-voucher .voucher-intro { margin-bottom: 32px; }
+#module-voucher .voucher-types { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 28px; }
+#module-voucher .voucher-type-card {
+  background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius);
+  padding: 16px 18px; cursor: pointer; transition: all .2s ease;
+  display: flex; align-items: center; gap: 12px;
+}
+#module-voucher .voucher-type-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.06); }
+#module-voucher .voucher-type-card.active { border-color: var(--primary); background: #FFF9F6; }
+#module-voucher .voucher-type-icon {
+  width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 600; flex-shrink: 0;
+}
+#module-voucher .voucher-type-title { font-weight: 600; font-size: 14px; color: var(--text-main); }
+#module-voucher .voucher-type-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+#module-voucher .voucher-layout { display: grid; grid-template-columns: 380px 1fr; gap: 28px; margin-bottom: 28px; }
+#module-voucher .voucher-source-panel, #module-voucher .voucher-entry-panel {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px;
+}
+#module-voucher .voucher-panel-title { font-size: 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+#module-voucher .voucher-panel-title .badge {
+  font-size: 11px; font-weight: 500; background: var(--bg); color: var(--text-muted);
+  padding: 2px 8px; border-radius: 10px; font-family: var(--font-sans);
+}
+#module-voucher .vform-group { margin-bottom: 14px; }
+#module-voucher .vform-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+#module-voucher .vform-group input, #module-voucher .vform-group select { padding: 9px 12px; font-size: 13px; }
+#module-voucher .voucher-meta-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+#module-voucher .voucher-meta-row label { font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px; }
+#module-voucher .voucher-meta-row input { padding: 8px 10px; font-size: 12px; }
+#module-voucher .voucher-entry-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+#module-voucher .voucher-entry-table th, #module-voucher .voucher-entry-table td {
+  padding: 6px 4px; border-bottom: 1px solid var(--border); font-size: 12px; text-align: left; vertical-align: middle;
+}
+#module-voucher .voucher-entry-table th { background: var(--bg); color: var(--text-muted); font-weight: 500; font-size: 11px; }
+#module-voucher .voucher-entry-table input, #module-voucher .voucher-entry-table select {
+  padding: 6px 8px; font-size: 12px; background: transparent;
+  border: 1px solid transparent; border-radius: 4px;
+}
+#module-voucher .voucher-entry-table input:focus, #module-voucher .voucher-entry-table select:focus {
+  border-color: var(--primary); background: var(--card);
+}
+#module-voucher .voucher-entry-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+#module-voucher .voucher-entry-table .btn-remove-row {
+  background: transparent; border: none; color: var(--diff); cursor: pointer; font-size: 15px;
+}
+#module-voucher .btn-add-entry {
+  background: var(--bg); color: var(--text-main); padding: 8px; width: 100%;
+  border-radius: 8px; border: 1px dashed var(--border); cursor: pointer; font-size: 12px; font-weight: 500;
+}
+#module-voucher .btn-add-entry:hover { border-color: var(--primary); color: var(--primary); }
+#module-voucher .voucher-totals {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 18px; margin-top: 16px; background: var(--bg); border-radius: var(--radius);
+  flex-wrap: wrap; gap: 12px;
+}
+#module-voucher .voucher-total-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+#module-voucher .voucher-total-item strong { font-family: var(--font-serif); font-size: 20px; color: var(--text-main); }
+#module-voucher .voucher-balance-status { font-size: 12px; padding: 4px 12px; border-radius: 12px; font-weight: 500; }
+#module-voucher .voucher-balance-status.ok { background: var(--match-bg); color: var(--match); }
+#module-voucher .voucher-balance-status.bad { background: var(--diff-bg); color: var(--diff); }
+#module-voucher .voucher-submit-bar {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 18px 28px; display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
+}
+#module-voucher .voucher-submit-bar .hint { font-size: 12px; color: var(--text-muted); }
+#module-voucher .voucher-list-panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; }
+#module-voucher .voucher-period-bar {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  padding: 14px 18px; background: var(--bg); border-radius: var(--radius);
+  margin-bottom: 20px; font-size: 12px;
+}
+#module-voucher .voucher-period-bar input { padding: 6px 10px; font-size: 12px; width: auto; }
+#module-voucher .period-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--card); border: 1px solid var(--border); padding: 3px 10px;
+  border-radius: 12px; font-size: 11px; color: var(--diff);
+}
+#module-voucher .period-chip .remove { cursor: pointer; font-weight: 700; }
+#module-voucher .voucher-table { width: 100%; border-collapse: collapse; }
+#module-voucher .voucher-table th, #module-voucher .voucher-table td {
+  padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 13px; text-align: left; vertical-align: top;
+}
+#module-voucher .voucher-table th { background: var(--bg); color: var(--text-muted); font-weight: 500; font-size: 12px; }
+.voucher-status { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+.voucher-status.DRAFT { background: #F3F4F6; color: #4B5563; }
+.voucher-status.PENDING { background: #FFF7ED; color: #C2410C; }
+.voucher-status.APPROVED { background: #EFF6FF; color: #1D4ED8; }
+.voucher-status.REJECTED { background: #FEE2E2; color: #B91C1C; }
+.voucher-status.POSTED { background: #F0FDF4; color: #15803D; }
+.voucher-amount { font-weight: 500; color: var(--text-main); font-variant-numeric: tabular-nums; }
+.voucher-source-link { color: var(--accent-blue); cursor: pointer; text-decoration: underline; font-size: 12px; }
+
+/* 会计记账 */
+#module-accounting .accounting-intro { margin-bottom: 32px; }
+#module-accounting .acc-period-bar {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px 20px; margin-bottom: 20px;
+}
+#module-accounting .acc-tabs {
+  display: flex; gap: 4px; background: var(--bg); border-radius: var(--radius);
+  padding: 4px; margin-bottom: 20px; overflow-x: auto;
+}
+#module-accounting .acc-tab {
+  padding: 10px 18px; font-size: 13px; font-weight: 500; color: var(--text-muted);
+  cursor: pointer; border-radius: 8px; white-space: nowrap; transition: all .2s;
+}
+#module-accounting .acc-tab.active { background: var(--card); color: var(--text-main); box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+#module-accounting .acc-badge {
+  display: inline-block; padding: 1px 8px; border-radius: 10px;
+  background: var(--primary); color: #fff; font-size: 11px; margin-left: 6px;
+}
+#module-accounting .acc-tab-panel { display: none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+#module-accounting .acc-tab-panel.active { display: block; }
+#module-accounting .acc-table { width: 100%; border-collapse: collapse; }
+#module-accounting .acc-table th, #module-accounting .acc-table td {
+  padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 13px; text-align: left;
+}
+#module-accounting .acc-table th { background: var(--bg); color: var(--text-muted); font-weight: 500; font-size: 12px; }
+#module-accounting .acc-table tfoot td { font-weight: 600; background: var(--bg); }
+#module-accounting .acc-detail-bar { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+#module-accounting .acc-report-subtabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+#module-accounting .acc-report-subtab {
+  padding: 10px 16px; font-size: 13px; font-weight: 500; color: var(--text-muted);
+  cursor: pointer; border-bottom: 2px solid transparent;
+}
+#module-accounting .acc-report-subtab.active { color: var(--text-main); border-bottom-color: var(--primary); }
+#module-accounting .acc-report-table { width: 100%; border-collapse: collapse; }
+#module-accounting .acc-report-table th, #module-accounting .acc-report-table td {
+  padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 13px;
+}
+#module-accounting .acc-report-table th { background: var(--bg); color: var(--text-muted); font-weight: 500; font-size: 12px; }
+#module-accounting .acc-report-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+#module-accounting .acc-report-table tr.report-title td { background: var(--bg); font-weight: 600; }
+#module-accounting .acc-report-table tr.report-total td { font-weight: 600; background: #FAFAF7; }
+#module-accounting .acc-link {
+  color: var(--accent-blue); cursor: pointer; text-decoration: underline; text-decoration-color: rgba(107,140,186,.4);
+}
+#module-accounting .acc-link:hover { text-decoration-color: var(--accent-blue); }
+
 @media print {
   body { background: #FFF; }
-  .app-header, #module-home, #module-recon, #module-invoice .form-panel, #module-invoice .ledger-panel, #module-cashier .entry-panel, #module-cashier .quick-cards, .no-print { display: none !important; }
+  .app-header, #module-home, #module-recon, #module-invoice .form-panel, #module-invoice .ledger-panel, #module-cashier .entry-panel, #module-cashier .quick-cards, #module-voucher .voucher-types, #module-voucher .voucher-list-panel, #module-accounting .acc-period-bar, #module-accounting .acc-tabs, .no-print { display: none !important; }
   #module-invoice { padding: 0; margin: 0; display: block !important; max-width: 100%; }
   #module-invoice .layout { display: block; }
   .invoice-panel { box-shadow: none !important; border: none !important; width: 100% !important; padding: 0 !important; margin: 0 !important; }
@@ -369,6 +439,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
   #module-invoice .filter-bar { flex-direction: column; }
   #module-cashier .quick-cards { grid-template-columns: 1fr; }
   #module-cashier .cf-span-2 { grid-column: span 1; }
+  #module-voucher .voucher-layout { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -384,24 +455,21 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
     <button type="button" class="nav-btn" data-target="module-recon">数据对账</button>
     <button type="button" class="nav-btn" data-target="module-invoice">智能开票</button>
     <button type="button" class="nav-btn" data-target="module-cashier">出纳收付</button>
+    <button type="button" class="nav-btn" data-target="module-voucher">日常制证</button>
+    <button type="button" class="nav-btn" data-target="module-accounting">会计记账</button>
   </div>
 </header>
 
 <!-- ================= 首页 ================= -->
 <div id="module-home" class="module active">
   <div class="home-container">
-
     <div class="home-header-text">
       <div class="home-subtitle-top">FINANCE WORKSPACE</div>
-      <h1 class="home-title serif-title">
-        Finance<br>
-        <i>Workspace</i>
-      </h1>
-      <p class="home-desc">安全、精准的本地化财务工具。系统提供深度的数据比对、优雅的票据归档与完整的出纳收付流程，请选择要处理的工作。</p>
+      <h1 class="home-title serif-title">Finance<br><i>Workspace</i></h1>
+      <p class="home-desc">安全、精准的本地化财务工具。系统覆盖数据比对、票据归档、出纳收付、凭证制审与账表生成全流程。</p>
     </div>
 
     <div class="home-cards">
-
       <div class="home-card" onclick="switchModule('module-recon')">
         <div class="home-card-content">
           <h3 class="serif-title">数据对账</h3>
@@ -440,7 +508,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
       <div class="home-card" onclick="switchModule('module-cashier')">
         <div class="home-card-content">
           <h3 class="serif-title">出纳收付</h3>
-          <p>收款、付款与内部转账登记，自动生成出纳日报、票据台账与现金银行日记账。</p>
+          <p>收款、付款与内部转账登记，自定义账户台账，自动生成日报、票据台账与日记账。</p>
           <button class="btn-enter">进入出纳 →</button>
         </div>
         <svg class="card-svg-bg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -453,6 +521,35 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
         </svg>
       </div>
 
+      <div class="home-card" onclick="switchModule('module-voucher')">
+        <div class="home-card-content">
+          <h3 class="serif-title">日常制证</h3>
+          <p>依据业务类型关联原始单据，制作凭证并提交审核，自动校验借贷平衡与会计期间。</p>
+          <button class="btn-enter">进入制证 →</button>
+        </div>
+        <svg class="card-svg-bg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="20" y="18" width="60" height="70" rx="3" fill="#FFFFFF" stroke="#141413" stroke-width="2"/>
+          <line x1="32" y1="34" x2="68" y2="34" stroke="#141413" stroke-width="1.5"/>
+          <line x1="32" y1="46" x2="68" y2="46" stroke="#141413" stroke-width="1.5"/>
+          <line x1="32" y1="58" x2="60" y2="58" stroke="#141413" stroke-width="1.5"/>
+          <circle cx="70" cy="72" r="12" fill="#D97757"/>
+          <path d="M65 72 L69 76 L77 68" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <div class="home-card" onclick="switchModule('module-accounting')">
+        <div class="home-card-content">
+          <h3 class="serif-title">会计记账</h3>
+          <p>已审核凭证记账，生成科目汇总表、明细账、总账、试算平衡表与财务报表。</p>
+          <button class="btn-enter">进入记账 →</button>
+        </div>
+        <svg class="card-svg-bg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="18" y="20" width="64" height="60" rx="3" fill="#FFFFFF" stroke="#141413" stroke-width="2"/>
+          <path d="M30 40 L70 40 M30 52 L70 52 M30 64 L55 64" stroke="#141413" stroke-width="1.5" stroke-linecap="round"/>
+          <rect x="60" y="58" width="22" height="22" rx="2" fill="#D97757"/>
+          <path d="M66 69 L70 73 L77 65" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
     </div>
   </div>
 </div>
@@ -540,14 +637,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 
       <div class="additional-info">
         <h3 class="serif-title">附加信息与凭证</h3>
-
         <label style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:8px;">上传发货单、合同等证明文件：</label>
         <div class="upload-zone-mini" id="attach-upload-zone">
           <p style="margin:0;">点击选择文件 (PDF / JPG / PNG)</p>
           <input type="file" id="attach-file-input" multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none">
         </div>
         <div class="attachment-list" id="attachment-list"></div>
-
         <label style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:8px; margin-top:16px;">上传发票专用章 (PNG透明底最佳)：</label>
         <div class="upload-zone-mini" id="stamp-upload-zone">
           <p style="margin:0; color:var(--primary);">点击上传印章图片</p>
@@ -557,7 +652,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
             <img id="stamp-preview-img" style="max-height:60px; border:1px solid var(--border); border-radius:4px; padding:4px; background:#fff;">
             <button type="button" class="btn" style="padding:4px 8px; font-size:12px; margin-left:8px;" onclick="removeStamp()">清除印章</button>
         </div>
-
         <label style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:8px; margin-top:16px;">补充日志 / 备注说明：</label>
         <textarea id="inv-input-logs" placeholder="记录特殊说明..."></textarea>
       </div>
@@ -574,7 +668,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
         <span>开票日期: <span id="inv-prev-date">-</span></span>
         <span>收款方式: <span id="inv-prev-payment">-</span></span>
       </div>
-
       <div class="invoice-info">
         <div style="font-weight:500; margin-bottom:8px; color:var(--text-main);">购买方信息</div>
         <div>名称：<span id="inv-prev-buyer">-</span></div>
@@ -583,18 +676,15 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
         <div>名称：<span id="inv-prev-seller">-</span></div>
         <div>纳税人识别号：<span id="inv-prev-seller-taxno">-</span></div>
       </div>
-
       <table class="invoice-table">
         <thead><tr><th>服务名称</th><th>数量</th><th>单价</th><th>金额</th></tr></thead>
         <tbody id="inv-prev-items-body"></tbody>
       </table>
-
       <div class="invoice-total">
         <div>合计金额：￥<span id="inv-prev-total">0.00</span></div>
         <div>价税合计(大写)：<span id="inv-prev-upper" style="color:var(--text-main); font-weight:500;">零元整</span></div>
         <div class="total-amount serif-title">(小写) ￥<span id="inv-prev-total-small">0.00</span></div>
       </div>
-
       <div id="invoice-stamp-area">
         <img id="invoice-stamp-img" src="" alt="印章" style="display:none;">
       </div>
@@ -611,7 +701,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
         <button type="button" class="btn" id="inv-btn-export">导出 Excel</button>
       </div>
     </div>
-
     <div class="filter-bar">
       <input type="text" id="f-invoice-no" placeholder="🔍 发票号码">
       <input type="text" id="f-buyer" placeholder="🔍 购买方名称">
@@ -630,7 +719,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
       </div>
       <button type="button" class="btn" onclick="document.getElementById('f-invoice-no').value='';document.getElementById('f-buyer').value='';document.getElementById('f-payment').value='';document.getElementById('f-date-start').value='';document.getElementById('f-date-end').value='';filterLedger();" style="background:#9CA3AF; padding:8px 16px; font-size:13px; color:#fff;">重置</button>
     </div>
-
     <table class="ledger-table">
       <thead><tr><th>操作</th><th>发票号码</th><th>开票日期</th><th>购买方</th><th>金额</th><th>收款方式</th><th>凭证与日志</th></tr></thead>
       <tbody id="inv-ledger-body"></tbody>
@@ -650,70 +738,71 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
   <div class="cashier-intro">
     <div class="home-subtitle-top">CASHIER · 出纳</div>
     <h1 class="serif-title" style="font-size:40px; margin-bottom:12px;">收付款 · 转账 · 日报</h1>
-    <p style="max-width:700px;">依据已审批的有效单据办理收款、付款与内部转账，登记回单与票据信息，自动生成出纳日报、票据台账与现金银行日记账。</p>
+    <p style="max-width:700px;">依据已审批的有效单据办理收款、付款与内部转账，登记回单与票据信息，自动生成出纳日报、票据台账与现金银行日记账。账户可在下拉中选择，也可直接手输自定义账户。</p>
   </div>
 
-  <!-- 快捷入口 -->
   <div class="quick-cards">
     <div class="quick-card" data-type="RECEIPT" onclick="setCashierType('RECEIPT')">
       <div class="quick-icon" style="background:var(--match-bg); color:var(--match);">↓</div>
-      <div>
-        <div class="quick-title">收款登记</div>
-        <div class="quick-desc">客户回款 / 现金收据</div>
-      </div>
+      <div><div class="quick-title">收款登记</div><div class="quick-desc">客户回款 / 现金收据</div></div>
     </div>
     <div class="quick-card" data-type="PAYMENT" onclick="setCashierType('PAYMENT')">
       <div class="quick-icon" style="background:var(--diff-bg); color:var(--diff);">↑</div>
-      <div>
-        <div class="quick-title">付款登记</div>
-        <div class="quick-desc">供应商付款 / 报销支出</div>
-      </div>
+      <div><div class="quick-title">付款登记</div><div class="quick-desc">供应商付款 / 报销支出</div></div>
     </div>
     <div class="quick-card" data-type="TRANSFER" onclick="setCashierType('TRANSFER')">
       <div class="quick-icon" style="background:var(--company-only-bg); color:var(--company-only);">⇄</div>
-      <div>
-        <div class="quick-title">内部转账</div>
-        <div class="quick-desc">账户间划转 · 双向记账</div>
-      </div>
+      <div><div class="quick-title">内部转账</div><div class="quick-desc">账户间划转 · 双向记账</div></div>
     </div>
   </div>
 
-  <!-- 登记表单 -->
   <div class="entry-panel">
     <div class="entry-head">
       <h2 class="serif-title" style="font-size:22px;">登记出纳业务</h2>
-      <div class="type-switch">
-        <button type="button" class="type-btn active" data-type="RECEIPT" onclick="setCashierType('RECEIPT')">收款</button>
-        <button type="button" class="type-btn" data-type="PAYMENT" onclick="setCashierType('PAYMENT')">付款</button>
-        <button type="button" class="type-btn" data-type="TRANSFER" onclick="setCashierType('TRANSFER')">内部转账</button>
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <div class="type-switch">
+          <button type="button" class="type-btn active" data-type="RECEIPT" onclick="setCashierType('RECEIPT')">收款</button>
+          <button type="button" class="type-btn" data-type="PAYMENT" onclick="setCashierType('PAYMENT')">付款</button>
+          <button type="button" class="type-btn" data-type="TRANSFER" onclick="setCashierType('TRANSFER')">内部转账</button>
+        </div>
+        <button type="button" class="btn-mini" onclick="toggleAccountManager()">⚙️ 管理常用账户</button>
+      </div>
+    </div>
+
+    <div id="account-manager" class="account-manager" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <strong style="font-size:14px;">常用账户管理（仅作为下拉建议，也可直接在表单中手输任意账户）</strong>
+        <button type="button" class="btn-mini" onclick="toggleAccountManager()">收起</button>
+      </div>
+      <table class="acc-manage-table">
+        <thead><tr><th>账户名称</th><th width="140px">类型</th><th width="90px">操作</th></tr></thead>
+        <tbody id="account-manage-body"></tbody>
+      </table>
+      <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
+        <input type="text" id="new-account-name" placeholder="新账户名称，如：华夏银行 · 6388 **** 0001" style="flex:1; min-width:180px; padding:8px 12px; font-size:13px;">
+        <select id="new-account-kind" style="width:120px; padding:8px 12px; font-size:13px;">
+          <option value="BANK">银行</option>
+          <option value="CASH">现金</option>
+          <option value="OTHER">其他</option>
+        </select>
+        <button type="button" class="btn btn-primary" style="padding:8px 16px; font-size:13px;" onclick="addNewAccount()">添加账户</button>
       </div>
     </div>
 
     <div class="cash-form-grid">
-      <div class="cf-group">
-        <label>业务日期</label>
-        <input type="date" id="cash-date">
-      </div>
-      <div class="cf-group">
-        <label>金额 (元)</label>
-        <input type="number" id="cash-amount" min="0.01" step="0.01" placeholder="0.00">
-      </div>
+      <div class="cf-group"><label>业务日期</label><input type="date" id="cash-date"></div>
+      <div class="cf-group"><label>金额 (元)</label><input type="number" id="cash-amount" min="0.01" step="0.01" placeholder="0.00"></div>
       <div class="cf-group">
         <label id="cash-label-account">收款账户</label>
-        <select id="cash-account"></select>
+        <input type="text" id="cash-account" list="cash-account-options" placeholder="选择或直接输入账户名称" autocomplete="off">
+        <datalist id="cash-account-options"></datalist>
       </div>
       <div class="cf-group" id="cash-field-in-account" style="display:none;">
         <label>转入账户</label>
-        <select id="cash-in-account"></select>
+        <input type="text" id="cash-in-account" list="cash-account-options" placeholder="选择或直接输入账户名称" autocomplete="off">
       </div>
-      <div class="cf-group" id="cash-field-counterparty">
-        <label id="cash-label-counterparty">付款方名称</label>
-        <input type="text" id="cash-counterparty" placeholder="对方单位 / 个人">
-      </div>
-      <div class="cf-group" id="cash-field-counterparty-account">
-        <label>对方账号</label>
-        <input type="text" id="cash-counterparty-account" placeholder="选填">
-      </div>
+      <div class="cf-group" id="cash-field-counterparty"><label id="cash-label-counterparty">付款方名称</label><input type="text" id="cash-counterparty" placeholder="对方单位 / 个人"></div>
+      <div class="cf-group" id="cash-field-counterparty-account"><label>对方账号</label><input type="text" id="cash-counterparty-account" placeholder="选填"></div>
       <div class="cf-group" id="cash-field-source">
         <label>关联来源单据号</label>
         <div style="display:flex; gap:8px;">
@@ -734,21 +823,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
           <option value="NOTE">票据</option>
         </select>
       </div>
-      <div class="cf-group">
-        <label>回单 / 收据编号</label>
-        <input type="text" id="cash-receipt-no" placeholder="用于重复校验">
-      </div>
-      <div class="cf-group cf-span-2">
-        <label>票据信息</label>
-        <input type="text" id="cash-note-info" placeholder="票号 / 出票日 / 到期日等">
-      </div>
-      <div class="cf-group cf-span-2">
-        <label>备注</label>
-        <input type="text" id="cash-memo" placeholder="选填">
-      </div>
+      <div class="cf-group"><label>回单 / 收据编号</label><input type="text" id="cash-receipt-no" placeholder="用于重复校验"></div>
+      <div class="cf-group cf-span-2"><label>票据信息</label><input type="text" id="cash-note-info" placeholder="票号 / 出票日 / 到期日等"></div>
+      <div class="cf-group cf-span-2"><label>备注</label><input type="text" id="cash-memo" placeholder="选填"></div>
     </div>
 
-    <!-- 回单图片上传 -->
     <div class="cash-receipt-upload">
       <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:8px;">回单 / 收据图片（选填，支持 JPG / PNG）</label>
       <div class="upload-zone-mini" id="cash-receipt-upload-zone">
@@ -763,7 +842,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
     </div>
   </div>
 
-  <!-- 输出区 -->
   <div class="cash-output">
     <div class="cash-tabs">
       <div class="cash-tab active" data-tab="register">收付款与转账登记表</div>
@@ -772,7 +850,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
       <div class="cash-tab" data-tab="journal">现金及银行日记账</div>
     </div>
 
-    <!-- 登记表 -->
     <div class="cash-tab-panel active" id="cash-tab-register">
       <div class="cash-toolbar">
         <select id="cash-filter-type">
@@ -794,23 +871,18 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
       <div style="overflow:auto;">
         <table class="cash-table">
           <thead>
-            <tr>
-              <th>日期</th><th>类型</th><th>金额</th><th>账户</th><th>对方</th>
-              <th>来源单据</th><th>凭证 / 回单</th><th>状态</th><th>操作</th>
-            </tr>
+            <tr><th>日期</th><th>类型</th><th>金额</th><th>账户</th><th>对方</th><th>来源单据</th><th>凭证 / 回单</th><th>状态</th><th>操作</th></tr>
           </thead>
           <tbody id="cash-register-body"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- 出纳日报 -->
     <div class="cash-tab-panel" id="cash-tab-daily">
       <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">按业务日期汇总，点击日期行可展开查看每笔交易明细。</p>
       <div id="cash-daily-list"></div>
     </div>
 
-    <!-- 票据台账 -->
     <div class="cash-tab-panel" id="cash-tab-notes">
       <div style="overflow:auto;">
         <table class="cash-table">
@@ -822,7 +894,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
       </div>
     </div>
 
-    <!-- 日记账 -->
     <div class="cash-tab-panel" id="cash-tab-journal">
       <div class="cash-toolbar">
         <select id="cash-journal-account"><option value="">全部账户</option></select>
@@ -833,60 +904,272 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
   </div>
 </div>
 
+<!-- ================= 制证模块 ================= -->
+<div id="module-voucher" class="module">
+  <div class="voucher-intro">
+    <div class="home-subtitle-top">VOUCHER · 制证</div>
+    <h1 class="serif-title" style="font-size:40px; margin-bottom:12px;">日常制证 · 凭证审核</h1>
+    <p style="max-width:760px;">依据原始单据制作各类业务凭证，系统校验借贷平衡、科目有效性与会计期间；提交后进入审核，通过即交记账模块。每张凭证均可追溯原始单据。</p>
+  </div>
+
+  <div class="voucher-types" id="voucher-types"></div>
+
+  <div class="voucher-layout">
+    <div class="voucher-source-panel">
+      <div class="voucher-panel-title serif-title">
+        原始单据 <span class="badge" id="voucher-source-badge">关联信息</span>
+      </div>
+      <div class="voucher-meta-row">
+        <div><label>业务日期</label><input type="date" id="voucher-date"></div>
+        <div><label>会计期间</label><input type="text" id="voucher-period" readonly style="background:var(--bg);"></div>
+      </div>
+      <div class="vform-group">
+        <label>来源类型</label>
+        <select id="voucher-source-type"></select>
+      </div>
+      <div class="vform-group">
+        <label id="voucher-source-no-label">来源单号</label>
+        <input type="text" id="voucher-source-no" placeholder="如未取得可留空">
+      </div>
+      <div class="vform-group">
+        <label>对方单位 / 经办人</label>
+        <input type="text" id="voucher-counterparty" placeholder="选填">
+      </div>
+      <div class="vform-group">
+        <label>原始单据附件（选填）</label>
+        <div class="upload-zone-mini" id="voucher-attach-zone" style="margin-bottom:8px;">
+          <p style="margin:0;">📎 点击上传原始单据</p>
+          <input type="file" id="voucher-attach-input" accept="image/*,.pdf" style="display:none">
+        </div>
+        <div class="attachment-list" id="voucher-attach-list" style="margin-bottom:0;"></div>
+      </div>
+      <div class="vform-group" style="margin-top:16px;">
+        <label>备注</label>
+        <input type="text" id="voucher-memo" placeholder="选填">
+      </div>
+    </div>
+
+    <div class="voucher-entry-panel">
+      <div class="voucher-panel-title serif-title" style="justify-content: space-between;">
+        <span>记账凭证 <span class="badge" id="voucher-no-badge">-</span></span>
+        <span style="font-size:12px; color:var(--text-muted); font-weight:400;">第 <span id="voucher-attach-count">0</span> 张附件</span>
+      </div>
+      <table class="voucher-entry-table">
+        <thead>
+          <tr><th width="26%">会计科目</th><th width="28%">摘要</th><th width="17%" class="num">借方</th><th width="17%" class="num">贷方</th><th width="6%"></th></tr>
+        </thead>
+        <tbody id="voucher-entries-body"></tbody>
+      </table>
+      <button type="button" class="btn-add-entry" onclick="addVoucherEntry()">+ 添加分录行</button>
+
+      <div class="voucher-totals">
+        <div class="voucher-total-item">借方合计：<strong id="voucher-debit-total">0.00</strong></div>
+        <div class="voucher-total-item">贷方合计：<strong id="voucher-credit-total">0.00</strong></div>
+        <div class="voucher-balance-status bad" id="voucher-balance-status">借贷不平</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="voucher-submit-bar">
+    <div class="hint" id="voucher-submit-hint">请填写完整分录后提交审核。</div>
+    <div style="display:flex; gap:12px;">
+      <button type="button" class="btn" onclick="resetVoucherForm()">重置</button>
+      <button type="button" class="btn btn-primary" id="voucher-btn-submit">提交审核</button>
+    </div>
+  </div>
+
+  <div class="voucher-list-panel">
+    <div class="voucher-panel-title serif-title" style="justify-content: space-between;">
+      <span>凭证列表与审核</span>
+      <span style="font-size:12px; color:var(--text-muted); font-weight:400;">共 <span id="voucher-list-count">0</span> 张凭证</span>
+    </div>
+
+    <div class="voucher-period-bar">
+      <span style="font-weight:500;">会计期间管理：</span>
+      <input type="month" id="voucher-period-input" style="width:auto;">
+      <button type="button" class="btn-mini" onclick="closePeriod()">关闭该期间</button>
+      <span style="color:var(--text-muted);">已关闭：</span>
+      <span id="voucher-closed-periods">无</span>
+    </div>
+
+    <div style="overflow:auto;">
+      <table class="voucher-table">
+        <thead>
+          <tr><th>凭证号</th><th>日期</th><th>类型</th><th>摘要</th><th class="num" style="text-align:right;">借方</th><th class="num" style="text-align:right;">贷方</th><th>来源单</th><th>状态</th><th>操作</th></tr>
+        </thead>
+        <tbody id="voucher-list-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 会计记账模块 ================= -->
+<div id="module-accounting" class="module">
+  <div class="accounting-intro">
+    <div class="home-subtitle-top">ACCOUNTING · 记账</div>
+    <h1 class="serif-title" style="font-size:40px; margin-bottom:12px;">会计记账 · 账簿 · 报表</h1>
+    <p style="max-width:760px;">从已审核凭证记账，生成科目汇总表、明细账、总账、试算平衡表和财务报表。报表金额可逐级追溯到科目、分录及凭证。</p>
+  </div>
+
+  <div class="acc-period-bar">
+    <span style="font-weight:500;">会计期间</span>
+    <select id="acc-period-select" onchange="onAccPeriodChange(this.value)" style="width:auto; min-width:180px;"></select>
+    <button type="button" class="btn-mini" onclick="refreshAccounting()">刷新</button>
+    <span style="color:var(--text-muted); font-size:12px; margin-left:auto;" id="acc-period-summary"></span>
+  </div>
+
+  <div class="acc-tabs" id="acc-tabs">
+    <div class="acc-tab active" data-tab="pending">待记账凭证 <span class="acc-badge" id="acc-badge-pending">0</span></div>
+    <div class="acc-tab" data-tab="summary">科目汇总表</div>
+    <div class="acc-tab" data-tab="detail">明细账</div>
+    <div class="acc-tab" data-tab="ledger">总账</div>
+    <div class="acc-tab" data-tab="trial">试算平衡表</div>
+    <div class="acc-tab" data-tab="report">财务报表</div>
+  </div>
+
+  <div class="acc-tab-panel active" id="acc-panel-pending">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+      <p style="font-size:13px; color:var(--text-muted); margin:0;">仅展示「审核通过」且未记账的凭证，同一凭证只允许入账一次。</p>
+      <button type="button" class="btn btn-primary" onclick="postAllPending()">一键记账全部</button>
+    </div>
+    <div style="overflow:auto;">
+      <table class="acc-table">
+        <thead><tr><th>凭证号</th><th>日期</th><th>业务类型</th><th>摘要</th><th style="text-align:right;">借方</th><th style="text-align:right;">贷方</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody id="acc-pending-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="acc-tab-panel" id="acc-panel-summary">
+    <div style="overflow:auto;">
+      <table class="acc-table">
+        <thead><tr><th>科目编码</th><th>科目名称</th><th style="text-align:right;">本期借方发生</th><th style="text-align:right;">本期贷方发生</th></tr></thead>
+        <tbody id="acc-summary-body"></tbody>
+        <tfoot id="acc-summary-foot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="acc-tab-panel" id="acc-panel-detail">
+    <div class="acc-detail-bar">
+      <span style="font-size:13px; color:var(--text-muted);">科目：</span>
+      <select id="acc-detail-account" style="width:auto; min-width:240px;"></select>
+    </div>
+    <div style="overflow:auto;">
+      <table class="acc-table">
+        <thead><tr><th>日期</th><th>凭证号</th><th>摘要</th><th style="text-align:right;">借方</th><th style="text-align:right;">贷方</th><th style="text-align:right;">余额</th></tr></thead>
+        <tbody id="acc-detail-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="acc-tab-panel" id="acc-panel-ledger">
+    <div style="overflow:auto;">
+      <table class="acc-table">
+        <thead><tr><th>科目编码</th><th>科目名称</th><th style="text-align:right;">期初余额</th><th style="text-align:right;">本期借方</th><th style="text-align:right;">本期贷方</th><th style="text-align:right;">期末余额</th></tr></thead>
+        <tbody id="acc-ledger-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="acc-tab-panel" id="acc-panel-trial">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+      <p style="font-size:13px; color:var(--text-muted); margin:0;">试算平衡校验：期初、本期、期末的借方合计应等于贷方合计。</p>
+      <button type="button" class="btn-mini" onclick="toggleOpeningEditor()">期初余额设置</button>
+    </div>
+    <div id="acc-opening-editor" style="display:none; background:var(--bg); padding:16px; border-radius:var(--radius); margin-bottom:16px; border:1px solid var(--border);">
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">为当前期间设置期初余额。仅填借方或贷方一侧，未填视为 0。期初合计应借贷相等。</p>
+      <div style="overflow:auto; max-height:400px;">
+        <table class="acc-table">
+          <thead><tr><th>科目编码</th><th>科目名称</th><th>期初借方</th><th>期初贷方</th></tr></thead>
+          <tbody id="acc-opening-body"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:12px; text-align:right;">
+        <button type="button" class="btn btn-primary" onclick="saveOpeningFromEditor()">保存期初余额</button>
+      </div>
+    </div>
+    <div style="overflow:auto;">
+      <table class="acc-table">
+        <thead><tr><th>科目编码</th><th>科目名称</th><th style="text-align:right;">期初借方</th><th style="text-align:right;">期初贷方</th><th style="text-align:right;">本期借方</th><th style="text-align:right;">本期贷方</th><th style="text-align:right;">期末借方</th><th style="text-align:right;">期末贷方</th></tr></thead>
+        <tbody id="acc-trial-body"></tbody>
+        <tfoot id="acc-trial-foot"></tfoot>
+      </table>
+    </div>
+    <div id="acc-trial-check" style="margin-top:16px;"></div>
+  </div>
+
+  <div class="acc-tab-panel" id="acc-panel-report">
+    <div class="acc-report-subtabs">
+      <div class="acc-report-subtab active" data-rtab="bs" onclick="switchReportTab('bs')">资产负债表</div>
+      <div class="acc-report-subtab" data-rtab="is" onclick="switchReportTab('is')">利润表</div>
+    </div>
+    <div id="acc-report-content" style="margin-top:20px;"></div>
+    <div style="margin-top:24px;">
+      <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:6px;">编表说明</label>
+      <textarea id="acc-report-note" placeholder="填写本报表的编制说明..." style="min-height:80px; font-size:13px;"></textarea>
+      <div style="text-align:right; margin-top:8px;">
+        <button type="button" class="btn-mini" onclick="saveReportNote()">保存说明</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-/* ================= 1. 路由导航与 GSAP 动画 ================= */
+/* ================= 1. 路由导航 ================= */
 function switchModule(targetId) {
     const target = document.getElementById(targetId);
     if (!target) return;
-
     const currentActive = document.querySelector('.module.active');
-
     if (currentActive === target) {
         gsap.set(target, { opacity: 1, y: 0 });
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
     }
-
     if (currentActive) {
         gsap.killTweensOf(currentActive);
         currentActive.classList.remove('active');
         currentActive.style.display = 'none';
     }
-
     target.classList.add('active');
     target.style.display = 'block';
-
     gsap.killTweensOf(target);
-    gsap.fromTo(target,
-        { opacity: 0, y: 15 },
-        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
-    );
-
+    gsap.fromTo(target, { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" });
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.target === targetId);
     });
-
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (targetId === 'module-accounting' && window.refreshAccounting) {
+        refreshAccounting();
+    }
 }
-
 document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => switchModule(btn.dataset.target));
 });
 
-/* ================= 2. 状态存储引擎 ================= */
+/* ================= 2. 存储引擎 ================= */
 const DB_NAME = 'FinanceWorkbenchDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_NAME = 'Invoices';
 const STORE_CASHIER = 'CashierRecords';
+const STORE_VOUCHER = 'VoucherRecords';
 const LS_KEY = 'finance_ledger_fallback';
 const LS_KEY_CASHIER = 'finance_cashier_fallback';
+const LS_KEY_VOUCHER = 'finance_voucher_fallback';
 
 let storageMode = 'MEMORY';
 let db = null;
-const memoryData = { 'Invoices': [], 'CashierRecords': [] };
+const memoryData = { 'Invoices': [], 'CashierRecords': [], 'VoucherRecords': [] };
 
-function lsKeyFor(storeName) { return storeName === STORE_CASHIER ? LS_KEY_CASHIER : LS_KEY; }
-function pkFor(storeName) { return storeName === STORE_CASHIER ? 'id' : 'invoiceNo'; }
+function lsKeyFor(storeName) {
+    if (storeName === STORE_CASHIER) return LS_KEY_CASHIER;
+    if (storeName === STORE_VOUCHER) return LS_KEY_VOUCHER;
+    return LS_KEY;
+}
+function pkFor(storeName) {
+    if (storeName === STORE_CASHIER || storeName === STORE_VOUCHER) return 'id';
+    return 'invoiceNo';
+}
 
 async function initStorage() {
     return new Promise((resolve) => {
@@ -897,12 +1180,9 @@ async function initStorage() {
             request.onsuccess = (e) => { clearTimeout(timeout); db = e.target.result; storageMode = 'INDEXEDDB'; resolve(storageMode); };
             request.onupgradeneeded = (e) => {
                 const dbInstance = e.target.result;
-                if (!dbInstance.objectStoreNames.contains(STORE_NAME)) {
-                    dbInstance.createObjectStore(STORE_NAME, { keyPath: 'invoiceNo' });
-                }
-                if (!dbInstance.objectStoreNames.contains(STORE_CASHIER)) {
-                    dbInstance.createObjectStore(STORE_CASHIER, { keyPath: 'id' });
-                }
+                if (!dbInstance.objectStoreNames.contains(STORE_NAME)) dbInstance.createObjectStore(STORE_NAME, { keyPath: 'invoiceNo' });
+                if (!dbInstance.objectStoreNames.contains(STORE_CASHIER)) dbInstance.createObjectStore(STORE_CASHIER, { keyPath: 'id' });
+                if (!dbInstance.objectStoreNames.contains(STORE_VOUCHER)) dbInstance.createObjectStore(STORE_VOUCHER, { keyPath: 'id' });
             };
         } catch (err) { tryLSFallback(resolve); }
     });
@@ -958,8 +1238,6 @@ async function clearStore(storeName) {
         memoryData[storeName] = [];
     }
 }
-
-/* 兼容旧接口 */
 async function saveRecordToDB(record) { return saveToStore(STORE_NAME, record); }
 async function getAllRecordsFromDB() { return getAllFromStore(STORE_NAME); }
 async function clearAllDB() { return clearStore(STORE_NAME); }
@@ -969,10 +1247,8 @@ function showToast(msg) {
     const t = document.getElementById('toast');
     t.innerText = msg;
     t.style.visibility = 'visible';
-
     gsap.killTweensOf(t);
     gsap.fromTo(t, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" });
-
     clearTimeout(t._timer);
     t._timer = setTimeout(() => {
         gsap.to(t, { opacity: 0, y: 20, duration: 0.3, onComplete: () => t.style.visibility = 'hidden' });
@@ -996,35 +1272,43 @@ function digitUppercase(n) {
         for (let j = 0; j < u[1].length && n > 0; j++) { p = d[n % 10] + u[1][j] + p; n = Math.floor(n / 10); }
         s = p.replace(/(零.)*零$/, '').replace(/^$/, '零') + u[0][i] + s;
     }
-    return head + s.replace(/(零.)*零元/, '元').replace(/(零.)+/g, '零').replace(/^整$/, '零元整');
+    return head + s.replace(/(.)*零元/, '元').replace(/(零.)+/g, '零').replace(/^整$/, '零元整');
 }
 
-/* ================= 4. 出纳模块常量 ================= */
-const ACCOUNTS = [
-  { id: 'CASH', name: '库存现金', kind: 'CASH' },
-  { id: 'ICBC', name: '工商银行 · 6222 **** 1234', kind: 'BANK' },
-  { id: 'CMB',  name: '招商银行 · 6225 **** 5678', kind: 'BANK' },
-  { id: 'CCB',  name: '建设银行 · 6217 **** 4321', kind: 'BANK' }
-];
+/* ================= 4. 出纳账户（常用库 + 自由输入） ================= */
+let ACCOUNTS = (() => {
+    try {
+        const saved = JSON.parse(localStorage.getItem('cashier_accounts') || 'null');
+        if (Array.isArray(saved) && saved.length) return saved;
+    } catch (e) {}
+    return [
+        { id: 'CASH', name: '库存现金', kind: 'CASH' },
+        { id: 'ICBC', name: '工商银行 · 6222 **** 1234', kind: 'BANK' },
+        { id: 'CMB',  name: '招商银行 · 6225 **** 5678', kind: 'BANK' },
+        { id: 'CCB',  name: '建设银行 · 6217 **** 4321', kind: 'BANK' }
+    ];
+})();
 
-const CASH_TYPE_LABEL = {
-  RECEIPT: '收款',
-  PAYMENT: '付款',
-  TRANSFER_OUT: '转账 · 转出',
-  TRANSFER_IN:  '转账 · 转入'
-};
+function saveCashierAccounts() {
+    try { localStorage.setItem('cashier_accounts', JSON.stringify(ACCOUNTS)); } catch (e) {}
+}
+
+/* 兼容历史：历史记录 account 可能存 id（旧版），也可能是名称。统一显示名称。 */
+function getAccountName(val) {
+    if (!val) return '-';
+    const byId = ACCOUNTS.find(x => x.id === val);
+    if (byId) return byId.name;
+    return val;
+}
+
+const CASH_TYPE_LABEL = { RECEIPT: '收款', PAYMENT: '付款', TRANSFER_OUT: '转账 · 转出', TRANSFER_IN: '转账 · 转入' };
 const CASH_STATUS_LABEL = { PENDING: '待办理', DONE: '已办理', POSTED: '已入账' };
 const RECEIPT_TYPE_LABEL = { BANK_RECEIPT: '银行回单', CASH_RECEIPT: '现金收据', NOTE: '票据' };
 
-function getAccountName(id) {
-  const a = ACCOUNTS.find(x => x.id === id);
-  return a ? a.name : (id || '-');
-}
 function getReceiptTypeLabel(t) { return RECEIPT_TYPE_LABEL[t] || '-'; }
 function isCashIn(r) { return r.type === 'RECEIPT' || r.type === 'TRANSFER_IN'; }
 function signedAmount(r) { return isCashIn(r) ? r.amount : -r.amount; }
 
-/* 通用图片预览窗口 */
 function openImagePreview(dataUrl) {
     if (!dataUrl) return showToast('无图片可预览');
     try {
@@ -1038,20 +1322,15 @@ function openImagePreview(dataUrl) {
 
 /* ================= 5. 主逻辑 ================= */
 document.addEventListener('DOMContentLoaded', async () => {
-  /* ---- 强制从首页开始 ---- */
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   window.scrollTo(0, 0);
 
   document.querySelectorAll('.module').forEach(m => {
-      m.classList.remove('active');
-      m.style.display = 'none';
-      m.style.opacity = 0;
+      m.classList.remove('active'); m.style.display = 'none'; m.style.opacity = 0;
   });
   const homeEl = document.getElementById('module-home');
-  homeEl.classList.add('active');
-  homeEl.style.display = 'block';
+  homeEl.classList.add('active'); homeEl.style.display = 'block';
   gsap.set(homeEl, { opacity: 1, y: 0 });
-
   document.querySelectorAll('.nav-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.target === 'module-home');
   });
@@ -1181,8 +1460,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             buyer: buyer, buyerTaxno: document.getElementById('inv-input-taxno').value,
             paymentMethod: document.getElementById('inv-input-payment').value,
             total: total, items: items, logs: logs, attachments: JSON.parse(JSON.stringify(currentAttachments)),
-            stampData: currentStamp,
-            status: '已入账'
+            stampData: currentStamp, status: '已入账'
         };
 
         await saveRecordToDB(record);
@@ -1246,16 +1524,12 @@ document.addEventListener('DOMContentLoaded', async () => {
           let attachHtml = '';
           if (i.attachments && i.attachments.length > 0) attachHtml += `<a class="btn-view-attach" onclick="viewAttachment('${i.attachments[0].data.replace(/'/g, "\\'")}')">📄 凭证</a>`;
           const logHtml = i.logs ? `<div style="font-size:12px; color:var(--text-muted); margin-top:6px;" title="${i.logs}">📝 ${i.logs.length > 15 ? i.logs.substring(0,15)+'...' : i.logs}</div>` : '';
-
           const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td><button class="btn-view-invoice" onclick="viewInvoice('${i.invoiceNo}')">查看发票</button></td>
+          tr.innerHTML = `<td><button class="btn-view-invoice" onclick="viewInvoice('${i.invoiceNo}')">查看发票</button></td>
             <td>${i.invoiceNo}</td><td>${i.date}</td><td>${i.buyer}</td><td style="font-weight:500">¥${i.total.toFixed(2)}</td><td>${i.paymentMethod}</td>
-            <td>${attachHtml} ${logHtml}</td>
-          `;
+            <td>${attachHtml} ${logHtml}</td>`;
           tb.appendChild(tr);
       });
-
       document.getElementById('filtered-total-amount').innerText = `¥${sum.toFixed(2)}`;
       document.getElementById('filtered-total-count').innerText = `共 ${filtered.length} 张`;
   };
@@ -1269,7 +1543,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.viewInvoice = function(invoiceNo) {
       const record = allRecords.find(r => r.invoiceNo === invoiceNo);
       if (!record) return;
-
       document.getElementById('inv-input-seller').value = record.seller || '';
       document.getElementById('inv-input-seller-taxno').value = record.sellerTaxno || '';
       document.getElementById('inv-input-buyer').value = record.buyer || '';
@@ -1278,14 +1551,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('inv-input-date').value = record.date;
       document.getElementById('inv-input-payment').value = record.paymentMethod || '银行转账';
       document.getElementById('inv-input-logs').value = record.logs || '';
-
       itemsBody.innerHTML = '';
       if (record.items && record.items.length > 0) record.items.forEach(it => addRow(it));
       else addRow();
-
       currentAttachments = record.attachments || [];
       renderAttachments();
-
       currentStamp = record.stampData || null;
       if (currentStamp) {
           stampPrevImg.src = currentStamp;
@@ -1293,10 +1563,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           invStampImg.src = currentStamp;
           invStampImg.style.display = 'block';
           gsap.fromTo(invStampImg, { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 0.85, duration: 0.3 });
-      } else {
-          removeStamp();
-      }
-
+      } else { removeStamp(); }
       updatePreview();
       window.scrollTo({ top: 0, behavior: 'smooth' });
       showToast(`已载入发票 ${invoiceNo}`);
@@ -1314,11 +1581,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadAndRenderLedger();
 
   /* ================= 5.2 对账模块 ================= */
-  let reconBank = null;
-  let reconCompany = null;
-  let reconResults = [];
-  let reconCurrentTab = 'ALL';
-
+  let reconBank = null, reconCompany = null, reconResults = [], reconCurrentTab = 'ALL';
   const RECON_STATUS_LABEL = { MATCH: '完全匹配', BANK_ONLY: '企业漏记', COMPANY_ONLY: '银行缺失', DIFF: '金额不符', ERROR: '异常' };
   const RECON_ROW_CLASS = { MATCH: 'row-match', BANK_ONLY: 'row-bank-only', COMPANY_ONLY: 'row-company-only', DIFF: 'row-diff', ERROR: 'row-error' };
 
@@ -1354,11 +1617,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const empty = document.createElement('option');
       empty.value = ''; empty.textContent = '-- 请选择 --';
       sel.appendChild(empty);
-      headers.forEach(h => {
-          const o = document.createElement('option');
-          o.value = h; o.textContent = h;
-          sel.appendChild(o);
-      });
+      headers.forEach(h => { const o = document.createElement('option'); o.value = h; o.textContent = h; sel.appendChild(o); });
       if (guessPattern) {
           const guess = headers.find(h => guessPattern.test(h));
           if (guess) sel.value = guess;
@@ -1376,59 +1635,35 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function buildReconResults(bankRows, companyRows, m) {
       const results = [];
-      const bankMap = new Map();
-      const companyMap = new Map();
-
+      const bankMap = new Map(), companyMap = new Map();
       bankRows.forEach((row, i) => {
           const raw = row[m.bankId];
           const id = String(raw == null ? '' : raw).trim();
           const amount = parseAmount(row[m.bankAmount]);
-          if (!id) {
-              results.push({ id: '(空)', status: 'ERROR', bankAmount: isNaN(amount) ? null : amount, companyAmount: null, detail: `银行表第 ${i + 2} 行：单号为空` });
-              return;
-          }
-          if (isNaN(amount)) {
-              results.push({ id, status: 'ERROR', bankAmount: null, companyAmount: null, detail: `银行表第 ${i + 2} 行：金额无法解析（${row[m.bankAmount]}）` });
-              return;
-          }
+          if (!id) { results.push({ id: '(空)', status: 'ERROR', bankAmount: isNaN(amount) ? null : amount, companyAmount: null, detail: `银行表第 ${i + 2} 行：单号为空` }); return; }
+          if (isNaN(amount)) { results.push({ id, status: 'ERROR', bankAmount: null, companyAmount: null, detail: `银行表第 ${i + 2} 行：金额无法解析（${row[m.bankAmount]}）` }); return; }
           if (!bankMap.has(id)) bankMap.set(id, { amount: 0, count: 0 });
           const b = bankMap.get(id); b.amount += amount; b.count++;
       });
-
       companyRows.forEach((row, i) => {
           const raw = row[m.companyId];
           const id = String(raw == null ? '' : raw).trim();
           const amount = parseAmount(row[m.companyAmount]);
-          if (!id) {
-              results.push({ id: '(空)', status: 'ERROR', bankAmount: null, companyAmount: isNaN(amount) ? null : amount, detail: `企业表第 ${i + 2} 行：单号为空` });
-              return;
-          }
-          if (isNaN(amount)) {
-              results.push({ id, status: 'ERROR', bankAmount: null, companyAmount: null, detail: `企业表第 ${i + 2} 行：金额无法解析（${row[m.companyAmount]}）` });
-              return;
-          }
+          if (!id) { results.push({ id: '(空)', status: 'ERROR', bankAmount: null, companyAmount: isNaN(amount) ? null : amount, detail: `企业表第 ${i + 2} 行：单号为空` }); return; }
+          if (isNaN(amount)) { results.push({ id, status: 'ERROR', bankAmount: null, companyAmount: null, detail: `企业表第 ${i + 2} 行：金额无法解析（${row[m.companyAmount]}）` }); return; }
           if (!companyMap.has(id)) companyMap.set(id, { amount: 0, count: 0 });
           const c = companyMap.get(id); c.amount += amount; c.count++;
       });
-
       const allIds = new Set([...bankMap.keys(), ...companyMap.keys()]);
       allIds.forEach(id => {
-          const b = bankMap.get(id);
-          const c = companyMap.get(id);
+          const b = bankMap.get(id), c = companyMap.get(id);
           if (b && c) {
               const diff = b.amount - c.amount;
-              if (Math.abs(diff) < 0.005) {
-                  results.push({ id, status: 'MATCH', bankAmount: b.amount, companyAmount: c.amount, detail: '' });
-              } else {
-                  results.push({ id, status: 'DIFF', bankAmount: b.amount, companyAmount: c.amount, detail: `差额：${diff > 0 ? '+' : ''}${diff.toFixed(2)}` });
-              }
-          } else if (b) {
-              results.push({ id, status: 'BANK_ONLY', bankAmount: b.amount, companyAmount: null, detail: '银行有流水，企业未记账' });
-          } else {
-              results.push({ id, status: 'COMPANY_ONLY', bankAmount: null, companyAmount: c.amount, detail: '企业已记账，银行无对应流水' });
-          }
+              if (Math.abs(diff) < 0.005) results.push({ id, status: 'MATCH', bankAmount: b.amount, companyAmount: c.amount, detail: '' });
+              else results.push({ id, status: 'DIFF', bankAmount: b.amount, companyAmount: c.amount, detail: `差额：${diff > 0 ? '+' : ''}${diff.toFixed(2)}` });
+          } else if (b) results.push({ id, status: 'BANK_ONLY', bankAmount: b.amount, companyAmount: null, detail: '银行有流水，企业未记账' });
+          else results.push({ id, status: 'COMPANY_ONLY', bankAmount: null, companyAmount: c.amount, detail: '企业已记账，银行无对应流水' });
       });
-
       const order = { ERROR: 0, DIFF: 1, BANK_ONLY: 2, COMPANY_ONLY: 3, MATCH: 4 };
       results.sort((a, b) => (order[a.status] - order[b.status]) || String(a.id).localeCompare(String(b.id)));
       return results;
@@ -1437,35 +1672,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderReconResults() {
       const tb = document.getElementById('recon-result-body');
       const list = reconCurrentTab === 'ALL' ? reconResults : reconResults.filter(r => r.status === reconCurrentTab);
-      if (!list.length) {
-          tb.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:32px;">该分类暂无记录</td></tr>`;
-          return;
-      }
+      if (!list.length) { tb.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:32px;">该分类暂无记录</td></tr>`; return; }
       tb.innerHTML = list.map(r => {
           const label = RECON_STATUS_LABEL[r.status] || r.status;
           const rowCls = RECON_ROW_CLASS[r.status] || '';
           const bankAmt = r.bankAmount != null ? '¥' + r.bankAmount.toFixed(2) : '-';
           const companyAmt = r.companyAmount != null ? '¥' + r.companyAmount.toFixed(2) : '-';
-          const detail = r.detail
-              ? (r.status === 'DIFF' ? `<span class="diff-amount">${escapeHtml(r.detail)}</span>` : escapeHtml(r.detail))
-              : '-';
-          return `<tr class="${rowCls}">
-            <td>${escapeHtml(r.id)}</td>
-            <td><span class="status-tag ${r.status}">${label}</span></td>
-            <td>${bankAmt}</td>
-            <td>${companyAmt}</td>
-            <td class="missing-detail">${detail}</td>
-          </tr>`;
+          const detail = r.detail ? (r.status === 'DIFF' ? `<span class="diff-amount">${escapeHtml(r.detail)}</span>` : escapeHtml(r.detail)) : '-';
+          return `<tr class="${rowCls}"><td>${escapeHtml(r.id)}</td><td><span class="status-tag ${r.status}">${label}</span></td><td>${bankAmt}</td><td>${companyAmt}</td><td class="missing-detail">${detail}</td></tr>`;
       }).join('');
   }
 
   function updateReconBadges() {
       const counts = { ALL: reconResults.length, MATCH: 0, BANK_ONLY: 0, COMPANY_ONLY: 0, DIFF: 0, ERROR: 0 };
       reconResults.forEach(r => { if (counts[r.status] != null) counts[r.status]++; });
-      Object.keys(counts).forEach(k => {
-          const el = document.getElementById('badge-' + k);
-          if (el) el.textContent = counts[k];
-      });
+      Object.keys(counts).forEach(k => { const el = document.getElementById('badge-' + k); if (el) el.textContent = counts[k]; });
   }
 
   function handleReconFile(file, side) {
@@ -1473,12 +1694,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!/\.(xlsx|xls)$/i.test(file.name)) return showToast('请上传 .xlsx / .xls 文件');
       const drop = document.getElementById(side === 'bank' ? 'recon-drop-bank' : 'recon-drop-company');
       const statusEl = drop.querySelector('p');
-
       parseExcelFile(file).then(parsed => {
           statusEl.textContent = `已加载：${file.name}（${parsed.rows.length} 行 · ${parsed.headers.length} 列）`;
           statusEl.style.color = 'var(--match)';
           document.getElementById('recon-mapping-area').style.display = 'block';
-
           if (side === 'bank') {
               reconBank = parsed;
               fillSelect(document.getElementById('recon-map-bank-id'), parsed.headers, /单号|流水号|交易号|订单号|编号|id/i);
@@ -1505,31 +1724,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       const btnReconcile = document.getElementById('recon-btn-reconcile');
       const resultArea = document.getElementById('recon-result-area');
 
-      /* 点击上传 */
-      dropBank.addEventListener('click', (e) => {
-          if (e.target === fileBank) return;
-          fileBank.click();
-      });
-      dropCompany.addEventListener('click', (e) => {
-          if (e.target === fileCompany) return;
-          fileCompany.click();
-      });
+      dropBank.addEventListener('click', (e) => { if (e.target === fileBank) return; fileBank.click(); });
+      dropCompany.addEventListener('click', (e) => { if (e.target === fileCompany) return; fileCompany.click(); });
+      fileBank.addEventListener('change', (e) => { handleReconFile(e.target.files[0], 'bank'); fileBank.value = ''; });
+      fileCompany.addEventListener('change', (e) => { handleReconFile(e.target.files[0], 'company'); fileCompany.value = ''; });
 
-      fileBank.addEventListener('change', (e) => {
-          handleReconFile(e.target.files[0], 'bank');
-          fileBank.value = '';
-      });
-      fileCompany.addEventListener('change', (e) => {
-          handleReconFile(e.target.files[0], 'company');
-          fileCompany.value = '';
-      });
-
-      /* 拖拽上传 */
       [[dropBank, 'bank'], [dropCompany, 'company']].forEach(([zone, side]) => {
-          zone.addEventListener('dragover', (e) => {
-              e.preventDefault();
-              zone.style.borderColor = 'var(--primary)';
-          });
+          zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.style.borderColor = 'var(--primary)'; });
           zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
           zone.addEventListener('drop', (e) => {
               e.preventDefault();
@@ -1539,12 +1740,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           });
       });
 
-      /* 映射变更 */
       ['recon-map-bank-id', 'recon-map-bank-amount', 'recon-map-company-id', 'recon-map-company-amount'].forEach(id => {
           document.getElementById(id).addEventListener('change', checkReconReady);
       });
 
-      /* 开始对账 */
       btnReconcile.addEventListener('click', () => {
           const m = {
               bankId: document.getElementById('recon-map-bank-id').value,
@@ -1553,18 +1752,15 @@ document.addEventListener('DOMContentLoaded', async () => {
               companyAmount: document.getElementById('recon-map-company-amount').value
           };
           if (!m.bankId || !m.bankAmount || !m.companyId || !m.companyAmount) return showToast('请先选择完整的列映射');
-
           reconResults = buildReconResults(reconBank.rows, reconCompany.rows, m);
           reconCurrentTab = 'ALL';
           document.querySelectorAll('#recon-tabs .tab').forEach(t => t.classList.toggle('active', t.dataset.type === 'ALL'));
-
           updateReconBadges();
           renderReconResults();
           resultArea.style.display = 'block';
           showToast(`对账完成，共 ${reconResults.length} 条记录`);
       });
 
-      /* 分类切换 */
       document.querySelectorAll('#recon-tabs .tab').forEach(tab => {
           tab.addEventListener('click', () => {
               document.querySelectorAll('#recon-tabs .tab').forEach(t => t.classList.remove('active'));
@@ -1574,7 +1770,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           });
       });
 
-      /* 导出 */
       document.getElementById('recon-btn-export').addEventListener('click', () => {
           const list = reconCurrentTab === 'ALL' ? reconResults : reconResults.filter(r => r.status === reconCurrentTab);
           if (!list.length) return showToast('当前分类无数据可导出');
@@ -1596,22 +1791,101 @@ document.addEventListener('DOMContentLoaded', async () => {
   })();
 
   /* ================= 5.3 出纳模块 ================= */
-  let cashierRecords = [];
-  let cashierCurrentType = 'RECEIPT';
-  let cashReceiptImage = null;
+  let cashierRecords = [], cashierCurrentType = 'RECEIPT', cashReceiptImage = null;
 
-  /* ---- 账户下拉 ---- */
+  /* 填充 datalist 建议账户 */
+  function refreshAccountDatalist() {
+      const datalist = document.getElementById('cash-account-options');
+      datalist.innerHTML = ACCOUNTS.map(a => `<option value="${escapeHtml(a.name)}"></option>`).join('');
+  }
+
+  /* 刷新日记账筛选下拉 */
+  function refreshJournalAccountOptions() {
+      const jAcc = document.getElementById('cash-journal-account');
+      const prev = jAcc.value;
+      const set = new Set();
+      ACCOUNTS.forEach(a => set.add(a.name));
+      cashierRecords.forEach(r => { if (r.account) set.add(getAccountName(r.account)); });
+      const names = Array.from(set).filter(Boolean).sort();
+      jAcc.innerHTML = '<option value="">全部账户</option>' + names.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+      if (prev && names.includes(prev)) jAcc.value = prev;
+  }
+
   function fillAccountSelects() {
-      const opts = ACCOUNTS.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
-      document.getElementById('cash-account').innerHTML = opts;
-      document.getElementById('cash-in-account').innerHTML = opts;
-      document.getElementById('cash-journal-account').innerHTML = '<option value="">全部账户</option>' + opts;
-      document.getElementById('cash-account').value = ACCOUNTS[1].id;
-      document.getElementById('cash-in-account').value = ACCOUNTS[2].id;
+      refreshAccountDatalist();
+      /* 预填默认建议值 */
+      if (ACCOUNTS[1]) document.getElementById('cash-account').value = ACCOUNTS[1].name;
+      if (ACCOUNTS[2]) document.getElementById('cash-in-account').value = ACCOUNTS[2].name;
+      refreshJournalAccountOptions();
   }
   fillAccountSelects();
 
-  /* ---- 回单图片上传 ---- */
+  window.toggleAccountManager = function() {
+      const el = document.getElementById('account-manager');
+      const open = el.style.display === 'none';
+      el.style.display = open ? 'block' : 'none';
+      if (open) renderAccountManager();
+  };
+
+  function renderAccountManager() {
+      const tbody = document.getElementById('account-manage-body');
+      if (!ACCOUNTS.length) {
+          tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:16px;">暂无常用账户，请添加</td></tr>`;
+          return;
+      }
+      tbody.innerHTML = ACCOUNTS.map(a => `
+          <tr>
+              <td><input type="text" value="${escapeHtml(a.name)}" onchange="updateAccountName('${a.id}', this.value)"></td>
+              <td>
+                  <select onchange="updateAccountKind('${a.id}', this.value)">
+                      <option value="BANK" ${a.kind === 'BANK' ? 'selected' : ''}>银行</option>
+                      <option value="CASH" ${a.kind === 'CASH' ? 'selected' : ''}>现金</option>
+                      <option value="OTHER" ${a.kind === 'OTHER' ? 'selected' : ''}>其他</option>
+                  </select>
+              </td>
+              <td><button type="button" class="btn-mini" style="color:var(--diff);" onclick="removeAccount('${a.id}')">删除</button></td>
+          </tr>
+      `).join('');
+  }
+
+  window.updateAccountName = function(id, name) {
+      const a = ACCOUNTS.find(x => x.id === id);
+      if (a) { a.name = name.trim() || a.name; saveCashierAccounts(); refreshAccountDatalist(); refreshJournalAccountOptions(); }
+  };
+  window.updateAccountKind = function(id, kind) {
+      const a = ACCOUNTS.find(x => x.id === id);
+      if (a) { a.kind = kind; saveCashierAccounts(); }
+  };
+  window.removeAccount = function(id) {
+      if (!confirm('确定从常用账户中移除该账户？历史记录中已引用该账户的条目仍会保留。')) return;
+      ACCOUNTS = ACCOUNTS.filter(x => x.id !== id);
+      saveCashierAccounts();
+      renderAccountManager();
+      refreshAccountDatalist();
+      refreshJournalAccountOptions();
+      loadCashier();
+  };
+  window.addNewAccount = function() {
+      const nameEl = document.getElementById('new-account-name');
+      const kindEl = document.getElementById('new-account-kind');
+      const name = nameEl.value.trim();
+      if (!name) return showToast('请填写账户名称');
+      const id = 'ACC' + Date.now();
+      ACCOUNTS.push({ id, name, kind: kindEl.value });
+      saveCashierAccounts();
+      nameEl.value = '';
+      renderAccountManager();
+      refreshAccountDatalist();
+      refreshJournalAccountOptions();
+      showToast('账户已添加为常用账户');
+  };
+
+  /* 兼容原函数名 */
+  function refreshAccountSelects() {
+      refreshAccountDatalist();
+      refreshJournalAccountOptions();
+  }
+
   const cashReceiptZone = document.getElementById('cash-receipt-upload-zone');
   const cashReceiptInput = document.getElementById('cash-receipt-file-input');
   const cashReceiptPreview = document.getElementById('cash-receipt-preview');
@@ -1638,50 +1912,30 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function renderCashReceiptPreview() {
       if (!cashReceiptImage) { cashReceiptPreview.innerHTML = ''; return; }
-      cashReceiptPreview.innerHTML = `
-        <div class="attach-item">
-          🧾 回单图片已附加
-          <button type="button" onclick="previewCashReceipt()" style="color:var(--accent-blue); font-size:12px;">预览</button>
-          <button type="button" onclick="removeCashReceiptImage()">×</button>
-        </div>`;
+      cashReceiptPreview.innerHTML = `<div class="attach-item">🧾 回单图片已附加<button type="button" onclick="previewCashReceipt()" style="color:var(--accent-blue); font-size:12px;">预览</button><button type="button" onclick="removeCashReceiptImage()">×</button></div>`;
   }
 
   window.previewCashReceipt = function() { openImagePreview(cashReceiptImage); };
+  window.removeCashReceiptImage = function() { cashReceiptImage = null; renderCashReceiptPreview(); };
 
-  window.removeCashReceiptImage = function() {
-      cashReceiptImage = null;
-      renderCashReceiptPreview();
-  };
-
-  /* ---- 类型切换 ---- */
   window.setCashierType = function(type) {
       cashierCurrentType = type;
       const isTransfer = type === 'TRANSFER';
-
       document.querySelectorAll('#module-cashier .quick-card').forEach(c => c.classList.toggle('active', c.dataset.type === type));
       document.querySelectorAll('#module-cashier .type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
-
       document.getElementById('cash-field-in-account').style.display = isTransfer ? 'block' : 'none';
       document.getElementById('cash-field-counterparty').style.display = isTransfer ? 'none' : 'block';
       document.getElementById('cash-field-counterparty-account').style.display = isTransfer ? 'none' : 'block';
       document.getElementById('cash-field-source').style.display = isTransfer ? 'none' : 'block';
-
-      document.getElementById('cash-label-account').textContent =
-          type === 'RECEIPT' ? '收款账户' : (type === 'PAYMENT' ? '付款账户' : '转出账户');
-      document.getElementById('cash-label-counterparty').textContent =
-          type === 'RECEIPT' ? '付款方名称' : '收款方名称';
-
+      document.getElementById('cash-label-account').textContent = type === 'RECEIPT' ? '收款账户' : (type === 'PAYMENT' ? '付款账户' : '转出账户');
+      document.getElementById('cash-label-counterparty').textContent = type === 'RECEIPT' ? '付款方名称' : '收款方名称';
       const btn = document.getElementById('cash-btn-submit');
       btn.textContent = type === 'RECEIPT' ? '登记收款' : (type === 'PAYMENT' ? '登记付款' : '登记转账');
       btn.style.background = type === 'RECEIPT' ? 'var(--match)' : (type === 'PAYMENT' ? 'var(--diff)' : 'var(--company-only)');
       btn.style.borderColor = btn.style.background;
-
-      if (isTransfer) {
-          document.getElementById('cash-receipt-type').value = 'BANK_RECEIPT';
-      }
+      if (isTransfer) document.getElementById('cash-receipt-type').value = 'BANK_RECEIPT';
   };
 
-  /* ---- 重复校验 ---- */
   async function findDuplicateReceipt(receiptNo, excludeIds) {
       if (!receiptNo) return null;
       const all = await getAllFromStore(STORE_CASHIER);
@@ -1690,19 +1944,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function findDuplicateBusiness(sourceDocNo, amount, excludeIds) {
       if (!sourceDocNo) return null;
       const all = await getAllFromStore(STORE_CASHIER);
-      return all.find(r =>
-          r.sourceDocNo === sourceDocNo &&
-          Math.abs((r.amount || 0) - amount) < 0.005 &&
-          r.status === 'POSTED' &&
-          !(excludeIds || []).includes(r.id)
-      ) || null;
+      return all.find(r => r.sourceDocNo === sourceDocNo && Math.abs((r.amount || 0) - amount) < 0.005 && r.status === 'POSTED' && !(excludeIds || []).includes(r.id)) || null;
   }
 
-  /* ---- 提交登记 ---- */
   document.getElementById('cash-btn-submit').addEventListener('click', async () => {
       const date = document.getElementById('cash-date').value;
       const amount = parseFloat(document.getElementById('cash-amount').value);
-      const account = document.getElementById('cash-account').value;
+      /* 关键：账户直接取输入框内容，不再限定下拉 */
+      const account = document.getElementById('cash-account').value.trim();
       const receiptNo = document.getElementById('cash-receipt-no').value.trim();
       const receiptType = document.getElementById('cash-receipt-type').value;
       const noteInfo = document.getElementById('cash-note-info').value.trim();
@@ -1714,61 +1963,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (!date) return showToast('请选择业务日期');
       if (!amount || amount <= 0) return showToast('金额需大于 0');
-      if (!account) return showToast('请选择账户');
+      if (!account) return showToast('请填写账户名称');
 
       try {
           if (cashierCurrentType === 'TRANSFER') {
-              const inAccount = document.getElementById('cash-in-account').value;
-              if (!inAccount) return showToast('请选择转入账户');
+              const inAccount = document.getElementById('cash-in-account').value.trim();
+              if (!inAccount) return showToast('请填写转入账户');
               if (inAccount === account) return showToast('转入与转出账户不能相同');
-
               const dup = await findDuplicateReceipt(receiptNo, []);
               if (dup) return showToast(`⚠️ 回单号「${receiptNo}」已存在，请勿重复录入`);
-
               const stamp = Date.now();
-              const outId = `CSH${stamp}O`;
-              const inId  = `CSH${stamp}I`;
-              const base = {
-                  date, amount, receiptNo, receiptType: 'BANK_RECEIPT', noteInfo, memo,
-                  status: 'PENDING', createdAt: stamp,
-                  receiptImage: cashReceiptImage || null
-              };
-              const outRec = Object.assign({}, base, {
-                  id: outId, type: 'TRANSFER_OUT', account,
-                  counterparty: '内部转账', pairedId: inId,
-                  sourceDocNo: '', sourceDocType: ''
-              });
-              const inRec = Object.assign({}, base, {
-                  id: inId, type: 'TRANSFER_IN', account: inAccount,
-                  counterparty: '内部转账', pairedId: outId,
-                  sourceDocNo: '', sourceDocType: ''
-              });
-
+              const outId = `CSH${stamp}O`, inId = `CSH${stamp}I`;
+              const base = { date, amount, receiptNo, receiptType: 'BANK_RECEIPT', noteInfo, memo, status: 'PENDING', createdAt: stamp, receiptImage: cashReceiptImage || null };
+              const outRec = Object.assign({}, base, { id: outId, type: 'TRANSFER_OUT', account, counterparty: '内部转账', pairedId: inId, sourceDocNo: '', sourceDocType: '' });
+              const inRec = Object.assign({}, base, { id: inId, type: 'TRANSFER_IN', account: inAccount, counterparty: '内部转账', pairedId: outId, sourceDocNo: '', sourceDocType: '' });
               await saveToStore(STORE_CASHIER, outRec);
               await saveToStore(STORE_CASHIER, inRec);
               showToast('✅ 转账已登记（转出 + 转入 双向记账）');
-
           } else {
               const dup = await findDuplicateReceipt(receiptNo, []);
               if (dup) return showToast(`⚠️ 回单号「${receiptNo}」已存在，请勿重复录入`);
-
               const busDup = await findDuplicateBusiness(sourceDocNo, amount, []);
               if (busDup) return showToast(`⚠️ 来源单据「${sourceDocNo}」已完成入账，防止同一业务重复入账`);
-
               const rec = {
-                  id: 'CSH' + Date.now(),
-                  type: cashierCurrentType,
-                  status: 'PENDING',
+                  id: 'CSH' + Date.now(), type: cashierCurrentType, status: 'PENDING',
                   date, amount, account, counterparty, counterpartyAccount,
                   sourceDocNo, sourceDocType, receiptNo, receiptType, noteInfo, memo,
-                  receiptImage: cashReceiptImage || null,
-                  createdAt: Date.now()
+                  receiptImage: cashReceiptImage || null, createdAt: Date.now()
               };
               await saveToStore(STORE_CASHIER, rec);
               showToast('✅ 登记成功，当前状态：待办理');
           }
-
-          // 清空输入
           document.getElementById('cash-amount').value = '';
           document.getElementById('cash-source-doc').value = '';
           document.getElementById('cash-receipt-no').value = '';
@@ -1778,34 +2003,20 @@ document.addEventListener('DOMContentLoaded', async () => {
           document.getElementById('cash-counterparty-account').value = '';
           cashReceiptImage = null;
           renderCashReceiptPreview();
-
           await loadCashier();
-      } catch (err) {
-          console.error(err);
-          showToast('❌ 登记失败');
-      }
+      } catch (err) { console.error(err); showToast('❌ 登记失败'); }
   });
 
-  /* ---- 状态推进 ---- */
   window.advanceStatus = async function(id, action) {
       const all = await getAllFromStore(STORE_CASHIER);
       const rec = all.find(r => r.id === id);
       if (!rec) return;
-
       if (action === 'post') {
-          const busDup = await findDuplicateBusiness(
-              rec.sourceDocNo, rec.amount, [rec.id, rec.pairedId].filter(Boolean)
-          );
+          const busDup = await findDuplicateBusiness(rec.sourceDocNo, rec.amount, [rec.id, rec.pairedId].filter(Boolean));
           if (busDup) return showToast(`⚠️ 来源单据「${rec.sourceDocNo}」已有入账记录，防止重复入账`);
-          rec.status = 'POSTED';
-          rec.postedAt = Date.now();
-      } else if (action === 'done') {
-          rec.status = 'DONE';
-          rec.doneAt = Date.now();
-      }
-
+          rec.status = 'POSTED'; rec.postedAt = Date.now();
+      } else if (action === 'done') { rec.status = 'DONE'; rec.doneAt = Date.now(); }
       await saveToStore(STORE_CASHIER, rec);
-
       if (rec.pairedId) {
           const pair = all.find(r => r.id === rec.pairedId);
           if (pair) {
@@ -1815,19 +2026,16 @@ document.addEventListener('DOMContentLoaded', async () => {
               await saveToStore(STORE_CASHIER, pair);
           }
       }
-
       await loadCashier();
       showToast(action === 'done' ? '✅ 已确认办理' : '✅ 已入账');
   };
 
-  /* ---- 查看回单图片 ---- */
   window.viewRecordReceipt = function(id) {
       const r = cashierRecords.find(x => x.id === id);
       if (!r || !r.receiptImage) return showToast('该记录无回单图片');
       openImagePreview(r.receiptImage);
   };
 
-  /* ---- 加载 & 渲染 ---- */
   async function loadCashier() {
       try {
           cashierRecords = await getAllFromStore(STORE_CASHIER);
@@ -1836,23 +2044,16 @@ document.addEventListener('DOMContentLoaded', async () => {
               if (d !== 0) return d;
               return (b.createdAt || 0) - (a.createdAt || 0);
           });
-          renderRegister();
-          renderDaily();
-          renderNotes();
-          renderJournal();
-      } catch (err) {
-          console.error(err);
-          showToast('加载出纳数据失败');
-      }
+          renderRegister(); renderDaily(); renderNotes(); renderJournal();
+          refreshJournalAccountOptions();
+      } catch (err) { console.error(err); showToast('加载出纳数据失败'); }
   }
 
-  /* ---- 登记表 ---- */
   function renderRegister() {
       const typeF = document.getElementById('cash-filter-type').value;
       const statusF = document.getElementById('cash-filter-status').value;
       const startF = document.getElementById('cash-filter-start').value;
       const endF = document.getElementById('cash-filter-end').value;
-
       const list = cashierRecords.filter(r => {
           if (typeF) {
               if (typeF === 'TRANSFER') { if (r.type !== 'TRANSFER_OUT' && r.type !== 'TRANSFER_IN') return false; }
@@ -1863,13 +2064,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (endF && r.date > endF) return false;
           return true;
       });
-
       const tb = document.getElementById('cash-register-body');
-      if (!list.length) {
-          tb.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:36px;">暂无记录</td></tr>`;
-          return;
-      }
-
+      if (!list.length) { tb.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:36px;">暂无记录</td></tr>`; return; }
       tb.innerHTML = list.map(r => {
           const typeLabel = CASH_TYPE_LABEL[r.type] || r.type;
           const statusLabel = CASH_STATUS_LABEL[r.status] || r.status;
@@ -1877,39 +2073,17 @@ document.addEventListener('DOMContentLoaded', async () => {
           const sign = positive ? '+' : '-';
           const cls = positive ? 'cash-in' : 'cash-out';
           const pairTag = r.pairedId ? `<span class="pair-tag">⇄ 关联</span>` : '';
-
-          // 凭证 / 回单列（含回单图片查看）
           let receiptCell = '-';
           if (r.receiptNo || r.receiptImage) {
               receiptCell = '';
-              if (r.receiptNo) {
-                  receiptCell += `${r.receiptNo}<div style="font-size:11px;color:var(--text-muted);">${getReceiptTypeLabel(r.receiptType)}</div>`;
-              }
-              if (r.receiptImage) {
-                  receiptCell += `<div style="margin-top:4px;"><a class="btn-view-attach" onclick="viewRecordReceipt('${r.id}')">🧾 查看回单</a></div>`;
-              }
+              if (r.receiptNo) receiptCell += `${r.receiptNo}<div style="font-size:11px;color:var(--text-muted);">${getReceiptTypeLabel(r.receiptType)}</div>`;
+              if (r.receiptImage) receiptCell += `<div style="margin-top:4px;"><a class="btn-view-attach" onclick="viewRecordReceipt('${r.id}')">🧾 查看回单</a></div>`;
           }
-
           let actions = '';
-          if (r.status === 'PENDING') {
-              actions = `<button class="btn-mini" onclick="advanceStatus('${r.id}','done')">确认办理</button>`;
-          } else if (r.status === 'DONE') {
-              actions = `<button class="btn-mini btn-mini-primary" onclick="advanceStatus('${r.id}','post')">入账</button>`;
-          } else {
-              actions = `<span style="color:var(--match); font-size:12px;">✓ 已完成</span>`;
-          }
-
-          return `<tr>
-            <td>${r.date}</td>
-            <td>${typeLabel}${pairTag}</td>
-            <td class="${cls}">${sign}¥${(r.amount || 0).toFixed(2)}</td>
-            <td>${getAccountName(r.account)}</td>
-            <td>${r.counterparty || '-'}</td>
-            <td>${r.sourceDocNo || '-'}</td>
-            <td>${receiptCell}</td>
-            <td><span class="status-pill ${r.status}">${statusLabel}</span></td>
-            <td>${actions}</td>
-          </tr>`;
+          if (r.status === 'PENDING') actions = `<button class="btn-mini" onclick="advanceStatus('${r.id}','done')">确认办理</button>`;
+          else if (r.status === 'DONE') actions = `<button class="btn-mini btn-mini-primary" onclick="advanceStatus('${r.id}','post')">入账</button>`;
+          else actions = `<span style="color:var(--match); font-size:12px;">✓ 已完成</span>`;
+          return `<tr><td>${r.date}</td><td>${typeLabel}${pairTag}</td><td class="${cls}">${sign}¥${(r.amount || 0).toFixed(2)}</td><td>${escapeHtml(getAccountName(r.account))}</td><td>${r.counterparty || '-'}</td><td>${r.sourceDocNo || '-'}</td><td>${receiptCell}</td><td><span class="status-pill ${r.status}">${statusLabel}</span></td><td>${actions}</td></tr>`;
       }).join('');
   }
 
@@ -1920,132 +2094,82 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('cash-filter-end').value = '';
       renderRegister();
   };
-
   ['cash-filter-type', 'cash-filter-status', 'cash-filter-start', 'cash-filter-end'].forEach(id => {
       document.getElementById(id).addEventListener('change', renderRegister);
   });
 
-  /* ---- 出纳日报 ---- */
   function renderDaily() {
       const groups = {};
-      cashierRecords.forEach(r => {
-          if (!groups[r.date]) groups[r.date] = [];
-          groups[r.date].push(r);
-      });
+      cashierRecords.forEach(r => { if (!groups[r.date]) groups[r.date] = []; groups[r.date].push(r); });
       const dates = Object.keys(groups).sort().reverse();
       const container = document.getElementById('cash-daily-list');
-
-      if (!dates.length) {
-          container.innerHTML = `<p style="padding:24px; color:var(--text-muted); text-align:center;">暂无日报数据</p>`;
-          return;
-      }
-
+      if (!dates.length) { container.innerHTML = `<p style="padding:24px; color:var(--text-muted); text-align:center;">暂无日报数据</p>`; return; }
       container.innerHTML = dates.map(d => {
           const recs = groups[d];
           const inSum = recs.filter(isCashIn).reduce((s, r) => s + r.amount, 0);
           const outSum = recs.filter(r => !isCashIn(r)).reduce((s, r) => s + r.amount, 0);
           const postedCount = recs.filter(r => r.status === 'POSTED').length;
-
           const rows = recs.map(r => {
               const positive = isCashIn(r);
               let receiptHtml = r.receiptNo || '-';
-              if (r.receiptImage) {
-                  receiptHtml += ` <a class="btn-view-attach" style="margin-left:4px;" onclick="viewRecordReceipt('${r.id}')">🧾</a>`;
-              }
-              return `<tr>
-                <td>${CASH_TYPE_LABEL[r.type] || r.type}</td>
-                <td>${getAccountName(r.account)}</td>
-                <td>${r.counterparty || '-'}</td>
-                <td>${receiptHtml}</td>
-                <td style="text-align:right;" class="${positive ? 'cash-in' : 'cash-out'}">${positive ? '+' : '-'}¥${(r.amount || 0).toFixed(2)}</td>
-                <td><span class="status-pill ${r.status}">${CASH_STATUS_LABEL[r.status]}</span></td>
-              </tr>`;
+              if (r.receiptImage) receiptHtml += ` <a class="btn-view-attach" style="margin-left:4px;" onclick="viewRecordReceipt('${r.id}')">🧾</a>`;
+              return `<tr><td>${CASH_TYPE_LABEL[r.type] || r.type}</td><td>${escapeHtml(getAccountName(r.account))}</td><td>${r.counterparty || '-'}</td><td>${receiptHtml}</td><td style="text-align:right;" class="${positive ? 'cash-in' : 'cash-out'}">${positive ? '+' : '-'}¥${(r.amount || 0).toFixed(2)}</td><td><span class="status-pill ${r.status}">${CASH_STATUS_LABEL[r.status]}</span></td></tr>`;
           }).join('');
-
-          return `<div class="daily-group">
-            <div class="daily-head" onclick="toggleDaily(this)">
-              <span style="font-weight:600;">📅 ${d}</span>
-              <span class="cash-in">收款 ¥${inSum.toFixed(2)}</span>
-              <span class="cash-out">付款 ¥${outSum.toFixed(2)}</span>
-              <span style="color:var(--text-muted);">净额 ¥${(inSum - outSum).toFixed(2)}</span>
-              <span style="color:var(--text-muted);">共 ${recs.length} 笔 · 已入账 ${postedCount} 笔</span>
-              <span class="arrow">▾</span>
-            </div>
-            <div class="daily-body">
-              <table class="cash-table">
-                <thead><tr><th>类型</th><th>账户</th><th>对方</th><th>回单号</th><th style="text-align:right;">金额</th><th>状态</th></tr></thead>
-                <tbody>${rows}</tbody>
-              </table>
-            </div>
-          </div>`;
+          return `<div class="daily-group"><div class="daily-head" onclick="toggleDaily(this)"><span style="font-weight:600;">📅 ${d}</span><span class="cash-in">收款 ¥${inSum.toFixed(2)}</span><span class="cash-out">付款 ¥${outSum.toFixed(2)}</span><span style="color:var(--text-muted);">净额 ¥${(inSum - outSum).toFixed(2)}</span><span style="color:var(--text-muted);">共 ${recs.length} 笔 · 已入账 ${postedCount} 笔</span><span class="arrow">▾</span></div><div class="daily-body"><table class="cash-table"><thead><tr><th>类型</th><th>账户</th><th>对方</th><th>回单号</th><th style="text-align:right;">金额</th><th>状态</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
       }).join('');
   }
 
-  window.toggleDaily = function(headEl) {
-      headEl.parentElement.classList.toggle('open');
-  };
+  window.toggleDaily = function(headEl) { headEl.parentElement.classList.toggle('open'); };
 
-  /* ---- 票据台账 ---- */
   function renderNotes() {
       const list = cashierRecords.filter(r => r.receiptNo || r.receiptImage);
       const tb = document.getElementById('cash-notes-body');
-      if (!list.length) {
-          tb.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:36px;">暂无票据 / 回单记录</td></tr>`;
-          return;
-      }
-      tb.innerHTML = list.map(r => `<tr>
-        <td style="font-weight:500;">${r.receiptNo || '-'}</td>
-        <td>${getReceiptTypeLabel(r.receiptType)}</td>
-        <td>${r.date}</td>
-        <td>${CASH_TYPE_LABEL[r.type] || r.type}</td>
-        <td style="text-align:right;">¥${(r.amount || 0).toFixed(2)}</td>
-        <td>${r.noteInfo || '-'}</td>
-        <td>${r.receiptImage ? `<a class="btn-view-attach" onclick="viewRecordReceipt('${r.id}')">🧾 查看</a>` : '-'}</td>
-        <td><span class="status-pill ${r.status}">${CASH_STATUS_LABEL[r.status]}</span></td>
-      </tr>`).join('');
+      if (!list.length) { tb.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:36px;">暂无票据 / 回单记录</td></tr>`; return; }
+      tb.innerHTML = list.map(r => `<tr><td style="font-weight:500;">${r.receiptNo || '-'}</td><td>${getReceiptTypeLabel(r.receiptType)}</td><td>${r.date}</td><td>${CASH_TYPE_LABEL[r.type] || r.type}</td><td style="text-align:right;">¥${(r.amount || 0).toFixed(2)}</td><td>${r.noteInfo || '-'}</td><td>${r.receiptImage ? `<a class="btn-view-attach" onclick="viewRecordReceipt('${r.id}')">🧾 查看</a>` : '-'}</td><td><span class="status-pill ${r.status}">${CASH_STATUS_LABEL[r.status]}</span></td></tr>`).join('');
   }
 
-  /* ---- 日记账 ---- */
+  /* 日记账按记录中实际出现过的账户名动态分组，兼容任意手输账户 */
   function renderJournal() {
       const filterAcc = document.getElementById('cash-journal-account').value;
-      const accs = filterAcc ? ACCOUNTS.filter(a => a.id === filterAcc) : ACCOUNTS;
       const container = document.getElementById('cash-journal-body');
 
-      container.innerHTML = accs.map(acc => {
+      const nameSet = new Set();
+      ACCOUNTS.forEach(a => nameSet.add(a.name));
+      cashierRecords.forEach(r => { if (r.account) nameSet.add(getAccountName(r.account)); });
+
+      let names = Array.from(nameSet).filter(Boolean).sort();
+      if (filterAcc) names = names.filter(n => n === filterAcc);
+
+      if (!names.length) {
+          container.innerHTML = `<p style="padding:24px; color:var(--text-muted); text-align:center;">暂无账户数据</p>`;
+          return;
+      }
+
+      container.innerHTML = names.map(accountName => {
           const recs = cashierRecords
-              .filter(r => r.account === acc.id && (r.status === 'DONE' || r.status === 'POSTED'))
+              .filter(r => getAccountName(r.account) === accountName && (r.status === 'DONE' || r.status === 'POSTED'))
               .sort((a, b) => {
                   const d = (a.date || '').localeCompare(b.date || '');
                   if (d !== 0) return d;
                   return (a.createdAt || 0) - (b.createdAt || 0);
               });
 
+          const accMeta = ACCOUNTS.find(a => a.name === accountName);
+          const kindLabel = accMeta ? (accMeta.kind === 'CASH' ? '现金' : (accMeta.kind === 'BANK' ? '银行存款' : '其他')) : '自定义账户';
+
           let balance = 0;
           const rows = recs.map(r => {
               const positive = isCashIn(r);
               balance += signedAmount(r);
-              return `<tr>
-                <td>${r.date}</td>
-                <td>${CASH_TYPE_LABEL[r.type] || r.type}${r.counterparty ? ' · ' + r.counterparty : ''}</td>
-                <td style="text-align:right; color:var(--match);">${positive ? '¥' + r.amount.toFixed(2) : '-'}</td>
-                <td style="text-align:right; color:var(--diff);">${!positive ? '¥' + r.amount.toFixed(2) : '-'}</td>
-                <td style="text-align:right; font-weight:500;">¥${balance.toFixed(2)}</td>
-              </tr>`;
+              return `<tr><td>${r.date}</td><td>${CASH_TYPE_LABEL[r.type] || r.type}${r.counterparty ? ' · ' + r.counterparty : ''}</td><td style="text-align:right; color:var(--match);">${positive ? '¥' + r.amount.toFixed(2) : '-'}</td><td style="text-align:right; color:var(--diff);">${!positive ? '¥' + r.amount.toFixed(2) : '-'}</td><td style="text-align:right; font-weight:500;">¥${balance.toFixed(2)}</td></tr>`;
           }).join('') || `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:20px;">暂无流水</td></tr>`;
 
-          return `<div class="journal-account">
-            <h3>${acc.name} <span class="acc-kind">${acc.kind === 'CASH' ? '现金' : '银行存款'}</span></h3>
-            <table class="cash-table">
-              <thead><tr><th>日期</th><th>摘要</th><th style="text-align:right;">收入</th><th style="text-align:right;">支出</th><th style="text-align:right;">余额</th></tr></thead>
-              <tbody>${rows}</tbody>
-            </table>
-          </div>`;
+          return `<div class="journal-account"><h3>${escapeHtml(accountName)} <span class="acc-kind">${kindLabel}</span></h3><table class="cash-table"><thead><tr><th>日期</th><th>摘要</th><th style="text-align:right;">收入</th><th style="text-align:right;">支出</th><th style="text-align:right;">余额</th></tr></thead><tbody>${rows}</tbody></table></div>`;
       }).join('');
   }
 
   document.getElementById('cash-journal-account').addEventListener('change', renderJournal);
 
-  /* ---- 输出区 Tab ---- */
   document.querySelectorAll('#module-cashier .cash-tab').forEach(tab => {
       tab.addEventListener('click', () => {
           document.querySelectorAll('#module-cashier .cash-tab').forEach(t => t.classList.remove('active'));
@@ -2055,13 +2179,952 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
   });
 
-  /* ---- 初始化出纳模块 ---- */
   const now = new Date();
-  document.getElementById('cash-date').value =
-      `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-
+  document.getElementById('cash-date').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   setCashierType('RECEIPT');
   await loadCashier();
+
+  /* ================= 5.4 制证与凭证审核 ================= */
+  const VOUCHER_ACCOUNTS = [
+    { code: '1001', name: '库存现金' },
+    { code: '1002', name: '银行存款' },
+    { code: '1122', name: '应收账款' },
+    { code: '1123', name: '预付账款' },
+    { code: '1221', name: '其他应收款' },
+    { code: '1401', name: '原材料' },
+    { code: '1405', name: '库存商品' },
+    { code: '1601', name: '固定资产' },
+    { code: '2202', name: '应付账款' },
+    { code: '2203', name: '预收账款' },
+    { code: '2211', name: '应付职工薪酬' },
+    { code: '2221', name: '应交税费' },
+    { code: '2241', name: '其他应付款' },
+    { code: '4001', name: '实收资本' },
+    { code: '5001', name: '生产成本' },
+    { code: '6001', name: '主营业务收入' },
+    { code: '6401', name: '主营业务成本' },
+    { code: '6601', name: '销售费用' },
+    { code: '6602', name: '管理费用' },
+    { code: '6603', name: '财务费用' }
+  ];
+
+  const VOUCHER_BIZ = {
+    EXPENSE: { label: '费用报销', icon: '📋', bg: 'var(--diff-bg)', color: 'var(--diff)', sourceLabel: '报销单号 / 费用发票号', sourceTypes: ['报销单', '费用发票'], template: [{ account: '6602', summary: '报销费用', side: 'D' }, { account: '1002', summary: '银行付款', side: 'C' }] },
+    SALES: { label: '销售收入', icon: '💰', bg: 'var(--match-bg)', color: 'var(--match)', sourceLabel: '销售合同 / 发票号', sourceTypes: ['销售合同', '销售发票'], template: [{ account: '1122', summary: '确认收入', side: 'D' }, { account: '6001', summary: '确认收入', side: 'C' }] },
+    BANK: { label: '银行往来', icon: '🏦', bg: 'var(--company-only-bg)', color: 'var(--company-only)', sourceLabel: '银行回单号', sourceTypes: ['银行回单'], template: [{ account: '1002', summary: '收到银行款项', side: 'D' }, { account: '1122', summary: '核销应收', side: 'C' }] },
+    PAYROLL: { label: '工资计提', icon: '👥', bg: 'var(--bank-only-bg)', color: 'var(--bank-only)', sourceLabel: '工资表 / 核算单号', sourceTypes: ['工资表', '代扣代缴清单'], template: [{ account: '6602', summary: '计提工资', side: 'D' }, { account: '2211', summary: '计提工资', side: 'C' }] },
+    PURCHASE: { label: '采购成本', icon: '📦', bg: 'var(--match-bg)', color: 'var(--match)', sourceLabel: '采购合同 / 购进发票号', sourceTypes: ['采购合同', '购进发票'], template: [{ account: '1401', summary: '采购入库', side: 'D' }, { account: '2202', summary: '应付货款', side: 'C' }] },
+    OTHER: { label: '其他业务', icon: '🧾', bg: 'var(--bg)', color: 'var(--text-main)', sourceLabel: '来源单号', sourceTypes: ['其他单据'], template: [{ account: '1002', summary: '其他业务', side: 'D' }, { account: '2241', summary: '其他业务', side: 'C' }] }
+  };
+
+  const VOUCHER_STATUS_LABEL = { DRAFT: '草稿', PENDING: '待审核', APPROVED: '审核通过', REJECTED: '已退回', POSTED: '已记账' };
+
+  let voucherRecords = [];
+  let voucherCurrentBiz = 'EXPENSE';
+  let voucherCurrentAttach = null;
+  let voucherEditId = null;
+  let closedPeriods = (() => {
+      try { return JSON.parse(localStorage.getItem('closed_periods') || '[]'); } catch(e) { return []; }
+  })();
+  function saveClosedPeriods() { try { localStorage.setItem('closed_periods', JSON.stringify(closedPeriods)); } catch(e) {} }
+
+  function renderVoucherTypes() {
+      const wrap = document.getElementById('voucher-types');
+      wrap.innerHTML = Object.keys(VOUCHER_BIZ).map(k => {
+          const cfg = VOUCHER_BIZ[k];
+          const active = k === voucherCurrentBiz ? 'active' : '';
+          return `<div class="voucher-type-card ${active}" data-biz="${k}" onclick="setVoucherBiz('${k}')">
+            <div class="voucher-type-icon" style="background:${cfg.bg}; color:${cfg.color};">${cfg.icon}</div>
+            <div><div class="voucher-type-title">${cfg.label}</div><div class="voucher-type-desc">来源：${cfg.sourceTypes[0]}</div></div>
+          </div>`;
+      }).join('');
+  }
+
+  function accountOptionsHtml(selected) {
+      return VOUCHER_ACCOUNTS.map(a => `<option value="${a.code}" ${selected === a.code ? 'selected' : ''}>${a.code} ${a.name}</option>`).join('');
+  }
+
+  function addVoucherEntry(data) {
+      const tbody = document.getElementById('voucher-entries-body');
+      const tr = document.createElement('tr');
+      const d = data || {};
+      tr.innerHTML = `
+        <td><select class="entry-account">${accountOptionsHtml(d.account || '1002')}</select></td>
+        <td><input type="text" class="entry-summary" value="${escapeHtml(d.summary || '')}" placeholder="摘要"></td>
+        <td><input type="number" class="entry-debit num" step="0.01" value="${d.debit != null ? d.debit : ''}" placeholder="0.00"></td>
+        <td><input type="number" class="entry-credit num" step="0.01" value="${d.credit != null ? d.credit : ''}" placeholder="0.00"></td>
+        <td><button type="button" class="btn-remove-row" onclick="this.closest('tr').remove(); recalcVoucherTotals();">×</button></td>`;
+      tbody.appendChild(tr);
+      tr.querySelectorAll('input').forEach(inp => inp.addEventListener('input', recalcVoucherTotals));
+      recalcVoucherTotals();
+  }
+
+  function resetVoucherEntries() {
+      document.getElementById('voucher-entries-body').innerHTML = '';
+      const tpl = VOUCHER_BIZ[voucherCurrentBiz].template;
+      tpl.forEach(t => {
+          addVoucherEntry({
+              account: t.account,
+              summary: t.summary,
+              debit: t.side === 'D' ? '' : '',
+              credit: t.side === 'C' ? '' : ''
+          });
+      });
+      recalcVoucherTotals();
+  }
+
+  window.addVoucherEntry = function() { addVoucherEntry(); };
+  window.recalcVoucherTotals = function() {
+      let dSum = 0, cSum = 0;
+      document.querySelectorAll('#voucher-entries-body tr').forEach(tr => {
+          const d = parseFloat(tr.querySelector('.entry-debit')?.value) || 0;
+          const c = parseFloat(tr.querySelector('.entry-credit')?.value) || 0;
+          dSum += d; cSum += c;
+      });
+      document.getElementById('voucher-debit-total').textContent = dSum.toFixed(2);
+      document.getElementById('voucher-credit-total').textContent = cSum.toFixed(2);
+      const diff = dSum - cSum;
+      const statusEl = document.getElementById('voucher-balance-status');
+      if (Math.abs(diff) < 0.005 && dSum > 0) {
+          statusEl.className = 'voucher-balance-status ok';
+          statusEl.textContent = `借贷平衡 ¥${dSum.toFixed(2)}`;
+      } else {
+          statusEl.className = 'voucher-balance-status bad';
+          statusEl.textContent = diff === 0 ? '借贷不平 (无金额)' : `借贷不平 差额 ¥${diff.toFixed(2)}`;
+      }
+  };
+
+  window.setVoucherBiz = function(biz) {
+      voucherCurrentBiz = biz;
+      renderVoucherTypes();
+      const cfg = VOUCHER_BIZ[biz];
+      document.getElementById('voucher-source-badge').textContent = cfg.label;
+      document.getElementById('voucher-source-no-label').textContent = cfg.sourceLabel;
+      document.getElementById('voucher-source-type').innerHTML = cfg.sourceTypes.map(t => `<option value="${t}">${t}</option>`).join('');
+      document.getElementById('voucher-source-no').placeholder = cfg.sourceLabel.replace('号', '') + ' 编号';
+      if (!voucherEditId) resetVoucherEntries();
+  };
+
+  function getPeriod(dateStr) { return dateStr ? dateStr.slice(0, 7) : ''; }
+  function updateVoucherPeriod() {
+      const dateVal = document.getElementById('voucher-date').value;
+      const period = getPeriod(dateVal);
+      document.getElementById('voucher-period').value = period || '';
+      const hint = document.getElementById('voucher-submit-hint');
+      if (period && closedPeriods.includes(period)) {
+          hint.innerHTML = `<span style="color:var(--diff);">⚠️ 会计期间 ${period} 已关闭，无法提交制证</span>`;
+      } else {
+          hint.textContent = '请填写完整分录后提交审核。';
+      }
+  }
+
+  window.closePeriod = function() {
+      const p = document.getElementById('voucher-period-input').value;
+      if (!p) return showToast('请选择要关闭的期间');
+      if (closedPeriods.includes(p)) return showToast('该期间已关闭');
+      closedPeriods.push(p);
+      saveClosedPeriods();
+      renderClosedPeriods();
+      updateVoucherPeriod();
+      showToast(`✅ 已关闭期间 ${p}`);
+  };
+  window.openPeriod = function(p) {
+      closedPeriods = closedPeriods.filter(x => x !== p);
+      saveClosedPeriods();
+      renderClosedPeriods();
+      updateVoucherPeriod();
+      showToast(`已重新打开期间 ${p}`);
+  };
+  function renderClosedPeriods() {
+      const el = document.getElementById('voucher-closed-periods');
+      if (!closedPeriods.length) { el.innerHTML = '<span style="color:var(--text-muted);">无</span>'; return; }
+      el.innerHTML = closedPeriods.map(p => `<span class="period-chip">${p}<span class="remove" onclick="openPeriod('${p}')">×</span></span>`).join(' ');
+  }
+
+  document.getElementById('voucher-attach-zone').addEventListener('click', () => document.getElementById('voucher-attach-input').click());
+  document.getElementById('voucher-attach-input').addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+          const file = e.target.files[0];
+          if (storageMode !== 'INDEXEDDB' && file.size > 800 * 1024) return showToast('当前存储模式不支持超大文件（限 800KB）');
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+              voucherCurrentAttach = { name: file.name, data: ev.target.result };
+              renderVoucherAttach();
+              showToast('原始单据已加载');
+          };
+          reader.readAsDataURL(file);
+          e.target.value = '';
+      }
+  });
+  function renderVoucherAttach() {
+      const list = document.getElementById('voucher-attach-list');
+      const cnt = document.getElementById('voucher-attach-count');
+      if (!voucherCurrentAttach) { list.innerHTML = ''; cnt.textContent = '0'; return; }
+      cnt.textContent = '1';
+      list.innerHTML = `<div class="attach-item">📎 ${voucherCurrentAttach.name}<button type="button" onclick="previewVoucherAttach()" style="color:var(--accent-blue); font-size:12px;">预览</button><button type="button" onclick="removeVoucherAttach()">×</button></div>`;
+  }
+  window.previewVoucherAttach = function() { if (voucherCurrentAttach) openImagePreview(voucherCurrentAttach.data); };
+  window.removeVoucherAttach = function() { voucherCurrentAttach = null; renderVoucherAttach(); };
+
+  window.resetVoucherForm = function() {
+      voucherEditId = null;
+      const dateInput = document.getElementById('voucher-date');
+      const todayStr = new Date().toISOString().slice(0, 10);
+      dateInput.value = todayStr;
+      document.getElementById('voucher-source-no').value = '';
+      document.getElementById('voucher-counterparty').value = '';
+      document.getElementById('voucher-memo').value = '';
+      voucherCurrentAttach = null;
+      renderVoucherAttach();
+      resetVoucherEntries();
+      updateVoucherPeriod();
+      document.getElementById('voucher-no-badge').textContent = '-';
+      document.getElementById('voucher-btn-submit').textContent = '提交审核';
+  };
+
+  async function findDuplicateVoucher(sourceNo, bizType, excludeId) {
+      if (!sourceNo) return null;
+      const all = await getAllFromStore(STORE_VOUCHER);
+      return all.find(v => v.sourceNo === sourceNo && v.bizType === bizType && v.status !== 'REJECTED' && v.id !== excludeId) || null;
+  }
+
+  document.getElementById('voucher-btn-submit').addEventListener('click', async () => {
+      const date = document.getElementById('voucher-date').value;
+      const period = getPeriod(date);
+      const sourceType = document.getElementById('voucher-source-type').value;
+      const sourceNo = document.getElementById('voucher-source-no').value.trim();
+      const counterparty = document.getElementById('voucher-counterparty').value.trim();
+      const memo = document.getElementById('voucher-memo').value.trim();
+
+      if (!date) return showToast('请选择业务日期');
+      if (!period) return showToast('业务日期无效');
+      if (closedPeriods.includes(period)) return showToast(`⚠️ 会计期间 ${period} 已关闭，无法制证`);
+
+      const entries = [];
+      let dSum = 0, cSum = 0;
+      document.querySelectorAll('#voucher-entries-body tr').forEach(tr => {
+          const account = tr.querySelector('.entry-account').value;
+          const summary = tr.querySelector('.entry-summary').value.trim();
+          const debit = parseFloat(tr.querySelector('.entry-debit').value) || 0;
+          const credit = parseFloat(tr.querySelector('.entry-credit').value) || 0;
+          if (!account) return;
+          if (debit === 0 && credit === 0) return;
+          entries.push({ account, summary, debit, credit });
+          dSum += debit; cSum += credit;
+      });
+
+      if (!entries.length) return showToast('至少需要一条有效分录');
+      if (Math.abs(dSum - cSum) >= 0.005) return showToast(`⚠️ 借贷不平（借方 ¥${dSum.toFixed(2)} / 贷方 ¥${cSum.toFixed(2)}）`);
+      if (dSum <= 0) return showToast('借贷金额需大于 0');
+
+      for (const e of entries) {
+          if (!VOUCHER_ACCOUNTS.find(a => a.code === e.account)) {
+              return showToast(`⚠️ 科目编码 ${e.account} 无效`);
+          }
+      }
+
+      if (sourceNo) {
+          const dup = await findDuplicateVoucher(sourceNo, voucherCurrentBiz, voucherEditId);
+          if (dup) {
+              const ok = confirm(`⚠️ 检测到来源「${sourceNo}」已有同类型凭证（${VOUCHER_STATUS_LABEL[dup.status]}）。\n\n如业务上确需一单多凭证，请点击"确定"继续提交。`);
+              if (!ok) return;
+          }
+      }
+
+      const cfg = VOUCHER_BIZ[voucherCurrentBiz];
+      const voucherNo = voucherEditId ? (voucherRecords.find(v => v.id === voucherEditId)?.voucherNo) :
+          '记-' + date.replace(/-/g, '') + '-' + String(voucherRecords.filter(v => v.date === date).length + 1).padStart(3, '0');
+
+      const record = {
+          id: voucherEditId || ('VCH' + Date.now()),
+          voucherNo,
+          date, period,
+          bizType: voucherCurrentBiz,
+          bizLabel: cfg.label,
+          sourceType, sourceNo, counterparty, memo,
+          attach: voucherCurrentAttach ? JSON.parse(JSON.stringify(voucherCurrentAttach)) : null,
+          entries,
+          totalDebit: dSum,
+          totalCredit: cSum,
+          status: 'PENDING',
+          createdAt: Date.now(),
+          submittedAt: Date.now()
+      };
+
+      try {
+          await saveToStore(STORE_VOUCHER, record);
+          showToast(`✅ 凭证 ${voucherNo} 已提交审核`);
+          resetVoucherForm();
+          await loadVouchers();
+      } catch (err) { console.error(err); showToast('❌ 提交失败'); }
+  });
+
+  window.approveVoucher = async function(id) {
+      const all = await getAllFromStore(STORE_VOUCHER);
+      const v = all.find(x => x.id === id);
+      if (!v || v.status !== 'PENDING') return;
+      v.status = 'APPROVED';
+      v.approvedAt = Date.now();
+      await saveToStore(STORE_VOUCHER, v);
+      await loadVouchers();
+      showToast(`✅ 凭证 ${v.voucherNo} 已审核通过`);
+  };
+
+  window.rejectVoucher = async function(id) {
+      const reason = prompt('请输入退回原因（选填）：');
+      if (reason === null) return;
+      const all = await getAllFromStore(STORE_VOUCHER);
+      const v = all.find(x => x.id === id);
+      if (!v || v.status !== 'PENDING') return;
+      v.status = 'REJECTED';
+      v.rejectReason = reason || '审核退回';
+      v.rejectedAt = Date.now();
+      await saveToStore(STORE_VOUCHER, v);
+      await loadVouchers();
+      showToast(`凭证 ${v.voucherNo} 已退回`);
+  };
+
+  window.postVoucher = async function(id) {
+      const all = await getAllFromStore(STORE_VOUCHER);
+      const v = all.find(x => x.id === id);
+      if (!v || v.status !== 'APPROVED') return;
+      v.status = 'POSTED';
+      v.postedAt = Date.now();
+      await saveToStore(STORE_VOUCHER, v);
+      await loadVouchers();
+      if (window.refreshAccounting) refreshAccounting();
+      showToast(`✅ 凭证 ${v.voucherNo} 已交记账`);
+  };
+
+  window.editVoucher = function(id) {
+      const v = voucherRecords.find(x => x.id === id);
+      if (!v) return;
+      voucherEditId = id;
+      voucherCurrentBiz = v.bizType;
+      renderVoucherTypes();
+      const cfg = VOUCHER_BIZ[v.bizType];
+      document.getElementById('voucher-source-badge').textContent = cfg.label;
+      document.getElementById('voucher-source-no-label').textContent = cfg.sourceLabel;
+      document.getElementById('voucher-source-type').innerHTML = cfg.sourceTypes.map(t => `<option value="${t}" ${t === v.sourceType ? 'selected' : ''}>${t}</option>`).join('');
+      document.getElementById('voucher-date').value = v.date;
+      document.getElementById('voucher-source-no').value = v.sourceNo || '';
+      document.getElementById('voucher-counterparty').value = v.counterparty || '';
+      document.getElementById('voucher-memo').value = v.memo || '';
+      voucherCurrentAttach = v.attach || null;
+      renderVoucherAttach();
+      document.getElementById('voucher-entries-body').innerHTML = '';
+      v.entries.forEach(e => addVoucherEntry(e));
+      recalcVoucherTotals();
+      updateVoucherPeriod();
+      document.getElementById('voucher-no-badge').textContent = v.voucherNo;
+      document.getElementById('voucher-btn-submit').textContent = '更新并重新提交';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      showToast(`已载入凭证 ${v.voucherNo}`);
+  };
+
+  window.deleteVoucher = async function(id) {
+      if (!confirm('确定删除该凭证？')) return;
+      const all = await getAllFromStore(STORE_VOUCHER);
+      const v = all.find(x => x.id === id);
+      if (!v) return;
+      if (v.status === 'POSTED') return showToast('已记账凭证不可删除');
+      const remain = all.filter(x => x.id !== id);
+      await clearStore(STORE_VOUCHER);
+      for (const r of remain) await saveToStore(STORE_VOUCHER, r);
+      await loadVouchers();
+      showToast('已删除');
+  };
+
+  async function loadVouchers() {
+      try {
+          voucherRecords = await getAllFromStore(STORE_VOUCHER);
+          voucherRecords.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+          renderVoucherList();
+      } catch (err) { console.error(err); showToast('加载凭证失败'); }
+  }
+
+  function renderVoucherList() {
+      const tb = document.getElementById('voucher-list-body');
+      document.getElementById('voucher-list-count').textContent = voucherRecords.length;
+      if (!voucherRecords.length) {
+          tb.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:36px;">暂无凭证记录</td></tr>`;
+          return;
+      }
+      tb.innerHTML = voucherRecords.map(v => {
+          const summary = v.entries[0]?.summary || v.memo || '-';
+          const statusLabel = VOUCHER_STATUS_LABEL[v.status] || v.status;
+          const sourceLink = v.sourceNo ? `<span class="voucher-source-link" title="点击查看原始单据" onclick="traceVoucherSource('${v.id}')">${escapeHtml(v.sourceNo)}</span>` : '-';
+          let actions = '';
+          if (v.status === 'PENDING') {
+              actions = `<button class="btn-mini btn-mini-primary" onclick="approveVoucher('${v.id}')">审核通过</button>
+                        <button class="btn-mini" style="margin-left:4px; color:var(--diff);" onclick="rejectVoucher('${v.id}')">退回</button>`;
+          } else if (v.status === 'APPROVED') {
+              actions = `<button class="btn-mini btn-mini-primary" onclick="postVoucher('${v.id}')">记账</button>`;
+          } else if (v.status === 'REJECTED') {
+              actions = `<button class="btn-mini" onclick="editVoucher('${v.id}')">编辑重提</button>
+                        <button class="btn-mini" style="margin-left:4px; color:var(--diff);" onclick="deleteVoucher('${v.id}')">删除</button>`;
+          } else if (v.status === 'POSTED') {
+              actions = `<span style="color:var(--match); font-size:12px;">✓ 已入账</span>`;
+          }
+          return `<tr>
+            <td style="font-weight:500;">${v.voucherNo}</td>
+            <td>${v.date}</td>
+            <td>${v.bizLabel}</td>
+            <td>${escapeHtml(summary)}</td>
+            <td class="voucher-amount" style="text-align:right;">¥${v.totalDebit.toFixed(2)}</td>
+            <td class="voucher-amount" style="text-align:right;">¥${v.totalCredit.toFixed(2)}</td>
+            <td>${sourceLink}</td>
+            <td><span class="voucher-status ${v.status}">${statusLabel}</span></td>
+            <td style="white-space:nowrap;">${actions}</td>
+          </tr>`;
+      }).join('');
+  }
+
+  window.traceVoucherSource = function(id) {
+      const v = voucherRecords.find(x => x.id === id);
+      if (!v) return;
+      const msg = `【凭证 ${v.voucherNo}】\n\n来源类型：${v.sourceType}\n来源单号：${v.sourceNo}\n对方单位：${v.counterparty || '-'}\n\n分录：\n` +
+          v.entries.map(e => `  ${e.account} · ${e.summary} — 借 ${e.debit.toFixed(2)} / 贷 ${e.credit.toFixed(2)}`).join('\n');
+      if (v.attach) {
+          if (confirm(msg + '\n\n是否查看原始单据附件？')) openImagePreview(v.attach.data);
+      } else {
+          alert(msg + '\n\n（未上传原始单据附件）');
+      }
+  };
+
+  (function initVoucherModule() {
+      renderVoucherTypes();
+      const todayStr = new Date().toISOString().slice(0, 10);
+      document.getElementById('voucher-date').value = todayStr;
+      document.getElementById('voucher-period-input').value = todayStr.slice(0, 7);
+      document.getElementById('voucher-date').addEventListener('change', updateVoucherPeriod);
+      setVoucherBiz('EXPENSE');
+      updateVoucherPeriod();
+      renderClosedPeriods();
+      loadVouchers();
+  })();
+
+  /* ================= 5.5 会计记账模块 ================= */
+  let accVoucherRecords = [];
+  let accCurrentPeriod = '';
+  let accCurrentReportTab = 'bs';
+
+  let openingBalances = (() => {
+      try { return JSON.parse(localStorage.getItem('acc_opening_balances') || '{}'); } catch(e) { return {}; }
+  })();
+  let reportNotes = (() => {
+      try { return JSON.parse(localStorage.getItem('acc_report_notes') || '{}'); } catch(e) { return {}; }
+  })();
+
+  function saveOpeningBalances() {
+      try { localStorage.setItem('acc_opening_balances', JSON.stringify(openingBalances)); } catch(e) {}
+  }
+  function saveReportNotes() {
+      try { localStorage.setItem('acc_report_notes', JSON.stringify(reportNotes)); } catch(e) {}
+  }
+
+  async function loadAccountingVouchers() {
+      accVoucherRecords = await getAllFromStore(STORE_VOUCHER);
+  }
+
+  function getVoucherPeriod(v) {
+      return v.period || (v.date ? v.date.slice(0, 7) : '');
+  }
+
+  function getAccPeriods() {
+      const set = new Set();
+      accVoucherRecords.forEach(v => { const p = getVoucherPeriod(v); if (p) set.add(p); });
+      const now = new Date();
+      set.add(`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`);
+      return Array.from(set).sort().reverse();
+  }
+
+  function getPostedVouchersOf(period) {
+      return accVoucherRecords.filter(v => v.status === 'POSTED' && getVoucherPeriod(v) === period);
+  }
+
+  function getAccountActivity(period) {
+      const map = {};
+      getPostedVouchersOf(period).forEach(v => {
+          (v.entries || []).forEach(e => {
+              const code = e.account;
+              if (!map[code]) map[code] = { debit: 0, credit: 0 };
+              map[code].debit += e.debit || 0;
+              map[code].credit += e.credit || 0;
+          });
+      });
+      return map;
+  }
+
+  function getOpeningOf(period) { return openingBalances[period] || {}; }
+
+  function computeTrialBalance(period) {
+      const opening = getOpeningOf(period);
+      const activity = getAccountActivity(period);
+      const codes = new Set([...Object.keys(opening), ...Object.keys(activity)]);
+      const rows = [];
+      let totalObD = 0, totalObC = 0, totalAD = 0, totalAC = 0, totalCbD = 0, totalCbC = 0;
+      Array.from(codes).sort().forEach(code => {
+          const o = opening[code] || { debit: 0, credit: 0 };
+          const a = activity[code] || { debit: 0, credit: 0 };
+          const obD = o.debit || 0, obC = o.credit || 0;
+          const ad = a.debit || 0, ac = a.credit || 0;
+          const net = (obD - obC) + (ad - ac);
+          const cbD = net > 0 ? net : 0;
+          const cbC = net < 0 ? -net : 0;
+          totalObD += obD; totalObC += obC;
+          totalAD += ad; totalAC += ac;
+          totalCbD += cbD; totalCbC += cbC;
+          const acc = VOUCHER_ACCOUNTS.find(x => x.code === code);
+          rows.push({ code, name: acc ? acc.name : code, obD, obC, ad, ac, cbD, cbC });
+      });
+      return { rows, totalObD, totalObC, totalAD, totalAC, totalCbD, totalCbC };
+  }
+
+  function updateAccBadge() {
+      const n = accVoucherRecords.filter(v => v.status === 'APPROVED' && getVoucherPeriod(v) === accCurrentPeriod).length;
+      document.getElementById('acc-badge-pending').textContent = n;
+  }
+
+  function updateAccPeriodSummary() {
+      const posted = accVoucherRecords.filter(v => v.status === 'POSTED' && getVoucherPeriod(v) === accCurrentPeriod).length;
+      const pending = accVoucherRecords.filter(v => v.status === 'APPROVED' && getVoucherPeriod(v) === accCurrentPeriod).length;
+      document.getElementById('acc-period-summary').textContent = `本期已记账 ${posted} 张 · 待记账 ${pending} 张`;
+  }
+
+  function renderAccPeriodSelect() {
+      const sel = document.getElementById('acc-period-select');
+      const periods = getAccPeriods();
+      if (!accCurrentPeriod || !periods.includes(accCurrentPeriod)) accCurrentPeriod = periods[0] || '';
+      sel.innerHTML = periods.map(p => `<option value="${p}" ${p === accCurrentPeriod ? 'selected' : ''}>${p}</option>`).join('');
+      sel.value = accCurrentPeriod;
+  }
+
+  function renderAccPending() {
+      const tb = document.getElementById('acc-pending-body');
+      const list = accVoucherRecords.filter(v => v.status === 'APPROVED' && getVoucherPeriod(v) === accCurrentPeriod);
+      if (!list.length) {
+          tb.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:36px;">本期暂无待记账凭证<br><span style="font-size:12px;">请先在「日常制证」模块录入并审核通过凭证</span></td></tr>`;
+          return;
+      }
+      tb.innerHTML = list.map(v => {
+          const summary = v.entries[0]?.summary || v.memo || '-';
+          return `<tr>
+              <td style="font-weight:500;">${v.voucherNo}</td>
+              <td>${v.date}</td>
+              <td>${v.bizLabel}</td>
+              <td>${escapeHtml(summary)}</td>
+              <td style="text-align:right;" class="voucher-amount">¥${v.totalDebit.toFixed(2)}</td>
+              <td style="text-align:right;" class="voucher-amount">¥${v.totalCredit.toFixed(2)}</td>
+              <td><span class="voucher-status APPROVED">审核通过</span></td>
+              <td><button class="btn-mini btn-mini-primary" onclick="postVoucherFromAcc('${v.id}')">记账</button></td>
+          </tr>`;
+      }).join('');
+  }
+
+  window.postVoucherFromAcc = async function(id) {
+      const all = await getAllFromStore(STORE_VOUCHER);
+      const v = all.find(x => x.id === id);
+      if (!v) return showToast('凭证不存在');
+      if (v.status === 'POSTED') return showToast('该凭证已记账，同一凭证只入账一次');
+      if (v.status !== 'APPROVED') return showToast('该凭证状态不允许记账');
+      v.status = 'POSTED';
+      v.postedAt = Date.now();
+      await saveToStore(STORE_VOUCHER, v);
+      await loadAccountingVouchers();
+      await loadVouchers();
+      renderAccountingAll();
+      showToast(`✅ 凭证 ${v.voucherNo} 已记账`);
+  };
+
+  window.postAllPending = async function() {
+      const list = accVoucherRecords.filter(v => v.status === 'APPROVED' && getVoucherPeriod(v) === accCurrentPeriod);
+      if (!list.length) return showToast('本期无待记账凭证');
+      if (!confirm(`确定将本期 ${list.length} 张待记账凭证全部记账？`)) return;
+      let count = 0;
+      for (const v of list) {
+          if (v.status === 'APPROVED') {
+              v.status = 'POSTED';
+              v.postedAt = Date.now();
+              await saveToStore(STORE_VOUCHER, v);
+              count++;
+          }
+      }
+      await loadAccountingVouchers();
+      await loadVouchers();
+      renderAccountingAll();
+      showToast(`✅ 已记账 ${count} 张凭证`);
+  };
+
+  function renderAccSummary() {
+      const tb = document.getElementById('acc-summary-body');
+      const foot = document.getElementById('acc-summary-foot');
+      const activity = getAccountActivity(accCurrentPeriod);
+      const codes = Object.keys(activity).sort();
+      if (!codes.length) {
+          tb.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:36px;">本期暂无已记账分录</td></tr>`;
+          foot.innerHTML = '';
+          return;
+      }
+      let totalD = 0, totalC = 0;
+      tb.innerHTML = codes.map(code => {
+          const acc = VOUCHER_ACCOUNTS.find(x => x.code === code);
+          const a = activity[code];
+          totalD += a.debit; totalC += a.credit;
+          return `<tr><td>${code}</td><td>${acc ? acc.name : code}</td><td style="text-align:right;">¥${a.debit.toFixed(2)}</td><td style="text-align:right;">¥${a.credit.toFixed(2)}</td></tr>`;
+      }).join('');
+      foot.innerHTML = `<tr><td colspan="2" style="text-align:right;">合计</td><td style="text-align:right;">¥${totalD.toFixed(2)}</td><td style="text-align:right;">¥${totalC.toFixed(2)}</td></tr>`;
+  }
+
+  function renderAccDetail(desiredCode) {
+      const sel = document.getElementById('acc-detail-account');
+      const tb = document.getElementById('acc-detail-body');
+      const activity = getAccountActivity(accCurrentPeriod);
+      const opening = getOpeningOf(accCurrentPeriod);
+      const codes = new Set([...Object.keys(activity), ...Object.keys(opening)]);
+      if (desiredCode) codes.add(desiredCode);
+      const currentVal = desiredCode || sel.value;
+      sel.innerHTML = '<option value="">-- 请选择科目 --</option>' + Array.from(codes).sort().map(code => {
+          const acc = VOUCHER_ACCOUNTS.find(x => x.code === code);
+          return `<option value="${code}">${code} ${acc ? acc.name : ''}</option>`;
+      }).join('');
+      if (currentVal && codes.has(currentVal)) sel.value = currentVal;
+
+      const code = sel.value;
+      if (!code) {
+          tb.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:36px;">请选择科目查看明细账</td></tr>`;
+          return;
+      }
+
+      const o = opening[code] || { debit: 0, credit: 0 };
+      let balance = (o.debit || 0) - (o.credit || 0);
+
+      const entries = [];
+      getPostedVouchersOf(accCurrentPeriod).forEach(v => {
+          (v.entries || []).forEach(e => {
+              if (e.account === code) {
+                  entries.push({ date: v.date, voucherNo: v.voucherNo, summary: e.summary, debit: e.debit || 0, credit: e.credit || 0 });
+              }
+          });
+      });
+      entries.sort((a, b) => a.date.localeCompare(b.date) || a.voucherNo.localeCompare(b.voucherNo));
+
+      let html = `<tr style="background:var(--bg);">
+          <td colspan="3" style="font-weight:600;">期初余额</td>
+          <td style="text-align:right;">${o.debit ? '¥' + o.debit.toFixed(2) : '-'}</td>
+          <td style="text-align:right;">${o.credit ? '¥' + o.credit.toFixed(2) : '-'}</td>
+          <td style="text-align:right; font-weight:600;">${balance >= 0 ? '借' : '贷'} ¥${Math.abs(balance).toFixed(2)}</td>
+      </tr>`;
+
+      entries.forEach(e => {
+          balance += e.debit - e.credit;
+          html += `<tr>
+              <td>${e.date}</td>
+              <td><span class="acc-link" onclick="viewVoucherDetail('${e.voucherNo}')">${e.voucherNo}</span></td>
+              <td>${escapeHtml(e.summary)}</td>
+              <td style="text-align:right;">${e.debit ? '¥' + e.debit.toFixed(2) : '-'}</td>
+              <td style="text-align:right;">${e.credit ? '¥' + e.credit.toFixed(2) : '-'}</td>
+              <td style="text-align:right;">${balance >= 0 ? '借' : '贷'} ¥${Math.abs(balance).toFixed(2)}</td>
+          </tr>`;
+      });
+
+      tb.innerHTML = html;
+  }
+
+  function renderAccLedger() {
+      const tb = document.getElementById('acc-ledger-body');
+      const data = computeTrialBalance(accCurrentPeriod);
+      const rows = data.rows.filter(r => r.obD || r.obC || r.ad || r.ac || r.cbD || r.cbC);
+      if (!rows.length) {
+          tb.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:36px;">本期暂无数据</td></tr>`;
+          return;
+      }
+      tb.innerHTML = rows.map(r => {
+          const balance = r.obD - r.obC;
+          const obStr = balance >= 0 ? `借 ¥${balance.toFixed(2)}` : `贷 ¥${Math.abs(balance).toFixed(2)}`;
+          const netEnd = (r.obD - r.obC) + (r.ad - r.ac);
+          const cbStr = netEnd >= 0 ? `借 ¥${netEnd.toFixed(2)}` : `贷 ¥${Math.abs(netEnd).toFixed(2)}`;
+          return `<tr>
+              <td>${r.code}</td>
+              <td>${r.name}</td>
+              <td style="text-align:right;">${obStr}</td>
+              <td style="text-align:right;">¥${r.ad.toFixed(2)}</td>
+              <td style="text-align:right;">¥${r.ac.toFixed(2)}</td>
+              <td style="text-align:right; font-weight:500;">${cbStr}</td>
+          </tr>`;
+      }).join('');
+  }
+
+  function renderAccTrial() {
+      const tb = document.getElementById('acc-trial-body');
+      const foot = document.getElementById('acc-trial-foot');
+      const check = document.getElementById('acc-trial-check');
+      const data = computeTrialBalance(accCurrentPeriod);
+      if (!data.rows.length) {
+          tb.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:36px;">本期暂无数据</td></tr>`;
+          foot.innerHTML = '';
+          check.innerHTML = '';
+          return;
+      }
+      tb.innerHTML = data.rows.map(r => `<tr>
+          <td>${r.code}</td>
+          <td>${r.name}</td>
+          <td style="text-align:right;">${r.obD ? '¥' + r.obD.toFixed(2) : '-'}</td>
+          <td style="text-align:right;">${r.obC ? '¥' + r.obC.toFixed(2) : '-'}</td>
+          <td style="text-align:right;">${r.ad ? '¥' + r.ad.toFixed(2) : '-'}</td>
+          <td style="text-align:right;">${r.ac ? '¥' + r.ac.toFixed(2) : '-'}</td>
+          <td style="text-align:right;">${r.cbD ? '¥' + r.cbD.toFixed(2) : '-'}</td>
+          <td style="text-align:right;">${r.cbC ? '¥' + r.cbC.toFixed(2) : '-'}</td>
+      </tr>`).join('');
+      foot.innerHTML = `<tr>
+          <td colspan="2" style="text-align:right;">合计</td>
+          <td style="text-align:right;">¥${data.totalObD.toFixed(2)}</td>
+          <td style="text-align:right;">¥${data.totalObC.toFixed(2)}</td>
+          <td style="text-align:right;">¥${data.totalAD.toFixed(2)}</td>
+          <td style="text-align:right;">¥${data.totalAC.toFixed(2)}</td>
+          <td style="text-align:right;">¥${data.totalCbD.toFixed(2)}</td>
+          <td style="text-align:right;">¥${data.totalCbC.toFixed(2)}</td>
+      </tr>`;
+      const obOK = Math.abs(data.totalObD - data.totalObC) < 0.005;
+      const adOK = Math.abs(data.totalAD - data.totalAC) < 0.005;
+      const cbOK = Math.abs(data.totalCbD - data.totalCbC) < 0.005;
+      check.innerHTML = `<div style="display:flex; gap:20px; flex-wrap:wrap;">
+          <span class="status-pill ${obOK ? 'POSTED' : 'REJECTED'}">期初：${obOK ? '平衡' : '不平衡'}</span>
+          <span class="status-pill ${adOK ? 'POSTED' : 'REJECTED'}">本期：${adOK ? '平衡' : '不平衡'}</span>
+          <span class="status-pill ${cbOK ? 'POSTED' : 'REJECTED'}">期末：${cbOK ? '平衡' : '不平衡'}</span>
+      </div>`;
+  }
+
+  window.toggleOpeningEditor = function() {
+      const el = document.getElementById('acc-opening-editor');
+      const open = el.style.display === 'none';
+      el.style.display = open ? 'block' : 'none';
+      if (open) renderOpeningEditor();
+  };
+
+  function renderOpeningEditor() {
+      const tbody = document.getElementById('acc-opening-body');
+      const opening = getOpeningOf(accCurrentPeriod);
+      tbody.innerHTML = VOUCHER_ACCOUNTS.map(a => {
+          const o = opening[a.code] || { debit: 0, credit: 0 };
+          return `<tr>
+              <td>${a.code}</td>
+              <td>${a.name}</td>
+              <td><input type="number" step="0.01" class="opening-debit" data-code="${a.code}" value="${o.debit || ''}" placeholder="0.00" style="padding:6px 8px; font-size:12px;"></td>
+              <td><input type="number" step="0.01" class="opening-credit" data-code="${a.code}" value="${o.credit || ''}" placeholder="0.00" style="padding:6px 8px; font-size:12px;"></td>
+          </tr>`;
+      }).join('');
+  }
+
+  window.saveOpeningFromEditor = function() {
+      if (!accCurrentPeriod) return showToast('请先选择期间');
+      const opening = {};
+      document.querySelectorAll('.opening-debit').forEach(inp => {
+          const code = inp.dataset.code;
+          const d = parseFloat(inp.value) || 0;
+          const cInp = document.querySelector(`.opening-credit[data-code="${code}"]`);
+          const c = parseFloat(cInp.value) || 0;
+          if (d || c) opening[code] = { debit: d, credit: c };
+      });
+      openingBalances[accCurrentPeriod] = opening;
+      saveOpeningBalances();
+      showToast('✅ 期初余额已保存');
+      renderAccTrial();
+      renderAccLedger();
+      renderAccDetail();
+      renderAccReport();
+  };
+
+  function getClosingBalance(code) {
+      const data = computeTrialBalance(accCurrentPeriod);
+      const r = data.rows.find(x => x.code === code);
+      if (!r) return 0;
+      return (r.obD - r.obC) + (r.ad - r.ac);
+  }
+
+  window.switchReportTab = function(tab) {
+      accCurrentReportTab = tab;
+      document.querySelectorAll('.acc-report-subtab').forEach(el => el.classList.toggle('active', el.dataset.rtab === tab));
+      renderAccReport();
+  };
+
+  function renderAccReport() {
+      const container = document.getElementById('acc-report-content');
+      const noteEl = document.getElementById('acc-report-note');
+      const noteKey = `${accCurrentPeriod}_${accCurrentReportTab}`;
+      noteEl.value = reportNotes[noteKey] || '';
+      if (accCurrentReportTab === 'bs') container.innerHTML = renderBalanceSheet();
+      else container.innerHTML = renderIncomeStatement();
+  }
+
+  window.saveReportNote = function() {
+      const note = document.getElementById('acc-report-note').value;
+      const key = `${accCurrentPeriod}_${accCurrentReportTab}`;
+      reportNotes[key] = note;
+      saveReportNotes();
+      showToast('✅ 编表说明已保存');
+  };
+
+  function renderBalanceSheet() {
+      const cash = getClosingBalance('1001') + getClosingBalance('1002');
+      const ar = getClosingBalance('1122');
+      const pre = getClosingBalance('1123');
+      const otherRecv = getClosingBalance('1221');
+      const inv = getClosingBalance('1401') + getClosingBalance('1405');
+      const fa = getClosingBalance('1601');
+      const totalAssets = cash + ar + pre + otherRecv + inv + fa;
+
+      const ap = -getClosingBalance('2202');
+      const adv = -getClosingBalance('2203');
+      const payroll = -getClosingBalance('2211');
+      const tax = -getClosingBalance('2221');
+      const otherPay = -getClosingBalance('2241');
+      const totalLiab = ap + adv + payroll + tax + otherPay;
+      const capital = -getClosingBalance('4001');
+      const totalEquity = capital;
+
+      const rev = -getClosingBalance('6001');
+      const cost = getClosingBalance('6401');
+      const sellExp = getClosingBalance('6601');
+      const adminExp = getClosingBalance('6602');
+      const finExp = getClosingBalance('6603');
+      const netProfit = rev - cost - sellExp - adminExp - finExp;
+
+      const totalLiabEquity = totalLiab + totalEquity + netProfit;
+      const balanceOK = Math.abs(totalAssets - totalLiabEquity) < 0.005;
+
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:16px;">
+          <div>
+            <h3 class="serif-title" style="font-size:22px;">资产负债表</h3>
+            <p style="font-size:12px; color:var(--text-muted); margin:4px 0 0;">会计期间：${accCurrentPeriod}</p>
+          </div>
+          <span style="font-size:12px; color:var(--text-muted);">单位：元</span>
+        </div>
+        <table class="acc-report-table">
+          <thead><tr><th>项目</th><th style="text-align:right;">期末余额</th><th>数据来源（点击追溯）</th></tr></thead>
+          <tbody>
+            <tr class="report-title"><td colspan="3">资产</td></tr>
+            <tr><td>货币资金</td><td class="num">¥${cash.toFixed(2)}</td><td><span class="acc-link" onclick="drillAccount('1001')">1001 库存现金</span> / <span class="acc-link" onclick="drillAccount('1002')">1002 银行存款</span></td></tr>
+            <tr><td>应收账款</td><td class="num">¥${ar.toFixed(2)}</td><td><span class="acc-link" onclick="drillAccount('1122')">1122</span></td></tr>
+            <tr><td>预付账款</td><td class="num">¥${pre.toFixed(2)}</td><td><span class="acc-link" onclick="drillAccount('1123')">1123</span></td></tr>
+            <tr><td>其他应收款</td><td class="num">¥${otherRecv.toFixed(2)}</td><td><span class="acc-link" onclick="drillAccount('1221')">1221</span></td></tr>
+            <tr><td>存货</td><td class="num">¥${inv.toFixed(2)}</td><td><span class="acc-link" onclick="drillAccount('1401')">1401</span> / <span class="acc-link" onclick="drillAccount('1405')">1405</span></td></tr>
+            <tr><td>固定资产</td><td class="num">¥${fa.toFixed(2)}</td><td><span class="acc-link" onclick="drillAccount('1601')">1601</span></td></tr>
+            <tr class="report-total"><td>资产合计</td><td class="num">¥${totalAssets.toFixed(2)}</td><td></td></tr>
+            <tr class="report-title"><td colspan="3">负债</td></tr>
+            <tr><td>应付账款</td><td class="num">¥${ap.toFixed(2)}</td><td><span class="acc-link" onclick="drillAccount('2202')">2202</span></td></tr>
+            <tr><td>预收账款</td><td class="num">¥${adv.toFixed(2)}</td><td><span class="acc-link" onclick="drillAccount('2203')">2203</span></td></tr>
+            <tr><td>应付职工薪酬</td><td class="num">¥${payroll.toFixed(2)}</td><td><span class="acc-link" onclick="drillAccount('2211')">2211</span></td></tr>
+            <tr><td>应交税费</td><td class="num">¥${tax.toFixed(2)}</td><td><span class="acc-link" onclick="drillAccount('2221')">2221</span></td></tr>
+            <tr><td>其他应付款</td><td class="num">¥${otherPay.toFixed(2)}</td><td><span class="acc-link" onclick="drillAccount('2241')">2241</span></td></tr>
+            <tr class="report-total"><td>负债合计</td><td class="num">¥${totalLiab.toFixed(2)}</td><td></td></tr>
+            <tr class="report-title"><td colspan="3">所有者权益</td></tr>
+            <tr><td>实收资本</td><td class="num">¥${capital.toFixed(2)}</td><td><span class="acc-link" onclick="drillAccount('4001')">4001</span></td></tr>
+            <tr><td>未分配利润</td><td class="num">¥${netProfit.toFixed(2)}</td><td><span class="acc-link" onclick="switchReportTab('is')">利润表净利润</span></td></tr>
+            <tr class="report-total"><td>所有者权益合计</td><td class="num">¥${(totalEquity + netProfit).toFixed(2)}</td><td></td></tr>
+            <tr class="report-total"><td>负债和所有者权益合计</td><td class="num">¥${totalLiabEquity.toFixed(2)}</td><td></td></tr>
+          </tbody>
+        </table>
+        <div style="margin-top:12px; font-size:12px; color:var(--text-muted);">
+          ${balanceOK ? '✓ 资产 = 负债 + 所有者权益' : `⚠️ 差额 ¥${(totalAssets - totalLiabEquity).toFixed(2)}（可回到期初余额设置检查是否借贷不平）`}
+        </div>
+      `;
+  }
+
+  function renderIncomeStatement() {
+      const rev = -getClosingBalance('6001');
+      const cost = getClosingBalance('6401');
+      const sellExp = getClosingBalance('6601');
+      const adminExp = getClosingBalance('6602');
+      const finExp = getClosingBalance('6603');
+      const operatingProfit = rev - cost - sellExp - adminExp - finExp;
+      const totalProfit = operatingProfit;
+      const netProfit = totalProfit;
+
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:16px;">
+          <div>
+            <h3 class="serif-title" style="font-size:22px;">利润表</h3>
+            <p style="font-size:12px; color:var(--text-muted); margin:4px 0 0;">会计期间：${accCurrentPeriod}</p>
+          </div>
+          <span style="font-size:12px; color:var(--text-muted);">单位：元</span>
+        </div>
+        <table class="acc-report-table">
+          <thead><tr><th>项目</th><th style="text-align:right;">本期金额</th><th>数据来源（点击追溯）</th></tr></thead>
+          <tbody>
+            <tr><td>一、营业收入</td><td class="num">¥${rev.toFixed(2)}</td><td><span class="acc-link" onclick="drillAccount('6001')">6001</span></td></tr>
+            <tr><td>减：营业成本</td><td class="num">¥${cost.toFixed(2)}</td><td><span class="acc-link" onclick="drillAccount('6401')">6401</span></td></tr>
+            <tr><td>　　销售费用</td><td class="num">¥${sellExp.toFixed(2)}</td><td><span class="acc-link" onclick="drillAccount('6601')">6601</span></td></tr>
+            <tr><td>　　管理费用</td><td class="num">¥${adminExp.toFixed(2)}</td><td><span class="acc-link" onclick="drillAccount('6602')">6602</span></td></tr>
+            <tr><td>　　财务费用</td><td class="num">¥${finExp.toFixed(2)}</td><td><span class="acc-link" onclick="drillAccount('6603')">6603</span></td></tr>
+            <tr class="report-total"><td>二、营业利润</td><td class="num">¥${operatingProfit.toFixed(2)}</td><td></td></tr>
+            <tr class="report-total"><td>三、利润总额</td><td class="num">¥${totalProfit.toFixed(2)}</td><td></td></tr>
+            <tr class="report-total"><td>四、净利润</td><td class="num">¥${netProfit.toFixed(2)}</td><td></td></tr>
+          </tbody>
+        </table>
+      `;
+  }
+
+  window.drillAccount = function(code) {
+      document.querySelectorAll('#module-accounting .acc-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'detail'));
+      document.querySelectorAll('#module-accounting .acc-tab-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('acc-panel-detail').classList.add('active');
+      setTimeout(() => renderAccDetail(code), 0);
+  };
+
+  window.viewVoucherDetail = function(voucherNo) {
+      const v = accVoucherRecords.find(x => x.voucherNo === voucherNo);
+      if (!v) return showToast('未找到该凭证');
+      const entryLines = v.entries.map(e => {
+          const acc = VOUCHER_ACCOUNTS.find(x => x.code === e.account);
+          return `  ${e.account} ${acc ? acc.name : ''} · ${e.summary} — 借 ${(e.debit||0).toFixed(2)} / 贷 ${(e.credit||0).toFixed(2)}`;
+      }).join('\n');
+      const msg = `凭证号：${v.voucherNo}\n日期：${v.date}\n业务类型：${v.bizLabel}\n来源单：${v.sourceNo || '-'}\n状态：${VOUCHER_STATUS_LABEL[v.status]}\n\n分录：\n${entryLines}`;
+      if (v.attach) {
+          if (confirm(msg + '\n\n是否查看原始单据附件？')) openImagePreview(v.attach.data);
+      } else {
+          alert(msg);
+      }
+  };
+
+  function renderAccountingAll() {
+      renderAccPending();
+      renderAccSummary();
+      renderAccDetail();
+      renderAccLedger();
+      renderAccTrial();
+      renderAccReport();
+      updateAccBadge();
+      updateAccPeriodSummary();
+  }
+
+  window.onAccPeriodChange = function(p) {
+      accCurrentPeriod = p;
+      renderAccountingAll();
+  };
+
+  window.refreshAccounting = async function() {
+      await loadAccountingVouchers();
+      renderAccPeriodSelect();
+      renderAccountingAll();
+  };
+
+  document.querySelectorAll('#module-accounting .acc-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+          document.querySelectorAll('#module-accounting .acc-tab').forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('#module-accounting .acc-tab-panel').forEach(p => p.classList.remove('active'));
+          tab.classList.add('active');
+          document.getElementById('acc-panel-' + tab.dataset.tab).classList.add('active');
+      });
+  });
+  document.getElementById('acc-detail-account').addEventListener('change', () => renderAccDetail());
+
+  (async function initAccounting() {
+      await loadAccountingVouchers();
+      renderAccPeriodSelect();
+      renderAccountingAll();
+  })();
 });
 </script>
 </body>
