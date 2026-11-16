@@ -15,23 +15,20 @@
 <style>
 /* ================= 核心设计系统 (Anthropic 研报风格) ================= */
 :root {
-  /* 色彩 */
-  --bg: #F5F4ED;            /* 暖米白 */
-  --card: #FFFFFF;          /* 卡片纯白 */
-  --border: #E8E6DC;        /* 暖灰色极细边框 */
-  --text-main: #141413;     /* 近黑深灰 */
-  --text-muted: #6B6A65;    /* 次要文字 */
-  --primary: #D97757;       /* 陶土橙 */
+  --bg: #F5F4ED;
+  --card: #FFFFFF;
+  --border: #E8E6DC;
+  --text-main: #141413;
+  --text-muted: #6B6A65;
+  --primary: #D97757;
   --primary-hover: #C46545;
-  --accent-blue: #6B8CBA;   /* 辅助湖蓝 */
+  --accent-blue: #6B8CBA;
   --input-bg: #F9F9F6;
   --radius: 12px;
-  
-  /* 字体 */
+
   --font-serif: "Playfair Display", "Georgia", "Tiempos Headline", serif;
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
-  
-  /* 状态色 */
+
   --match: #5D9C7A; --match-bg: #F0FDF4;
   --bank-only: #E0A25E; --bank-only-bg: #FFF7ED;
   --company-only: #6B8CBA; --company-only-bg: #EFF6FF;
@@ -68,11 +65,11 @@ p { color: var(--text-muted); }
   background-color: var(--bg);
   position: sticky; top: 0; z-index: 100;
 }
-.app-logo { 
-  font-family: var(--font-serif); 
-  font-size: 22px; 
+.app-logo {
+  font-family: var(--font-serif);
+  font-size: 22px;
   font-weight: 600;
-  display: flex; gap: 12px; align-items: center; cursor: pointer; 
+  display: flex; gap: 12px; align-items: center; cursor: pointer;
 }
 .app-logo span { color: var(--primary); font-size: 24px; }
 .nav-tabs { display: flex; gap: 8px; }
@@ -84,9 +81,9 @@ p { color: var(--text-muted); }
 .nav-btn:hover { color: var(--text-main); background: var(--card); }
 .nav-btn.active { color: var(--text-main); background: var(--card); border: 1px solid var(--border); font-weight: 600; }
 
-/* 模块容器与动画 */
+/* 模块容器与动画 —— 修复：active 模块必须可见（opacity: 1） */
 .module { display: none; padding: 48px; max-width: 1400px; margin: 0 auto; width: 100%; flex: 1; opacity: 0; }
-.module.active { display: block; }
+.module.active { display: block; opacity: 1; }
 
 /* 按钮与输入框 */
 .btn {
@@ -115,14 +112,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
   font-size: 14px; opacity: 0; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
 
-/* ================= 首页 (完全复刻研报排版) ================= */
-.home-container { 
-  display: flex; flex-direction: column; 
-  justify-content: center; min-height: 75vh; 
+/* ================= 首页 ================= */
+.home-container {
+  display: flex; flex-direction: column;
+  justify-content: center; min-height: 75vh;
   max-width: 1100px; margin: 0 auto;
 }
 
-/* 头部排版 */
 .home-header-text {
   margin-bottom: 64px;
 }
@@ -130,12 +126,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
   font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;
   color: var(--primary); margin-bottom: 16px;
 }
-/* 艺术字大标题 */
-.home-title { 
-  font-size: 80px; 
-  color: var(--text-main); 
-  line-height: 1.05; 
-  margin-bottom: 24px; 
+.home-title {
+  font-size: 80px;
+  color: var(--text-main);
+  line-height: 1.05;
+  margin-bottom: 24px;
   font-weight: 400;
   letter-spacing: -1.5px;
 }
@@ -143,19 +138,17 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
   font-style: italic;
   font-weight: 400;
 }
-.home-desc { 
+.home-desc {
   font-size: 18px; color: var(--text-muted); max-width: 600px; line-height: 1.7;
 }
 
-/* 卡片网格 */
-.home-cards { 
-  display: grid; 
-  grid-template-columns: 1fr 1fr; 
-  gap: 32px; 
+.home-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
   width: 100%;
 }
 
-/* 卡片设计 */
 .home-card {
   background: var(--card); border: 1px solid var(--border);
   border-radius: 4px; padding: 48px; cursor: pointer;
@@ -165,17 +158,15 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 }
 .home-card:hover { border-color: var(--primary); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.06); }
 
-/* 卡片内部布局 */
 .home-card-content { flex: 1; z-index: 2; position: relative; }
 .home-card h3 { font-size: 32px; color: var(--text-main); margin-bottom: 12px; }
 .home-card p { font-size: 15px; margin-bottom: 32px; max-width: 80%; line-height: 1.7; }
-.home-card .btn-enter { 
-  background: var(--text-main); color: #fff; padding: 10px 20px; border-radius: 4px; border: none; font-weight: 500; cursor: pointer; 
+.home-card .btn-enter {
+  background: var(--text-main); color: #fff; padding: 10px 20px; border-radius: 4px; border: none; font-weight: 500; cursor: pointer;
   transition: background 0.2s;
 }
 .home-card:hover .btn-enter { background: var(--primary); }
 
-/* 纯 SVG 极简线稿绘图 */
 .card-svg-bg {
   position: absolute;
   bottom: 20px;
@@ -232,7 +223,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 #module-invoice .form-group { margin-bottom: 20px; }
 #module-invoice .form-group label { display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-muted); }
 
-/* 附加信息 */
 .additional-info { background: var(--bg); padding: 24px; border-radius: var(--radius); margin-bottom: 24px; margin-top: 40px; border: 1px solid var(--border); }
 .additional-info h3 { font-size: 18px; margin-bottom: 16px; }
 .upload-zone-mini { border: 1px dashed var(--border); border-radius: var(--radius); padding: 16px; text-align: center; cursor: pointer; background: var(--card); margin-bottom: 16px; }
@@ -242,7 +232,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 .attach-item button { background: transparent; border: none; color: var(--diff); cursor: pointer; font-size: 14px; }
 .additional-info textarea { resize: vertical; min-height: 100px; }
 
-/* 明细表格 */
 #module-invoice .items-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; table-layout: fixed; }
 #module-invoice .items-table th { padding: 12px 8px; text-align: left; font-size: 13px; color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 500; }
 #module-invoice .items-table td { padding: 8px 4px; border-bottom: 1px solid var(--border); }
@@ -252,7 +241,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 #module-invoice .btn-submit { width: 100%; padding: 16px; font-size: 16px; background: var(--primary); color: #fff; border: none; border-radius: var(--radius); cursor: pointer; font-weight: 500; }
 #module-invoice .btn-del { background: transparent; color: var(--diff); border: none; cursor: pointer; }
 
-/* 发票预览排版 */
 #module-invoice .invoice-header { text-align: center; border-bottom: 2px solid var(--primary); padding-bottom: 24px; margin-bottom: 32px; }
 #module-invoice .invoice-header h1 { color: var(--primary); font-size: 32px; letter-spacing: 4px; }
 #module-invoice .invoice-meta { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
@@ -263,7 +251,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 #module-invoice .invoice-total { text-align: right; font-size: 14px; line-height: 2; margin-bottom: 24px; color: var(--text-muted); }
 #module-invoice .total-amount { font-size: 28px; color: var(--text-main); margin-top: 8px; }
 
-/* 印章区域 */
 #invoice-stamp-area {
   position: absolute; bottom: 60px; right: 60px; width: 140px; height: 140px;
   display: flex; align-items: center; justify-content: center; opacity: 0.85;
@@ -271,7 +258,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 }
 #invoice-stamp-area img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
 
-/* 总账面板 */
 #module-invoice .ledger-panel { margin-top: 40px; background: var(--card); padding: 40px; border-radius: var(--radius); border: 1px solid var(--border); }
 #module-invoice .ledger-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
 #module-invoice .filter-bar { display: flex; gap: 16px; margin-bottom: 24px; background: var(--bg); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); flex-wrap: wrap; }
@@ -282,7 +268,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 .btn-view-attach { background: var(--bg); color: var(--accent-blue); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); display: inline-block; text-decoration: none; }
 .btn-view-invoice { background: var(--bg); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); }
 
-/* 打印样式 */
 @media print {
   body { background: #FFF; }
   .app-header, #module-home, #module-recon, #module-invoice .form-panel, #module-invoice .ledger-panel, .no-print { display: none !important; }
@@ -292,7 +277,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
   #invoice-stamp-area { bottom: 40px; right: 40px; }
 }
 
-/* 响应式设计 */
 @media (max-width: 1024px) {
   .home-cards { grid-template-columns: 1fr; }
   .home-title { font-size: 56px; }
@@ -315,17 +299,16 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
     <span>✻</span> 财务流程工作台
   </div>
   <div class="nav-tabs">
-    <button type="button" class="nav-btn" data-target="module-home">首页</button>
+    <button type="button" class="nav-btn active" data-target="module-home">首页</button>
     <button type="button" class="nav-btn" data-target="module-recon">数据对账</button>
     <button type="button" class="nav-btn" data-target="module-invoice">智能开票</button>
   </div>
 </header>
 
-<!-- ================= 首页 (研报排版) ================= -->
+<!-- ================= 首页 ================= -->
 <div id="module-home" class="module active">
   <div class="home-container">
-    
-    <!-- 头部文本：修改为艺术字样式 -->
+
     <div class="home-header-text">
       <div class="home-subtitle-top">FINANCE WORKSPACE</div>
       <h1 class="home-title serif-title">
@@ -334,18 +317,15 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
       </h1>
       <p class="home-desc">安全、精准的本地化财务工具。系统提供深度的数据比对与优雅的票据归档功能，请选择要处理的工作。</p>
     </div>
-    
-    <!-- 卡片网格 -->
+
     <div class="home-cards">
-      
-      <!-- 对账卡片 -->
+
       <div class="home-card" onclick="switchModule('module-recon')">
         <div class="home-card-content">
           <h3 class="serif-title">数据对账</h3>
           <p>支持 Excel 流水导入。智能比对，精准定位差异、漏记与异常单号。</p>
           <button class="btn-enter">进入对账 →</button>
         </div>
-        <!-- 极简手绘线稿：手托网络节点 (参考 Anthropic 风格) -->
         <svg class="card-svg-bg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M30 70 C 20 70, 15 80, 20 90 C 25 95, 40 95, 50 85 C 60 75, 65 50, 65 30" stroke="#141413" stroke-width="2" stroke-linecap="round"/>
           <path d="M40 80 C 50 80, 60 70, 60 50 C 60 30, 50 20, 40 20" stroke="#141413" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 4"/>
@@ -360,14 +340,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
         </svg>
       </div>
 
-      <!-- 开票卡片 -->
       <div class="home-card" onclick="switchModule('module-invoice')">
         <div class="home-card-content">
           <h3 class="serif-title">智能开票</h3>
           <p>录入明细，自动计算金额。支持上传真实印章、合同凭证及历史总账管理。</p>
           <button class="btn-enter">进入开票 →</button>
         </div>
-        <!-- 极简手绘线稿：手与几何形状 (参考 Anthropic 风格) -->
         <svg class="card-svg-bg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M20 80 C 10 70, 15 50, 30 45 C 40 40, 50 50, 60 50 C 70 50, 75 60, 75 70" stroke="#141413" stroke-width="2" stroke-linecap="round"/>
           <path d="M30 90 L 70 90 L 80 70 L 60 70 L 50 90" stroke="#141413" stroke-width="2" stroke-linejoin="round"/>
@@ -432,7 +410,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 <!-- ================= 开票模块 ================= -->
 <div id="module-invoice" class="module">
   <div class="layout">
-    <!-- 左侧录入 -->
     <div class="form-panel no-print">
       <h2 class="serif-title">发票信息录入</h2>
       <div style="background:var(--bg); padding:20px; border-radius:var(--radius); margin-bottom:24px; border:1px solid var(--border);">
@@ -462,11 +439,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
         <tbody id="inv-items-body"></tbody>
       </table>
       <button type="button" class="btn-add" id="inv-btn-add">+ 添加明细</button>
-      
+
       <div class="additional-info">
         <h3 class="serif-title">附加信息与凭证</h3>
-        
-        <!-- 附件上传 -->
+
         <label style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:8px;">上传发货单、合同等证明文件：</label>
         <div class="upload-zone-mini" id="attach-upload-zone">
           <p style="margin:0;">点击选择文件 (PDF / JPG / PNG)</p>
@@ -474,7 +450,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
         </div>
         <div class="attachment-list" id="attachment-list"></div>
 
-        <!-- 印章上传 -->
         <label style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:8px; margin-top:16px;">上传发票专用章 (PNG透明底最佳)：</label>
         <div class="upload-zone-mini" id="stamp-upload-zone">
           <p style="margin:0; color:var(--primary);">点击上传印章图片</p>
@@ -491,7 +466,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
       <button type="button" class="btn btn-submit" id="inv-btn-submit">生成发票并存入总账</button>
     </div>
 
-    <!-- 右侧发票预览 -->
     <div class="invoice-panel" id="inv-print-area">
       <div class="invoice-header"><h1 class="serif-title">增值税电子普通发票</h1></div>
       <div class="invoice-meta">
@@ -502,7 +476,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
         <span>开票日期: <span id="inv-prev-date">-</span></span>
         <span>收款方式: <span id="inv-prev-payment">-</span></span>
       </div>
-      
+
       <div class="invoice-info">
         <div style="font-weight:500; margin-bottom:8px; color:var(--text-main);">购买方信息</div>
         <div>名称：<span id="inv-prev-buyer">-</span></div>
@@ -516,21 +490,19 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
         <thead><tr><th>服务名称</th><th>数量</th><th>单价</th><th>金额</th></tr></thead>
         <tbody id="inv-prev-items-body"></tbody>
       </table>
-      
+
       <div class="invoice-total">
         <div>合计金额：￥<span id="inv-prev-total">0.00</span></div>
         <div>价税合计(大写)：<span id="inv-prev-upper" style="color:var(--text-main); font-weight:500;">零元整</span></div>
         <div class="total-amount serif-title">(小写) ￥<span id="inv-prev-total-small">0.00</span></div>
       </div>
-      
-      <!-- 动态印章区域 -->
+
       <div id="invoice-stamp-area">
         <img id="invoice-stamp-img" src="" alt="印章" style="display:none;">
       </div>
     </div>
   </div>
 
-  <!-- 总账面板 -->
   <div class="ledger-panel no-print">
     <div class="ledger-header">
       <div>
@@ -541,7 +513,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
         <button type="button" class="btn" id="inv-btn-export">导出 Excel</button>
       </div>
     </div>
-    
+
     <div class="filter-bar">
       <input type="text" id="f-invoice-no" placeholder="🔍 发票号码">
       <input type="text" id="f-buyer" placeholder="🔍 购买方名称">
@@ -578,32 +550,43 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 <script>
 /* ================= 1. 路由导航与 GSAP 动画 ================= */
 function switchModule(targetId) {
-    const currentActive = document.querySelector('.module.active');
     const target = document.getElementById(targetId);
-    
-    if (currentActive === target) return;
+    if (!target) return;                       // 目标不存在直接忽略
+
+    const currentActive = document.querySelector('.module.active');
+
+    // 已经在该模块：仅确保可见并回到顶部，不重复播动画
+    if (currentActive === target) {
+        gsap.set(target, { opacity: 1, y: 0 });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+    }
 
     if (currentActive) {
+        gsap.killTweensOf(currentActive);
         currentActive.classList.remove('active');
         currentActive.style.display = 'none';
     }
 
     target.classList.add('active');
     target.style.display = 'block';
-    
-    gsap.fromTo(target, 
+
+    gsap.killTweensOf(target);
+    gsap.fromTo(target,
         { opacity: 0, y: 15 },
         { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
     );
 
     document.querySelectorAll('.nav-btn').forEach(btn => {
-        if(btn.dataset.target === targetId) btn.classList.add('active');
-        else btn.classList.remove('active');
+        btn.classList.toggle('active', btn.dataset.target === targetId);
     });
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', e => switchModule(e.target.dataset.target)));
+document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchModule(btn.dataset.target));
+});
 
 /* ================= 2. 状态存储引擎 ================= */
 const DB_NAME = 'FinanceWorkbenchDB'; const STORE_NAME = 'Invoices'; const LS_KEY = 'finance_ledger_fallback';
@@ -649,7 +632,7 @@ async function getAllRecordsFromDB() {
             const req = db.transaction([STORE_NAME], 'readonly').objectStore(STORE_NAME).getAll();
             req.onsuccess = () => resolve(req.result); req.onerror = (e) => reject(e.target.error);
         });
-    } else if (storageMode === 'LOCALSTORAGE') { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } 
+    } else if (storageMode === 'LOCALSTORAGE') { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); }
     else { return [...memoryStore]; }
 }
 async function clearAllDB() {
@@ -658,43 +641,61 @@ async function clearAllDB() {
             const req = db.transaction([STORE_NAME], 'readwrite').objectStore(STORE_NAME).clear();
             req.onsuccess = () => resolve(); req.onerror = (e) => reject(e.target.error);
         });
-    } else if (storageMode === 'LOCALSTORAGE') { localStorage.removeItem(LS_KEY); } 
+    } else if (storageMode === 'LOCALSTORAGE') { localStorage.removeItem(LS_KEY); }
     else { memoryStore = []; }
 }
 
 /* ================= 3. 全局工具与页面逻辑 ================= */
-function showToast(msg) { 
-    const t = document.getElementById('toast'); 
-    t.innerText = msg; 
-    t.style.visibility = 'visible'; 
-    
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.style.visibility = 'visible';
+
     gsap.killTweensOf(t);
     gsap.fromTo(t, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" });
-    
-    clearTimeout(t._timer); 
-    t._timer = setTimeout(() => { 
+
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => {
         gsap.to(t, { opacity: 0, y: 20, duration: 0.3, onComplete: () => t.style.visibility = 'hidden' });
-    }, 3000); 
+    }, 3000);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  /* ---- 强制从首页开始（修复：打开时停在首页、不残留滚动位置） ---- */
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  window.scrollTo(0, 0);
+
+  document.querySelectorAll('.module').forEach(m => {
+      m.classList.remove('active');
+      m.style.display = 'none';
+      m.style.opacity = 0;
+  });
+  const homeEl = document.getElementById('module-home');
+  homeEl.classList.add('active');
+  homeEl.style.display = 'block';
+  gsap.set(homeEl, { opacity: 1, y: 0 });
+
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.target === 'module-home');
+  });
+
   await initStorage();
-  
-  // 初始化首页动画
-  gsap.fromTo('.home-header-text', 
-    { opacity: 0, y: 20 }, 
+
+  // 初始化首页动画（只作用于子元素，不改变父级可见性）
+  gsap.fromTo('.home-header-text',
+    { opacity: 0, y: 20 },
     { opacity: 1, y: 0, duration: 0.8, ease: "power2.out", delay: 0.1 }
   );
-  gsap.fromTo('.home-card', 
-    { opacity: 0, y: 30 }, 
+  gsap.fromTo('.home-card',
+    { opacity: 0, y: 30 },
     { opacity: 1, y: 0, duration: 0.8, stagger: 0.15, ease: "power2.out", delay: 0.2 }
   );
 
   /* ================= 发票归档 ================= */
-  let currentAttachments = []; 
-  let currentStamp = null; 
-  let allRecords = []; 
-  
+  let currentAttachments = [];
+  let currentStamp = null;
+  let allRecords = [];
+
   const itemsBody = document.getElementById('inv-items-body'), prevBody = document.getElementById('inv-prev-items-body');
   const today = new Date();
   document.getElementById('inv-input-date').value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
@@ -711,7 +712,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               reader.onload = (ev) => { currentAttachments.push({ name: file.name, data: ev.target.result }); renderAttachments(); };
               reader.readAsDataURL(file);
           });
-          fileInput.value = ''; 
+          fileInput.value = '';
       }
   });
   function renderAttachments() { attachList.innerHTML = currentAttachments.map((file, index) => `<div class="attach-item">📄 ${file.name}<button type="button" onclick="removeAttachment(${index})">×</button></div>`).join(''); }
@@ -727,14 +728,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (e.target.files.length > 0) {
           const file = e.target.files[0];
           const reader = new FileReader();
-          reader.onload = (ev) => { 
-              currentStamp = ev.target.result; 
+          reader.onload = (ev) => {
+              currentStamp = ev.target.result;
               stampPrevImg.src = currentStamp;
               stampPrevArea.style.display = 'block';
-              
+
               invStampImg.src = currentStamp;
               invStampImg.style.display = 'block';
-              
+
               gsap.fromTo(invStampImg, { scale: 0.8, rotation: -10, opacity: 0 }, { scale: 1, rotation: 0, opacity: 0.85, duration: 0.4, ease: "back.out(1.5)" });
           };
           reader.readAsDataURL(file);
@@ -809,42 +810,41 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (name) items.push({ name, qty: parseFloat(row.querySelector('.item-qty')?.value), price: parseFloat(row.querySelector('.item-price')?.value) });
         });
 
-        const record = { 
-            invoiceNo: document.getElementById('inv-input-no').value, date: document.getElementById('inv-input-date').value, 
+        const record = {
+            invoiceNo: document.getElementById('inv-input-no').value, date: document.getElementById('inv-input-date').value,
             seller: seller, sellerTaxno: document.getElementById('inv-input-seller-taxno').value,
             buyer: buyer, buyerTaxno: document.getElementById('inv-input-taxno').value,
             paymentMethod: document.getElementById('inv-input-payment').value,
-            total: total, items: items, logs: logs, attachments: JSON.parse(JSON.stringify(currentAttachments)), 
-            stampData: currentStamp, 
-            status: '已入账' 
+            total: total, items: items, logs: logs, attachments: JSON.parse(JSON.stringify(currentAttachments)),
+            stampData: currentStamp,
+            status: '已入账'
         };
 
         await saveRecordToDB(record);
         showToast(`✅ 已存入总账`);
         await loadAndRenderLedger();
-        
-        // 重置表单
-        document.getElementById('inv-input-buyer').value = ''; 
+
+        document.getElementById('inv-input-buyer').value = '';
         document.getElementById('inv-input-taxno').value = '';
-        document.getElementById('inv-input-logs').value = ''; 
+        document.getElementById('inv-input-logs').value = '';
         document.getElementById('inv-input-no').value = 'INV' + Date.now().toString().slice(-8);
-        itemsBody.innerHTML = ''; 
-        currentAttachments = []; 
-        renderAttachments(); 
-        removeStamp(); 
+        itemsBody.innerHTML = '';
+        currentAttachments = [];
+        renderAttachments();
+        removeStamp();
         addRow();
     } catch (err) { showToast('❌ 保存失败'); }
   });
 
-  document.getElementById('inv-btn-clear').addEventListener('click', async () => { 
-      if (confirm('⚠️ 警告：确定要清空所有历史记录吗？')) { 
+  document.getElementById('inv-btn-clear').addEventListener('click', async () => {
+      if (confirm('⚠️ 警告：确定要清空所有历史记录吗？')) {
           try { await clearAllDB(); await loadAndRenderLedger(); showToast('已清空'); } catch(e) { showToast('清空失败'); }
-      } 
+      }
   });
-  
+
   document.getElementById('inv-btn-export').addEventListener('click', () => {
     try {
-      if (!allRecords.length) return showToast('总账为空'); 
+      if (!allRecords.length) return showToast('总账为空');
       const rows = allRecords.map(i => ({ 发票号码: i.invoiceNo, 开票日期: i.date, 销售方: i.seller, 购买方: i.buyer, 金额: i.total, 收款方式: i.paymentMethod, 补充日志: i.logs || '', 凭证数量: i.attachments ? i.attachments.length : 0, 是否有印章: i.stampData ? '是' : '否' }));
       const ws = XLSX.utils.json_to_sheet(rows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '总账单'); XLSX.writeFile(wb, `总账单_${Date.now()}.xlsx`); showToast('导出成功');
     } catch (err) { showToast('导出失败'); }
@@ -854,7 +854,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
           allRecords = await getAllRecordsFromDB();
           allRecords.sort((a, b) => b.invoiceNo.localeCompare(a.invoiceNo));
-          filterLedger(); 
+          filterLedger();
       } catch (err) { showToast("加载历史数据失败"); }
   }
 
@@ -876,19 +876,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       const tb = document.getElementById('inv-ledger-body'); tb.innerHTML = ''; let sum = 0;
-      filtered.forEach(i => { 
-          sum += i.total; 
+      filtered.forEach(i => {
+          sum += i.total;
           let attachHtml = '';
           if (i.attachments && i.attachments.length > 0) attachHtml += `<a class="btn-view-attach" onclick="viewAttachment('${i.attachments[0].data.replace(/'/g, "\\'")}')">📄 凭证</a>`;
           const logHtml = i.logs ? `<div style="font-size:12px; color:var(--text-muted); margin-top:6px;" title="${i.logs}">📝 ${i.logs.length > 15 ? i.logs.substring(0,15)+'...' : i.logs}</div>` : '';
 
-          const tr = document.createElement('tr'); 
+          const tr = document.createElement('tr');
           tr.innerHTML = `
             <td><button class="btn-view-invoice" onclick="viewInvoice('${i.invoiceNo}')">查看发票</button></td>
             <td>${i.invoiceNo}</td><td>${i.date}</td><td>${i.buyer}</td><td style="font-weight:500">¥${i.total.toFixed(2)}</td><td>${i.paymentMethod}</td>
             <td>${attachHtml} ${logHtml}</td>
-          `; 
-          tb.appendChild(tr); 
+          `;
+          tb.appendChild(tr);
       });
 
       document.getElementById('filtered-total-amount').innerText = `¥${sum.toFixed(2)}`;
@@ -904,23 +904,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.viewInvoice = function(invoiceNo) {
       const record = allRecords.find(r => r.invoiceNo === invoiceNo);
       if (!record) return;
-      
-      document.getElementById('inv-input-seller').value = record.seller || ''; 
+
+      document.getElementById('inv-input-seller').value = record.seller || '';
       document.getElementById('inv-input-seller-taxno').value = record.sellerTaxno || '';
-      document.getElementById('inv-input-buyer').value = record.buyer || ''; 
+      document.getElementById('inv-input-buyer').value = record.buyer || '';
       document.getElementById('inv-input-taxno').value = record.buyerTaxno || '';
-      document.getElementById('inv-input-no').value = record.invoiceNo; 
+      document.getElementById('inv-input-no').value = record.invoiceNo;
       document.getElementById('inv-input-date').value = record.date;
-      document.getElementById('inv-input-payment').value = record.paymentMethod || '银行转账'; 
+      document.getElementById('inv-input-payment').value = record.paymentMethod || '银行转账';
       document.getElementById('inv-input-logs').value = record.logs || '';
 
       itemsBody.innerHTML = '';
       if (record.items && record.items.length > 0) record.items.forEach(it => addRow(it));
       else addRow();
 
-      currentAttachments = record.attachments || []; 
-      renderAttachments(); 
-      
+      currentAttachments = record.attachments || [];
+      renderAttachments();
+
       currentStamp = record.stampData || null;
       if (currentStamp) {
           stampPrevImg.src = currentStamp;
@@ -932,7 +932,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           removeStamp();
       }
 
-      updatePreview(); 
+      updatePreview();
       window.scrollTo({ top: 0, behavior: 'smooth' });
       showToast(`已载入发票 ${invoiceNo}`);
   };
@@ -940,7 +940,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.viewAttachment = function(dataUrl) {
       try {
           const win = window.open();
-          if (win) { win.document.write(`<iframe src="${dataUrl}" frameborder="0" style="border:0;width:100%;height:100vh;" allowfullscreen></iframe>`); win.document.title = "凭证预览"; } 
+          if (win) { win.document.write(`<iframe src="${dataUrl}" frameborder="0" style="border:0;width:100%;height:100vh;" allowfullscreen></iframe>`); win.document.title = "凭证预览"; }
           else showToast("浏览器拦截了弹窗");
       } catch(e) { showToast("无法预览该文件格式"); }
   };
