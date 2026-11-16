@@ -7,7 +7,7 @@
 <!-- 引入 Excel 库和 GSAP 动画库 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-<!-- 引入 Google Fonts (Inter 用于正文，Playfair Display 用于标题艺术字) -->
+<!-- 引入 Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
@@ -81,7 +81,7 @@ p { color: var(--text-muted); }
 .nav-btn:hover { color: var(--text-main); background: var(--card); }
 .nav-btn.active { color: var(--text-main); background: var(--card); border: 1px solid var(--border); font-weight: 600; }
 
-/* 模块容器与动画 —— 修复：active 模块必须可见（opacity: 1） */
+/* 模块容器与动画 */
 .module { display: none; padding: 48px; max-width: 1400px; margin: 0 auto; width: 100%; flex: 1; opacity: 0; }
 .module.active { display: block; opacity: 1; }
 
@@ -110,6 +110,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
   text-align: center; border-radius: var(--radius); padding: 16px;
   position: fixed; z-index: 1000; left: 50%; bottom: 30px;
   font-size: 14px; opacity: 0; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  transform: translateX(-50%);
 }
 
 /* ================= 首页 ================= */
@@ -119,9 +120,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
   max-width: 1100px; margin: 0 auto;
 }
 
-.home-header-text {
-  margin-bottom: 64px;
-}
+.home-header-text { margin-bottom: 64px; }
 .home-subtitle-top {
   font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;
   color: var(--primary); margin-bottom: 16px;
@@ -134,24 +133,19 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
   font-weight: 400;
   letter-spacing: -1.5px;
 }
-.home-title i {
-  font-style: italic;
-  font-weight: 400;
-}
-.home-desc {
-  font-size: 18px; color: var(--text-muted); max-width: 600px; line-height: 1.7;
-}
+.home-title i { font-style: italic; font-weight: 400; }
+.home-desc { font-size: 18px; color: var(--text-muted); max-width: 600px; line-height: 1.7; }
 
 .home-cards {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 32px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 28px;
   width: 100%;
 }
 
 .home-card {
   background: var(--card); border: 1px solid var(--border);
-  border-radius: 4px; padding: 48px; cursor: pointer;
+  border-radius: 4px; padding: 40px; cursor: pointer;
   transition: all 0.3s ease; display: flex; flex-direction: column;
   position: relative; overflow: hidden;
   box-shadow: 0 4px 24px rgba(0,0,0,0.02);
@@ -159,8 +153,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 .home-card:hover { border-color: var(--primary); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.06); }
 
 .home-card-content { flex: 1; z-index: 2; position: relative; }
-.home-card h3 { font-size: 32px; color: var(--text-main); margin-bottom: 12px; }
-.home-card p { font-size: 15px; margin-bottom: 32px; max-width: 80%; line-height: 1.7; }
+.home-card h3 { font-size: 28px; color: var(--text-main); margin-bottom: 12px; }
+.home-card p { font-size: 14px; margin-bottom: 32px; max-width: 85%; line-height: 1.7; }
 .home-card .btn-enter {
   background: var(--text-main); color: #fff; padding: 10px 20px; border-radius: 4px; border: none; font-weight: 500; cursor: pointer;
   transition: background 0.2s;
@@ -171,15 +165,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
   position: absolute;
   bottom: 20px;
   right: 20px;
-  width: 180px;
-  height: 180px;
+  width: 150px;
+  height: 150px;
   z-index: 1;
   opacity: 0.85;
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.home-card:hover .card-svg-bg {
-  transform: scale(1.05) rotate(2deg);
-}
+.home-card:hover .card-svg-bg { transform: scale(1.05) rotate(2deg); }
 
 /* ================= 对账模块 ================= */
 #module-recon .upload-container { display: flex; gap: 32px; margin-bottom: 40px; }
@@ -268,9 +260,96 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 .btn-view-attach { background: var(--bg); color: var(--accent-blue); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); display: inline-block; text-decoration: none; }
 .btn-view-invoice { background: var(--bg); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); }
 
+/* ================= 出纳模块 ================= */
+#module-cashier .cashier-intro { margin-bottom: 32px; }
+#module-cashier .quick-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 28px; }
+#module-cashier .quick-card {
+  background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius);
+  padding: 20px 24px; cursor: pointer; transition: all .2s ease;
+  display: flex; align-items: center; gap: 16px;
+}
+#module-cashier .quick-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.06); }
+#module-cashier .quick-card.active { border-color: var(--primary); background: #FFF9F6; }
+#module-cashier .quick-icon {
+  width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 600; flex-shrink: 0;
+}
+#module-cashier .quick-title { font-weight: 600; font-size: 15px; color: var(--text-main); }
+#module-cashier .quick-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+#module-cashier .entry-panel {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 32px; margin-bottom: 28px;
+}
+#module-cashier .entry-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+#module-cashier .type-switch { display: flex; gap: 4px; background: var(--bg); padding: 4px; border-radius: 10px; }
+#module-cashier .type-btn {
+  padding: 8px 20px; border: none; background: transparent; border-radius: 8px;
+  font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text-muted);
+  font-family: var(--font-sans); transition: all .2s;
+}
+#module-cashier .type-btn.active { background: var(--card); color: var(--text-main); box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+#module-cashier .cash-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+#module-cashier .cf-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+#module-cashier .cf-span-2 { grid-column: span 2; }
+
+/* 回单图片上传区 */
+#module-cashier .cash-receipt-upload {
+  margin-top: 20px; padding: 16px; background: var(--bg);
+  border-radius: var(--radius); border: 1px solid var(--border);
+}
+#module-cashier .cash-receipt-upload .upload-zone-mini {
+  margin-bottom: 0; background: var(--card);
+}
+#module-cashier .cash-receipt-upload .attachment-list {
+  margin-top: 10px; margin-bottom: 0;
+}
+
+#module-cashier .cash-output { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+#module-cashier .cash-tabs { display: flex; gap: 4px; padding: 0 20px; background: var(--bg); border-bottom: 1px solid var(--border); overflow-x: auto; }
+#module-cashier .cash-tab { padding: 14px 16px; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+#module-cashier .cash-tab.active { color: var(--text-main); border-bottom-color: var(--primary); }
+#module-cashier .cash-tab-panel { display: none; padding: 24px; }
+#module-cashier .cash-tab-panel.active { display: block; }
+
+#module-cashier .cash-toolbar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+#module-cashier .cash-toolbar input, #module-cashier .cash-toolbar select { width: auto; flex: 1; min-width: 120px; padding: 8px 12px; font-size: 13px; }
+
+#module-cashier .cash-table { width: 100%; border-collapse: collapse; }
+#module-cashier .cash-table th, #module-cashier .cash-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 13px; text-align: left; }
+#module-cashier .cash-table th { background: var(--bg); color: var(--text-muted); font-weight: 500; font-size: 12px; }
+
+.cash-in { color: var(--match); font-weight: 600; }
+.cash-out { color: var(--diff); font-weight: 600; }
+
+.status-pill { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+.status-pill.PENDING { background: #FFF7ED; color: #C2410C; }
+.status-pill.DONE { background: #EFF6FF; color: #1D4ED8; }
+.status-pill.POSTED { background: #F0FDF4; color: #15803D; }
+
+.btn-mini { padding: 5px 12px; border-radius: 6px; font-size: 12px; border: 1px solid var(--border); background: var(--card); cursor: pointer; color: var(--text-main); font-family: var(--font-sans); }
+.btn-mini:hover { background: var(--bg); }
+.btn-mini-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.btn-mini-primary:hover { background: var(--primary-hover); }
+
+.pair-tag { font-size: 10px; background: var(--company-only-bg); color: var(--company-only); padding: 1px 6px; border-radius: 8px; margin-left: 4px; }
+
+.daily-group { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+.daily-head { display: flex; gap: 20px; align-items: center; padding: 14px 18px; background: var(--bg); cursor: pointer; font-size: 13px; flex-wrap: wrap; user-select: none; }
+.daily-head:hover { background: #F0EFE7; }
+.daily-head .arrow { margin-left: auto; transition: transform .25s; display: inline-block; }
+.daily-group.open .arrow { transform: rotate(180deg); }
+.daily-body { display: none; padding: 8px 18px 16px; }
+.daily-group.open .daily-body { display: block; }
+
+.journal-account { margin-bottom: 32px; }
+.journal-account:last-child { margin-bottom: 0; }
+.journal-account h3 { font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.acc-kind { font-size: 11px; font-weight: 500; background: var(--bg); color: var(--text-muted); padding: 2px 8px; border-radius: 10px; font-family: var(--font-sans); }
+
 @media print {
   body { background: #FFF; }
-  .app-header, #module-home, #module-recon, #module-invoice .form-panel, #module-invoice .ledger-panel, .no-print { display: none !important; }
+  .app-header, #module-home, #module-recon, #module-invoice .form-panel, #module-invoice .ledger-panel, #module-cashier .entry-panel, #module-cashier .quick-cards, .no-print { display: none !important; }
   #module-invoice { padding: 0; margin: 0; display: block !important; max-width: 100%; }
   #module-invoice .layout { display: block; }
   .invoice-panel { box-shadow: none !important; border: none !important; width: 100% !important; padding: 0 !important; margin: 0 !important; }
@@ -288,6 +367,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
   #module-recon .upload-container { flex-direction: column; }
   #module-recon .mapping-row { flex-direction: column; }
   #module-invoice .filter-bar { flex-direction: column; }
+  #module-cashier .quick-cards { grid-template-columns: 1fr; }
+  #module-cashier .cf-span-2 { grid-column: span 1; }
 }
 </style>
 </head>
@@ -302,6 +383,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
     <button type="button" class="nav-btn active" data-target="module-home">首页</button>
     <button type="button" class="nav-btn" data-target="module-recon">数据对账</button>
     <button type="button" class="nav-btn" data-target="module-invoice">智能开票</button>
+    <button type="button" class="nav-btn" data-target="module-cashier">出纳收付</button>
   </div>
 </header>
 
@@ -315,7 +397,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
         Finance<br>
         <i>Workspace</i>
       </h1>
-      <p class="home-desc">安全、精准的本地化财务工具。系统提供深度的数据比对与优雅的票据归档功能，请选择要处理的工作。</p>
+      <p class="home-desc">安全、精准的本地化财务工具。系统提供深度的数据比对、优雅的票据归档与完整的出纳收付流程，请选择要处理的工作。</p>
     </div>
 
     <div class="home-cards">
@@ -352,6 +434,22 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
           <rect x="50" y="30" width="30" height="30" fill="#FFFFFF" stroke="#141413" stroke-width="2"/>
           <rect x="60" y="15" width="20" height="20" fill="#D97757"/>
           <circle cx="35" cy="55" r="2" fill="#141413"/>
+        </svg>
+      </div>
+
+      <div class="home-card" onclick="switchModule('module-cashier')">
+        <div class="home-card-content">
+          <h3 class="serif-title">出纳收付</h3>
+          <p>收款、付款与内部转账登记，自动生成出纳日报、票据台账与现金银行日记账。</p>
+          <button class="btn-enter">进入出纳 →</button>
+        </div>
+        <svg class="card-svg-bg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="18" y="42" width="64" height="40" rx="4" fill="#FFFFFF" stroke="#141413" stroke-width="2"/>
+          <path d="M18 54 L82 54" stroke="#141413" stroke-width="2"/>
+          <circle cx="50" cy="64" r="9" fill="#FFFFFF" stroke="#141413" stroke-width="2"/>
+          <circle cx="50" cy="64" r="2.5" fill="#D97757"/>
+          <rect x="30" y="26" width="40" height="16" rx="2" fill="#FFFFFF" stroke="#141413" stroke-width="2"/>
+          <path d="M50 26 L50 42" stroke="#141413" stroke-width="1.5" stroke-dasharray="3 3"/>
         </svg>
       </div>
 
@@ -547,15 +645,202 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
   </div>
 </div>
 
+<!-- ================= 出纳模块 ================= -->
+<div id="module-cashier" class="module">
+  <div class="cashier-intro">
+    <div class="home-subtitle-top">CASHIER · 出纳</div>
+    <h1 class="serif-title" style="font-size:40px; margin-bottom:12px;">收付款 · 转账 · 日报</h1>
+    <p style="max-width:700px;">依据已审批的有效单据办理收款、付款与内部转账，登记回单与票据信息，自动生成出纳日报、票据台账与现金银行日记账。</p>
+  </div>
+
+  <!-- 快捷入口 -->
+  <div class="quick-cards">
+    <div class="quick-card" data-type="RECEIPT" onclick="setCashierType('RECEIPT')">
+      <div class="quick-icon" style="background:var(--match-bg); color:var(--match);">↓</div>
+      <div>
+        <div class="quick-title">收款登记</div>
+        <div class="quick-desc">客户回款 / 现金收据</div>
+      </div>
+    </div>
+    <div class="quick-card" data-type="PAYMENT" onclick="setCashierType('PAYMENT')">
+      <div class="quick-icon" style="background:var(--diff-bg); color:var(--diff);">↑</div>
+      <div>
+        <div class="quick-title">付款登记</div>
+        <div class="quick-desc">供应商付款 / 报销支出</div>
+      </div>
+    </div>
+    <div class="quick-card" data-type="TRANSFER" onclick="setCashierType('TRANSFER')">
+      <div class="quick-icon" style="background:var(--company-only-bg); color:var(--company-only);">⇄</div>
+      <div>
+        <div class="quick-title">内部转账</div>
+        <div class="quick-desc">账户间划转 · 双向记账</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 登记表单 -->
+  <div class="entry-panel">
+    <div class="entry-head">
+      <h2 class="serif-title" style="font-size:22px;">登记出纳业务</h2>
+      <div class="type-switch">
+        <button type="button" class="type-btn active" data-type="RECEIPT" onclick="setCashierType('RECEIPT')">收款</button>
+        <button type="button" class="type-btn" data-type="PAYMENT" onclick="setCashierType('PAYMENT')">付款</button>
+        <button type="button" class="type-btn" data-type="TRANSFER" onclick="setCashierType('TRANSFER')">内部转账</button>
+      </div>
+    </div>
+
+    <div class="cash-form-grid">
+      <div class="cf-group">
+        <label>业务日期</label>
+        <input type="date" id="cash-date">
+      </div>
+      <div class="cf-group">
+        <label>金额 (元)</label>
+        <input type="number" id="cash-amount" min="0.01" step="0.01" placeholder="0.00">
+      </div>
+      <div class="cf-group">
+        <label id="cash-label-account">收款账户</label>
+        <select id="cash-account"></select>
+      </div>
+      <div class="cf-group" id="cash-field-in-account" style="display:none;">
+        <label>转入账户</label>
+        <select id="cash-in-account"></select>
+      </div>
+      <div class="cf-group" id="cash-field-counterparty">
+        <label id="cash-label-counterparty">付款方名称</label>
+        <input type="text" id="cash-counterparty" placeholder="对方单位 / 个人">
+      </div>
+      <div class="cf-group" id="cash-field-counterparty-account">
+        <label>对方账号</label>
+        <input type="text" id="cash-counterparty-account" placeholder="选填">
+      </div>
+      <div class="cf-group" id="cash-field-source">
+        <label>关联来源单据号</label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="cash-source-doc" placeholder="审批单 / 合同号" style="flex:1;">
+          <select id="cash-source-type" style="width:110px; flex:none;">
+            <option value="审批单">审批单</option>
+            <option value="合同">合同</option>
+            <option value="发票">发票</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+      </div>
+      <div class="cf-group">
+        <label>凭证类型</label>
+        <select id="cash-receipt-type">
+          <option value="BANK_RECEIPT">银行回单</option>
+          <option value="CASH_RECEIPT">现金收据</option>
+          <option value="NOTE">票据</option>
+        </select>
+      </div>
+      <div class="cf-group">
+        <label>回单 / 收据编号</label>
+        <input type="text" id="cash-receipt-no" placeholder="用于重复校验">
+      </div>
+      <div class="cf-group cf-span-2">
+        <label>票据信息</label>
+        <input type="text" id="cash-note-info" placeholder="票号 / 出票日 / 到期日等">
+      </div>
+      <div class="cf-group cf-span-2">
+        <label>备注</label>
+        <input type="text" id="cash-memo" placeholder="选填">
+      </div>
+    </div>
+
+    <!-- 回单图片上传 -->
+    <div class="cash-receipt-upload">
+      <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:8px;">回单 / 收据图片（选填，支持 JPG / PNG）</label>
+      <div class="upload-zone-mini" id="cash-receipt-upload-zone">
+        <p style="margin:0;">📷 点击上传回单 / 收据照片</p>
+        <input type="file" id="cash-receipt-file-input" accept="image/*" style="display:none">
+      </div>
+      <div class="attachment-list" id="cash-receipt-preview"></div>
+    </div>
+
+    <div style="text-align:right; margin-top:24px;">
+      <button type="button" class="btn btn-primary" id="cash-btn-submit">登记收款</button>
+    </div>
+  </div>
+
+  <!-- 输出区 -->
+  <div class="cash-output">
+    <div class="cash-tabs">
+      <div class="cash-tab active" data-tab="register">收付款与转账登记表</div>
+      <div class="cash-tab" data-tab="daily">出纳日报</div>
+      <div class="cash-tab" data-tab="notes">票据台账</div>
+      <div class="cash-tab" data-tab="journal">现金及银行日记账</div>
+    </div>
+
+    <!-- 登记表 -->
+    <div class="cash-tab-panel active" id="cash-tab-register">
+      <div class="cash-toolbar">
+        <select id="cash-filter-type">
+          <option value="">全部类型</option>
+          <option value="RECEIPT">收款</option>
+          <option value="PAYMENT">付款</option>
+          <option value="TRANSFER">转账</option>
+        </select>
+        <select id="cash-filter-status">
+          <option value="">全部状态</option>
+          <option value="PENDING">待办理</option>
+          <option value="DONE">已办理</option>
+          <option value="POSTED">已入账</option>
+        </select>
+        <input type="date" id="cash-filter-start" title="开始日期">
+        <input type="date" id="cash-filter-end" title="结束日期">
+        <button type="button" class="btn" style="background:#9CA3AF; color:#fff; padding:8px 16px; font-size:13px; flex:none;" onclick="resetCashFilters()">重置</button>
+      </div>
+      <div style="overflow:auto;">
+        <table class="cash-table">
+          <thead>
+            <tr>
+              <th>日期</th><th>类型</th><th>金额</th><th>账户</th><th>对方</th>
+              <th>来源单据</th><th>凭证 / 回单</th><th>状态</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="cash-register-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 出纳日报 -->
+    <div class="cash-tab-panel" id="cash-tab-daily">
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">按业务日期汇总，点击日期行可展开查看每笔交易明细。</p>
+      <div id="cash-daily-list"></div>
+    </div>
+
+    <!-- 票据台账 -->
+    <div class="cash-tab-panel" id="cash-tab-notes">
+      <div style="overflow:auto;">
+        <table class="cash-table">
+          <thead>
+            <tr><th>回单 / 收据编号</th><th>凭证类型</th><th>日期</th><th>业务类型</th><th style="text-align:right;">金额</th><th>票据信息</th><th>回单图片</th><th>状态</th></tr>
+          </thead>
+          <tbody id="cash-notes-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 日记账 -->
+    <div class="cash-tab-panel" id="cash-tab-journal">
+      <div class="cash-toolbar">
+        <select id="cash-journal-account"><option value="">全部账户</option></select>
+        <span style="font-size:12px; color:var(--text-muted);">（仅统计「已办理 / 已入账」的实际资金流动）</span>
+      </div>
+      <div id="cash-journal-body"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ================= 1. 路由导航与 GSAP 动画 ================= */
 function switchModule(targetId) {
     const target = document.getElementById(targetId);
-    if (!target) return;                       // 目标不存在直接忽略
+    if (!target) return;
 
     const currentActive = document.querySelector('.module.active');
 
-    // 已经在该模块：仅确保可见并回到顶部，不重复播动画
     if (currentActive === target) {
         gsap.set(target, { opacity: 1, y: 0 });
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -589,19 +874,35 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 });
 
 /* ================= 2. 状态存储引擎 ================= */
-const DB_NAME = 'FinanceWorkbenchDB'; const STORE_NAME = 'Invoices'; const LS_KEY = 'finance_ledger_fallback';
-let storageMode = 'MEMORY'; let db = null; let memoryStore = [];
+const DB_NAME = 'FinanceWorkbenchDB';
+const DB_VERSION = 2;
+const STORE_NAME = 'Invoices';
+const STORE_CASHIER = 'CashierRecords';
+const LS_KEY = 'finance_ledger_fallback';
+const LS_KEY_CASHIER = 'finance_cashier_fallback';
+
+let storageMode = 'MEMORY';
+let db = null;
+const memoryData = { 'Invoices': [], 'CashierRecords': [] };
+
+function lsKeyFor(storeName) { return storeName === STORE_CASHIER ? LS_KEY_CASHIER : LS_KEY; }
+function pkFor(storeName) { return storeName === STORE_CASHIER ? 'id' : 'invoiceNo'; }
 
 async function initStorage() {
     return new Promise((resolve) => {
         try {
-            const request = indexedDB.open(DB_NAME, 1);
-            const timeout = setTimeout(() => tryLSFallback(resolve), 1000);
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            const timeout = setTimeout(() => tryLSFallback(resolve), 1200);
             request.onerror = () => { clearTimeout(timeout); tryLSFallback(resolve); };
             request.onsuccess = (e) => { clearTimeout(timeout); db = e.target.result; storageMode = 'INDEXEDDB'; resolve(storageMode); };
             request.onupgradeneeded = (e) => {
                 const dbInstance = e.target.result;
-                if (!dbInstance.objectStoreNames.contains(STORE_NAME)) dbInstance.createObjectStore(STORE_NAME, { keyPath: 'invoiceNo' });
+                if (!dbInstance.objectStoreNames.contains(STORE_NAME)) {
+                    dbInstance.createObjectStore(STORE_NAME, { keyPath: 'invoiceNo' });
+                }
+                if (!dbInstance.objectStoreNames.contains(STORE_CASHIER)) {
+                    dbInstance.createObjectStore(STORE_CASHIER, { keyPath: 'id' });
+                }
             };
         } catch (err) { tryLSFallback(resolve); }
     });
@@ -610,42 +911,60 @@ function tryLSFallback(resolve) {
     try { localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); storageMode = 'LOCALSTORAGE'; } catch (e) { storageMode = 'MEMORY'; }
     resolve(storageMode);
 }
-async function saveRecordToDB(record) {
+
+async function saveToStore(storeName, record) {
     if (storageMode === 'INDEXEDDB') {
         return new Promise((resolve, reject) => {
-            const req = db.transaction([STORE_NAME], 'readwrite').objectStore(STORE_NAME).put(record);
+            const req = db.transaction([storeName], 'readwrite').objectStore(storeName).put(record);
             req.onsuccess = () => resolve(); req.onerror = (e) => reject(e.target.error);
         });
     } else if (storageMode === 'LOCALSTORAGE') {
-        let data = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
-        const idx = data.findIndex(d => d.invoiceNo === record.invoiceNo);
+        const key = lsKeyFor(storeName);
+        let data = JSON.parse(localStorage.getItem(key) || '[]');
+        const pk = pkFor(storeName);
+        const idx = data.findIndex(d => d[pk] === record[pk]);
         if (idx >= 0) data[idx] = record; else data.push(record);
-        localStorage.setItem(LS_KEY, JSON.stringify(data));
+        localStorage.setItem(key, JSON.stringify(data));
     } else {
-        const idx = memoryStore.findIndex(d => d.invoiceNo === record.invoiceNo);
-        if (idx >= 0) memoryStore[idx] = record; else memoryStore.push(record);
+        const arr = memoryData[storeName];
+        const pk = pkFor(storeName);
+        const idx = arr.findIndex(d => d[pk] === record[pk]);
+        if (idx >= 0) arr[idx] = record; else arr.push(record);
     }
 }
-async function getAllRecordsFromDB() {
+
+async function getAllFromStore(storeName) {
     if (storageMode === 'INDEXEDDB') {
         return new Promise((resolve, reject) => {
-            const req = db.transaction([STORE_NAME], 'readonly').objectStore(STORE_NAME).getAll();
+            const req = db.transaction([storeName], 'readonly').objectStore(storeName).getAll();
             req.onsuccess = () => resolve(req.result); req.onerror = (e) => reject(e.target.error);
         });
-    } else if (storageMode === 'LOCALSTORAGE') { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); }
-    else { return [...memoryStore]; }
-}
-async function clearAllDB() {
-    if (storageMode === 'INDEXEDDB') {
-        return new Promise((resolve, reject) => {
-            const req = db.transaction([STORE_NAME], 'readwrite').objectStore(STORE_NAME).clear();
-            req.onsuccess = () => resolve(); req.onerror = (e) => reject(e.target.error);
-        });
-    } else if (storageMode === 'LOCALSTORAGE') { localStorage.removeItem(LS_KEY); }
-    else { memoryStore = []; }
+    } else if (storageMode === 'LOCALSTORAGE') {
+        return JSON.parse(localStorage.getItem(lsKeyFor(storeName)) || '[]');
+    } else {
+        return [...memoryData[storeName]];
+    }
 }
 
-/* ================= 3. 全局工具与页面逻辑 ================= */
+async function clearStore(storeName) {
+    if (storageMode === 'INDEXEDDB') {
+        return new Promise((resolve, reject) => {
+            const req = db.transaction([storeName], 'readwrite').objectStore(storeName).clear();
+            req.onsuccess = () => resolve(); req.onerror = (e) => reject(e.target.error);
+        });
+    } else if (storageMode === 'LOCALSTORAGE') {
+        localStorage.removeItem(lsKeyFor(storeName));
+    } else {
+        memoryData[storeName] = [];
+    }
+}
+
+/* 兼容旧接口 */
+async function saveRecordToDB(record) { return saveToStore(STORE_NAME, record); }
+async function getAllRecordsFromDB() { return getAllFromStore(STORE_NAME); }
+async function clearAllDB() { return clearStore(STORE_NAME); }
+
+/* ================= 3. 全局工具 ================= */
 function showToast(msg) {
     const t = document.getElementById('toast');
     t.innerText = msg;
@@ -660,8 +979,66 @@ function showToast(msg) {
     }, 3000);
 }
 
+function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function digitUppercase(n) {
+    if (isNaN(n) || n == null) return '零元整';
+    const fr = ['角','分'], d = ['零','壹','贰','叁','肆','伍','陆','柒','捌','玖'];
+    const u = [['元','万','亿'],['','拾','佰','仟']];
+    let head = n < 0 ? '欠' : '';
+    n = Math.abs(n); let s = '';
+    for (let i = 0; i < fr.length; i++) s += (d[Math.floor(n * 10 * Math.pow(10, i)) % 10] + fr[i]).replace(/零./, '');
+    s = s || '整'; n = Math.floor(n);
+    for (let i = 0; i < u[0].length && n > 0; i++) {
+        let p = '';
+        for (let j = 0; j < u[1].length && n > 0; j++) { p = d[n % 10] + u[1][j] + p; n = Math.floor(n / 10); }
+        s = p.replace(/(零.)*零$/, '').replace(/^$/, '零') + u[0][i] + s;
+    }
+    return head + s.replace(/(零.)*零元/, '元').replace(/(零.)+/g, '零').replace(/^整$/, '零元整');
+}
+
+/* ================= 4. 出纳模块常量 ================= */
+const ACCOUNTS = [
+  { id: 'CASH', name: '库存现金', kind: 'CASH' },
+  { id: 'ICBC', name: '工商银行 · 6222 **** 1234', kind: 'BANK' },
+  { id: 'CMB',  name: '招商银行 · 6225 **** 5678', kind: 'BANK' },
+  { id: 'CCB',  name: '建设银行 · 6217 **** 4321', kind: 'BANK' }
+];
+
+const CASH_TYPE_LABEL = {
+  RECEIPT: '收款',
+  PAYMENT: '付款',
+  TRANSFER_OUT: '转账 · 转出',
+  TRANSFER_IN:  '转账 · 转入'
+};
+const CASH_STATUS_LABEL = { PENDING: '待办理', DONE: '已办理', POSTED: '已入账' };
+const RECEIPT_TYPE_LABEL = { BANK_RECEIPT: '银行回单', CASH_RECEIPT: '现金收据', NOTE: '票据' };
+
+function getAccountName(id) {
+  const a = ACCOUNTS.find(x => x.id === id);
+  return a ? a.name : (id || '-');
+}
+function getReceiptTypeLabel(t) { return RECEIPT_TYPE_LABEL[t] || '-'; }
+function isCashIn(r) { return r.type === 'RECEIPT' || r.type === 'TRANSFER_IN'; }
+function signedAmount(r) { return isCashIn(r) ? r.amount : -r.amount; }
+
+/* 通用图片预览窗口 */
+function openImagePreview(dataUrl) {
+    if (!dataUrl) return showToast('无图片可预览');
+    try {
+        const win = window.open();
+        if (win) {
+            win.document.write(`<!DOCTYPE html><html><head><title>图片预览</title></head><body style="margin:0;background:#f5f4ed;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="${dataUrl}" style="max-width:96%;max-height:96vh;object-fit:contain;box-shadow:0 8px 32px rgba(0,0,0,.15);border-radius:6px;"></body></html>`);
+            win.document.close();
+        } else showToast('浏览器拦截了弹窗');
+    } catch(e) { showToast('无法预览'); }
+}
+
+/* ================= 5. 主逻辑 ================= */
 document.addEventListener('DOMContentLoaded', async () => {
-  /* ---- 强制从首页开始（修复：打开时停在首页、不残留滚动位置） ---- */
+  /* ---- 强制从首页开始 ---- */
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   window.scrollTo(0, 0);
 
@@ -681,17 +1058,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await initStorage();
 
-  // 初始化首页动画（只作用于子元素，不改变父级可见性）
-  gsap.fromTo('.home-header-text',
-    { opacity: 0, y: 20 },
-    { opacity: 1, y: 0, duration: 0.8, ease: "power2.out", delay: 0.1 }
-  );
-  gsap.fromTo('.home-card',
-    { opacity: 0, y: 30 },
-    { opacity: 1, y: 0, duration: 0.8, stagger: 0.15, ease: "power2.out", delay: 0.2 }
-  );
+  gsap.fromTo('.home-header-text', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out", delay: 0.1 });
+  gsap.fromTo('.home-card', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.12, ease: "power2.out", delay: 0.2 });
 
-  /* ================= 发票归档 ================= */
+  /* ================= 5.1 发票归档 ================= */
   let currentAttachments = [];
   let currentStamp = null;
   let allRecords = [];
@@ -701,7 +1071,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('inv-input-date').value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
   document.getElementById('inv-input-no').value = 'INV' + Date.now().toString().slice(-8);
 
-  // 附件上传
   const uploadZone = document.getElementById('attach-upload-zone'), fileInput = document.getElementById('attach-file-input'), attachList = document.getElementById('attachment-list');
   uploadZone.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', (e) => {
@@ -718,7 +1087,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderAttachments() { attachList.innerHTML = currentAttachments.map((file, index) => `<div class="attach-item">📄 ${file.name}<button type="button" onclick="removeAttachment(${index})">×</button></div>`).join(''); }
   window.removeAttachment = function(index) { currentAttachments.splice(index, 1); renderAttachments(); };
 
-  // 印章上传
   const stampZone = document.getElementById('stamp-upload-zone'), stampInput = document.getElementById('stamp-file-input');
   const stampPrevArea = document.getElementById('stamp-preview-mini'), stampPrevImg = document.getElementById('stamp-preview-img');
   const invStampImg = document.getElementById('invoice-stamp-img');
@@ -732,10 +1100,8 @@ document.addEventListener('DOMContentLoaded', async () => {
               currentStamp = ev.target.result;
               stampPrevImg.src = currentStamp;
               stampPrevArea.style.display = 'block';
-
               invStampImg.src = currentStamp;
               invStampImg.style.display = 'block';
-
               gsap.fromTo(invStampImg, { scale: 0.8, rotation: -10, opacity: 0 }, { scale: 1, rotation: 0, opacity: 0.85, duration: 0.4, ease: "back.out(1.5)" });
           };
           reader.readAsDataURL(file);
@@ -793,7 +1159,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   itemsBody.addEventListener('click', e => { if (e.target.classList.contains('btn-del')) { e.target.closest('tr').remove(); updatePreview(); } });
   itemsBody.addEventListener('input', e => { if (e.target.tagName === 'INPUT') updatePreview(); });
 
-  // 存入总账
   document.getElementById('inv-btn-submit').addEventListener('click', async (e) => {
     e.preventDefault();
     try {
@@ -945,15 +1310,758 @@ document.addEventListener('DOMContentLoaded', async () => {
       } catch(e) { showToast("无法预览该文件格式"); }
   };
 
-  function digitUppercase(n) {
-    if (isNaN(n) || n == null) return '零元整'; const fr = ['角','分'], d = ['零','壹','贰','叁','肆','伍','陆','柒','捌','玖']; const u = [['元','万','亿'],['','拾','佰','仟']]; let head = n < 0 ? '欠' : ''; n = Math.abs(n); let s = '';
-    for (let i = 0; i < fr.length; i++) s += (d[Math.floor(n * 10 * Math.pow(10, i)) % 10] + fr[i]).replace(/零./, ''); s = s || '整'; n = Math.floor(n);
-    for (let i = 0; i < u[0].length && n > 0; i++) { let p = ''; for (let j = 0; j < u[1].length && n > 0; j++) { p = d[n % 10] + u[1][j] + p; n = Math.floor(n / 10); } s = p.replace(/(零.)*零$/, '').replace(/^$/, '零') + u[0][i] + s; }
-    return head + s.replace(/(零.)*零元/, '元').replace(/(零.)+/g, '零').replace(/^整$/, '零元整');
-  }
-
   addRow();
   await loadAndRenderLedger();
+
+  /* ================= 5.2 对账模块 ================= */
+  let reconBank = null;
+  let reconCompany = null;
+  let reconResults = [];
+  let reconCurrentTab = 'ALL';
+
+  const RECON_STATUS_LABEL = { MATCH: '完全匹配', BANK_ONLY: '企业漏记', COMPANY_ONLY: '银行缺失', DIFF: '金额不符', ERROR: '异常' };
+  const RECON_ROW_CLASS = { MATCH: 'row-match', BANK_ONLY: 'row-bank-only', COMPANY_ONLY: 'row-company-only', DIFF: 'row-diff', ERROR: 'row-error' };
+
+  function parseExcelFile(file) {
+      return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+              try {
+                  const wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
+                  const sheetName = wb.SheetNames[0];
+                  if (!sheetName) return reject(new Error('未找到工作表'));
+                  const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: '' });
+                  if (!rows.length) return reject(new Error('工作表为空'));
+                  resolve({ headers: Object.keys(rows[0]), rows });
+              } catch (err) { reject(new Error('文件格式无法解析')); }
+          };
+          reader.onerror = () => reject(new Error('读取文件失败'));
+          reader.readAsArrayBuffer(file);
+      });
+  }
+
+  function parseAmount(v) {
+      if (v == null) return NaN;
+      if (typeof v === 'number') return v;
+      const s = String(v).replace(/[¥￥$,，\s]/g, '').trim();
+      if (!s) return NaN;
+      const n = parseFloat(s);
+      return isNaN(n) ? NaN : n;
+  }
+
+  function fillSelect(sel, headers, guessPattern) {
+      sel.innerHTML = '';
+      const empty = document.createElement('option');
+      empty.value = ''; empty.textContent = '-- 请选择 --';
+      sel.appendChild(empty);
+      headers.forEach(h => {
+          const o = document.createElement('option');
+          o.value = h; o.textContent = h;
+          sel.appendChild(o);
+      });
+      if (guessPattern) {
+          const guess = headers.find(h => guessPattern.test(h));
+          if (guess) sel.value = guess;
+      }
+  }
+
+  function checkReconReady() {
+      const ready = reconBank && reconCompany &&
+          document.getElementById('recon-map-bank-id').value &&
+          document.getElementById('recon-map-bank-amount').value &&
+          document.getElementById('recon-map-company-id').value &&
+          document.getElementById('recon-map-company-amount').value;
+      document.getElementById('recon-btn-reconcile').disabled = !ready;
+  }
+
+  function buildReconResults(bankRows, companyRows, m) {
+      const results = [];
+      const bankMap = new Map();
+      const companyMap = new Map();
+
+      bankRows.forEach((row, i) => {
+          const raw = row[m.bankId];
+          const id = String(raw == null ? '' : raw).trim();
+          const amount = parseAmount(row[m.bankAmount]);
+          if (!id) {
+              results.push({ id: '(空)', status: 'ERROR', bankAmount: isNaN(amount) ? null : amount, companyAmount: null, detail: `银行表第 ${i + 2} 行：单号为空` });
+              return;
+          }
+          if (isNaN(amount)) {
+              results.push({ id, status: 'ERROR', bankAmount: null, companyAmount: null, detail: `银行表第 ${i + 2} 行：金额无法解析（${row[m.bankAmount]}）` });
+              return;
+          }
+          if (!bankMap.has(id)) bankMap.set(id, { amount: 0, count: 0 });
+          const b = bankMap.get(id); b.amount += amount; b.count++;
+      });
+
+      companyRows.forEach((row, i) => {
+          const raw = row[m.companyId];
+          const id = String(raw == null ? '' : raw).trim();
+          const amount = parseAmount(row[m.companyAmount]);
+          if (!id) {
+              results.push({ id: '(空)', status: 'ERROR', bankAmount: null, companyAmount: isNaN(amount) ? null : amount, detail: `企业表第 ${i + 2} 行：单号为空` });
+              return;
+          }
+          if (isNaN(amount)) {
+              results.push({ id, status: 'ERROR', bankAmount: null, companyAmount: null, detail: `企业表第 ${i + 2} 行：金额无法解析（${row[m.companyAmount]}）` });
+              return;
+          }
+          if (!companyMap.has(id)) companyMap.set(id, { amount: 0, count: 0 });
+          const c = companyMap.get(id); c.amount += amount; c.count++;
+      });
+
+      const allIds = new Set([...bankMap.keys(), ...companyMap.keys()]);
+      allIds.forEach(id => {
+          const b = bankMap.get(id);
+          const c = companyMap.get(id);
+          if (b && c) {
+              const diff = b.amount - c.amount;
+              if (Math.abs(diff) < 0.005) {
+                  results.push({ id, status: 'MATCH', bankAmount: b.amount, companyAmount: c.amount, detail: '' });
+              } else {
+                  results.push({ id, status: 'DIFF', bankAmount: b.amount, companyAmount: c.amount, detail: `差额：${diff > 0 ? '+' : ''}${diff.toFixed(2)}` });
+              }
+          } else if (b) {
+              results.push({ id, status: 'BANK_ONLY', bankAmount: b.amount, companyAmount: null, detail: '银行有流水，企业未记账' });
+          } else {
+              results.push({ id, status: 'COMPANY_ONLY', bankAmount: null, companyAmount: c.amount, detail: '企业已记账，银行无对应流水' });
+          }
+      });
+
+      const order = { ERROR: 0, DIFF: 1, BANK_ONLY: 2, COMPANY_ONLY: 3, MATCH: 4 };
+      results.sort((a, b) => (order[a.status] - order[b.status]) || String(a.id).localeCompare(String(b.id)));
+      return results;
+  }
+
+  function renderReconResults() {
+      const tb = document.getElementById('recon-result-body');
+      const list = reconCurrentTab === 'ALL' ? reconResults : reconResults.filter(r => r.status === reconCurrentTab);
+      if (!list.length) {
+          tb.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:32px;">该分类暂无记录</td></tr>`;
+          return;
+      }
+      tb.innerHTML = list.map(r => {
+          const label = RECON_STATUS_LABEL[r.status] || r.status;
+          const rowCls = RECON_ROW_CLASS[r.status] || '';
+          const bankAmt = r.bankAmount != null ? '¥' + r.bankAmount.toFixed(2) : '-';
+          const companyAmt = r.companyAmount != null ? '¥' + r.companyAmount.toFixed(2) : '-';
+          const detail = r.detail
+              ? (r.status === 'DIFF' ? `<span class="diff-amount">${escapeHtml(r.detail)}</span>` : escapeHtml(r.detail))
+              : '-';
+          return `<tr class="${rowCls}">
+            <td>${escapeHtml(r.id)}</td>
+            <td><span class="status-tag ${r.status}">${label}</span></td>
+            <td>${bankAmt}</td>
+            <td>${companyAmt}</td>
+            <td class="missing-detail">${detail}</td>
+          </tr>`;
+      }).join('');
+  }
+
+  function updateReconBadges() {
+      const counts = { ALL: reconResults.length, MATCH: 0, BANK_ONLY: 0, COMPANY_ONLY: 0, DIFF: 0, ERROR: 0 };
+      reconResults.forEach(r => { if (counts[r.status] != null) counts[r.status]++; });
+      Object.keys(counts).forEach(k => {
+          const el = document.getElementById('badge-' + k);
+          if (el) el.textContent = counts[k];
+      });
+  }
+
+  function handleReconFile(file, side) {
+      if (!file) return;
+      if (!/\.(xlsx|xls)$/i.test(file.name)) return showToast('请上传 .xlsx / .xls 文件');
+      const drop = document.getElementById(side === 'bank' ? 'recon-drop-bank' : 'recon-drop-company');
+      const statusEl = drop.querySelector('p');
+
+      parseExcelFile(file).then(parsed => {
+          statusEl.textContent = `已加载：${file.name}（${parsed.rows.length} 行 · ${parsed.headers.length} 列）`;
+          statusEl.style.color = 'var(--match)';
+          document.getElementById('recon-mapping-area').style.display = 'block';
+
+          if (side === 'bank') {
+              reconBank = parsed;
+              fillSelect(document.getElementById('recon-map-bank-id'), parsed.headers, /单号|流水号|交易号|订单号|编号|id/i);
+              fillSelect(document.getElementById('recon-map-bank-amount'), parsed.headers, /金额|amount|发生额/i);
+          } else {
+              reconCompany = parsed;
+              fillSelect(document.getElementById('recon-map-company-id'), parsed.headers, /单号|流水号|交易号|订单号|编号|id/i);
+              fillSelect(document.getElementById('recon-map-company-amount'), parsed.headers, /金额|amount|发生额/i);
+          }
+          checkReconReady();
+          showToast(`✅ 已加载 ${file.name}`);
+      }).catch(err => {
+          statusEl.textContent = '支持 .xlsx / .xls 格式';
+          statusEl.style.color = '';
+          showToast('❌ ' + (err.message || '文件解析失败'));
+      });
+  }
+
+  (function initReconModule() {
+      const dropBank = document.getElementById('recon-drop-bank');
+      const fileBank = document.getElementById('recon-file-bank');
+      const dropCompany = document.getElementById('recon-drop-company');
+      const fileCompany = document.getElementById('recon-file-company');
+      const btnReconcile = document.getElementById('recon-btn-reconcile');
+      const resultArea = document.getElementById('recon-result-area');
+
+      /* 点击上传 */
+      dropBank.addEventListener('click', (e) => {
+          if (e.target === fileBank) return;
+          fileBank.click();
+      });
+      dropCompany.addEventListener('click', (e) => {
+          if (e.target === fileCompany) return;
+          fileCompany.click();
+      });
+
+      fileBank.addEventListener('change', (e) => {
+          handleReconFile(e.target.files[0], 'bank');
+          fileBank.value = '';
+      });
+      fileCompany.addEventListener('change', (e) => {
+          handleReconFile(e.target.files[0], 'company');
+          fileCompany.value = '';
+      });
+
+      /* 拖拽上传 */
+      [[dropBank, 'bank'], [dropCompany, 'company']].forEach(([zone, side]) => {
+          zone.addEventListener('dragover', (e) => {
+              e.preventDefault();
+              zone.style.borderColor = 'var(--primary)';
+          });
+          zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
+          zone.addEventListener('drop', (e) => {
+              e.preventDefault();
+              zone.style.borderColor = '';
+              const f = e.dataTransfer.files && e.dataTransfer.files[0];
+              if (f) handleReconFile(f, side);
+          });
+      });
+
+      /* 映射变更 */
+      ['recon-map-bank-id', 'recon-map-bank-amount', 'recon-map-company-id', 'recon-map-company-amount'].forEach(id => {
+          document.getElementById(id).addEventListener('change', checkReconReady);
+      });
+
+      /* 开始对账 */
+      btnReconcile.addEventListener('click', () => {
+          const m = {
+              bankId: document.getElementById('recon-map-bank-id').value,
+              bankAmount: document.getElementById('recon-map-bank-amount').value,
+              companyId: document.getElementById('recon-map-company-id').value,
+              companyAmount: document.getElementById('recon-map-company-amount').value
+          };
+          if (!m.bankId || !m.bankAmount || !m.companyId || !m.companyAmount) return showToast('请先选择完整的列映射');
+
+          reconResults = buildReconResults(reconBank.rows, reconCompany.rows, m);
+          reconCurrentTab = 'ALL';
+          document.querySelectorAll('#recon-tabs .tab').forEach(t => t.classList.toggle('active', t.dataset.type === 'ALL'));
+
+          updateReconBadges();
+          renderReconResults();
+          resultArea.style.display = 'block';
+          showToast(`对账完成，共 ${reconResults.length} 条记录`);
+      });
+
+      /* 分类切换 */
+      document.querySelectorAll('#recon-tabs .tab').forEach(tab => {
+          tab.addEventListener('click', () => {
+              document.querySelectorAll('#recon-tabs .tab').forEach(t => t.classList.remove('active'));
+              tab.classList.add('active');
+              reconCurrentTab = tab.dataset.type;
+              renderReconResults();
+          });
+      });
+
+      /* 导出 */
+      document.getElementById('recon-btn-export').addEventListener('click', () => {
+          const list = reconCurrentTab === 'ALL' ? reconResults : reconResults.filter(r => r.status === reconCurrentTab);
+          if (!list.length) return showToast('当前分类无数据可导出');
+          try {
+              const rows = list.map(r => ({
+                  单号: r.id,
+                  状态: RECON_STATUS_LABEL[r.status] || r.status,
+                  银行金额: r.bankAmount != null ? r.bankAmount.toFixed(2) : '',
+                  账面金额: r.companyAmount != null ? r.companyAmount.toFixed(2) : '',
+                  详情: r.detail || ''
+              }));
+              const ws = XLSX.utils.json_to_sheet(rows);
+              const wb = XLSX.utils.book_new();
+              XLSX.utils.book_append_sheet(wb, ws, '对账结果');
+              XLSX.writeFile(wb, `对账结果_${reconCurrentTab}_${Date.now()}.xlsx`);
+              showToast('导出成功');
+          } catch (err) { showToast('导出失败'); }
+      });
+  })();
+
+  /* ================= 5.3 出纳模块 ================= */
+  let cashierRecords = [];
+  let cashierCurrentType = 'RECEIPT';
+  let cashReceiptImage = null;
+
+  /* ---- 账户下拉 ---- */
+  function fillAccountSelects() {
+      const opts = ACCOUNTS.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+      document.getElementById('cash-account').innerHTML = opts;
+      document.getElementById('cash-in-account').innerHTML = opts;
+      document.getElementById('cash-journal-account').innerHTML = '<option value="">全部账户</option>' + opts;
+      document.getElementById('cash-account').value = ACCOUNTS[1].id;
+      document.getElementById('cash-in-account').value = ACCOUNTS[2].id;
+  }
+  fillAccountSelects();
+
+  /* ---- 回单图片上传 ---- */
+  const cashReceiptZone = document.getElementById('cash-receipt-upload-zone');
+  const cashReceiptInput = document.getElementById('cash-receipt-file-input');
+  const cashReceiptPreview = document.getElementById('cash-receipt-preview');
+
+  cashReceiptZone.addEventListener('click', () => cashReceiptInput.click());
+  cashReceiptInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+          const file = e.target.files[0];
+          if (storageMode !== 'INDEXEDDB' && file.size > 800 * 1024) {
+              showToast('当前存储模式不支持超大文件（限 800KB）');
+              cashReceiptInput.value = '';
+              return;
+          }
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+              cashReceiptImage = ev.target.result;
+              renderCashReceiptPreview();
+              showToast('回单图片已加载');
+          };
+          reader.readAsDataURL(file);
+          cashReceiptInput.value = '';
+      }
+  });
+
+  function renderCashReceiptPreview() {
+      if (!cashReceiptImage) { cashReceiptPreview.innerHTML = ''; return; }
+      cashReceiptPreview.innerHTML = `
+        <div class="attach-item">
+          🧾 回单图片已附加
+          <button type="button" onclick="previewCashReceipt()" style="color:var(--accent-blue); font-size:12px;">预览</button>
+          <button type="button" onclick="removeCashReceiptImage()">×</button>
+        </div>`;
+  }
+
+  window.previewCashReceipt = function() { openImagePreview(cashReceiptImage); };
+
+  window.removeCashReceiptImage = function() {
+      cashReceiptImage = null;
+      renderCashReceiptPreview();
+  };
+
+  /* ---- 类型切换 ---- */
+  window.setCashierType = function(type) {
+      cashierCurrentType = type;
+      const isTransfer = type === 'TRANSFER';
+
+      document.querySelectorAll('#module-cashier .quick-card').forEach(c => c.classList.toggle('active', c.dataset.type === type));
+      document.querySelectorAll('#module-cashier .type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+
+      document.getElementById('cash-field-in-account').style.display = isTransfer ? 'block' : 'none';
+      document.getElementById('cash-field-counterparty').style.display = isTransfer ? 'none' : 'block';
+      document.getElementById('cash-field-counterparty-account').style.display = isTransfer ? 'none' : 'block';
+      document.getElementById('cash-field-source').style.display = isTransfer ? 'none' : 'block';
+
+      document.getElementById('cash-label-account').textContent =
+          type === 'RECEIPT' ? '收款账户' : (type === 'PAYMENT' ? '付款账户' : '转出账户');
+      document.getElementById('cash-label-counterparty').textContent =
+          type === 'RECEIPT' ? '付款方名称' : '收款方名称';
+
+      const btn = document.getElementById('cash-btn-submit');
+      btn.textContent = type === 'RECEIPT' ? '登记收款' : (type === 'PAYMENT' ? '登记付款' : '登记转账');
+      btn.style.background = type === 'RECEIPT' ? 'var(--match)' : (type === 'PAYMENT' ? 'var(--diff)' : 'var(--company-only)');
+      btn.style.borderColor = btn.style.background;
+
+      if (isTransfer) {
+          document.getElementById('cash-receipt-type').value = 'BANK_RECEIPT';
+      }
+  };
+
+  /* ---- 重复校验 ---- */
+  async function findDuplicateReceipt(receiptNo, excludeIds) {
+      if (!receiptNo) return null;
+      const all = await getAllFromStore(STORE_CASHIER);
+      return all.find(r => r.receiptNo && r.receiptNo === receiptNo && !(excludeIds || []).includes(r.id)) || null;
+  }
+  async function findDuplicateBusiness(sourceDocNo, amount, excludeIds) {
+      if (!sourceDocNo) return null;
+      const all = await getAllFromStore(STORE_CASHIER);
+      return all.find(r =>
+          r.sourceDocNo === sourceDocNo &&
+          Math.abs((r.amount || 0) - amount) < 0.005 &&
+          r.status === 'POSTED' &&
+          !(excludeIds || []).includes(r.id)
+      ) || null;
+  }
+
+  /* ---- 提交登记 ---- */
+  document.getElementById('cash-btn-submit').addEventListener('click', async () => {
+      const date = document.getElementById('cash-date').value;
+      const amount = parseFloat(document.getElementById('cash-amount').value);
+      const account = document.getElementById('cash-account').value;
+      const receiptNo = document.getElementById('cash-receipt-no').value.trim();
+      const receiptType = document.getElementById('cash-receipt-type').value;
+      const noteInfo = document.getElementById('cash-note-info').value.trim();
+      const memo = document.getElementById('cash-memo').value.trim();
+      const sourceDocNo = document.getElementById('cash-source-doc').value.trim();
+      const sourceDocType = document.getElementById('cash-source-type').value;
+      const counterparty = document.getElementById('cash-counterparty').value.trim();
+      const counterpartyAccount = document.getElementById('cash-counterparty-account').value.trim();
+
+      if (!date) return showToast('请选择业务日期');
+      if (!amount || amount <= 0) return showToast('金额需大于 0');
+      if (!account) return showToast('请选择账户');
+
+      try {
+          if (cashierCurrentType === 'TRANSFER') {
+              const inAccount = document.getElementById('cash-in-account').value;
+              if (!inAccount) return showToast('请选择转入账户');
+              if (inAccount === account) return showToast('转入与转出账户不能相同');
+
+              const dup = await findDuplicateReceipt(receiptNo, []);
+              if (dup) return showToast(`⚠️ 回单号「${receiptNo}」已存在，请勿重复录入`);
+
+              const stamp = Date.now();
+              const outId = `CSH${stamp}O`;
+              const inId  = `CSH${stamp}I`;
+              const base = {
+                  date, amount, receiptNo, receiptType: 'BANK_RECEIPT', noteInfo, memo,
+                  status: 'PENDING', createdAt: stamp,
+                  receiptImage: cashReceiptImage || null
+              };
+              const outRec = Object.assign({}, base, {
+                  id: outId, type: 'TRANSFER_OUT', account,
+                  counterparty: '内部转账', pairedId: inId,
+                  sourceDocNo: '', sourceDocType: ''
+              });
+              const inRec = Object.assign({}, base, {
+                  id: inId, type: 'TRANSFER_IN', account: inAccount,
+                  counterparty: '内部转账', pairedId: outId,
+                  sourceDocNo: '', sourceDocType: ''
+              });
+
+              await saveToStore(STORE_CASHIER, outRec);
+              await saveToStore(STORE_CASHIER, inRec);
+              showToast('✅ 转账已登记（转出 + 转入 双向记账）');
+
+          } else {
+              const dup = await findDuplicateReceipt(receiptNo, []);
+              if (dup) return showToast(`⚠️ 回单号「${receiptNo}」已存在，请勿重复录入`);
+
+              const busDup = await findDuplicateBusiness(sourceDocNo, amount, []);
+              if (busDup) return showToast(`⚠️ 来源单据「${sourceDocNo}」已完成入账，防止同一业务重复入账`);
+
+              const rec = {
+                  id: 'CSH' + Date.now(),
+                  type: cashierCurrentType,
+                  status: 'PENDING',
+                  date, amount, account, counterparty, counterpartyAccount,
+                  sourceDocNo, sourceDocType, receiptNo, receiptType, noteInfo, memo,
+                  receiptImage: cashReceiptImage || null,
+                  createdAt: Date.now()
+              };
+              await saveToStore(STORE_CASHIER, rec);
+              showToast('✅ 登记成功，当前状态：待办理');
+          }
+
+          // 清空输入
+          document.getElementById('cash-amount').value = '';
+          document.getElementById('cash-source-doc').value = '';
+          document.getElementById('cash-receipt-no').value = '';
+          document.getElementById('cash-note-info').value = '';
+          document.getElementById('cash-memo').value = '';
+          document.getElementById('cash-counterparty').value = '';
+          document.getElementById('cash-counterparty-account').value = '';
+          cashReceiptImage = null;
+          renderCashReceiptPreview();
+
+          await loadCashier();
+      } catch (err) {
+          console.error(err);
+          showToast('❌ 登记失败');
+      }
+  });
+
+  /* ---- 状态推进 ---- */
+  window.advanceStatus = async function(id, action) {
+      const all = await getAllFromStore(STORE_CASHIER);
+      const rec = all.find(r => r.id === id);
+      if (!rec) return;
+
+      if (action === 'post') {
+          const busDup = await findDuplicateBusiness(
+              rec.sourceDocNo, rec.amount, [rec.id, rec.pairedId].filter(Boolean)
+          );
+          if (busDup) return showToast(`⚠️ 来源单据「${rec.sourceDocNo}」已有入账记录，防止重复入账`);
+          rec.status = 'POSTED';
+          rec.postedAt = Date.now();
+      } else if (action === 'done') {
+          rec.status = 'DONE';
+          rec.doneAt = Date.now();
+      }
+
+      await saveToStore(STORE_CASHIER, rec);
+
+      if (rec.pairedId) {
+          const pair = all.find(r => r.id === rec.pairedId);
+          if (pair) {
+              pair.status = rec.status;
+              if (rec.doneAt) pair.doneAt = rec.doneAt;
+              if (rec.postedAt) pair.postedAt = rec.postedAt;
+              await saveToStore(STORE_CASHIER, pair);
+          }
+      }
+
+      await loadCashier();
+      showToast(action === 'done' ? '✅ 已确认办理' : '✅ 已入账');
+  };
+
+  /* ---- 查看回单图片 ---- */
+  window.viewRecordReceipt = function(id) {
+      const r = cashierRecords.find(x => x.id === id);
+      if (!r || !r.receiptImage) return showToast('该记录无回单图片');
+      openImagePreview(r.receiptImage);
+  };
+
+  /* ---- 加载 & 渲染 ---- */
+  async function loadCashier() {
+      try {
+          cashierRecords = await getAllFromStore(STORE_CASHIER);
+          cashierRecords.sort((a, b) => {
+              const d = (b.date || '').localeCompare(a.date || '');
+              if (d !== 0) return d;
+              return (b.createdAt || 0) - (a.createdAt || 0);
+          });
+          renderRegister();
+          renderDaily();
+          renderNotes();
+          renderJournal();
+      } catch (err) {
+          console.error(err);
+          showToast('加载出纳数据失败');
+      }
+  }
+
+  /* ---- 登记表 ---- */
+  function renderRegister() {
+      const typeF = document.getElementById('cash-filter-type').value;
+      const statusF = document.getElementById('cash-filter-status').value;
+      const startF = document.getElementById('cash-filter-start').value;
+      const endF = document.getElementById('cash-filter-end').value;
+
+      const list = cashierRecords.filter(r => {
+          if (typeF) {
+              if (typeF === 'TRANSFER') { if (r.type !== 'TRANSFER_OUT' && r.type !== 'TRANSFER_IN') return false; }
+              else if (r.type !== typeF) return false;
+          }
+          if (statusF && r.status !== statusF) return false;
+          if (startF && r.date < startF) return false;
+          if (endF && r.date > endF) return false;
+          return true;
+      });
+
+      const tb = document.getElementById('cash-register-body');
+      if (!list.length) {
+          tb.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:36px;">暂无记录</td></tr>`;
+          return;
+      }
+
+      tb.innerHTML = list.map(r => {
+          const typeLabel = CASH_TYPE_LABEL[r.type] || r.type;
+          const statusLabel = CASH_STATUS_LABEL[r.status] || r.status;
+          const positive = isCashIn(r);
+          const sign = positive ? '+' : '-';
+          const cls = positive ? 'cash-in' : 'cash-out';
+          const pairTag = r.pairedId ? `<span class="pair-tag">⇄ 关联</span>` : '';
+
+          // 凭证 / 回单列（含回单图片查看）
+          let receiptCell = '-';
+          if (r.receiptNo || r.receiptImage) {
+              receiptCell = '';
+              if (r.receiptNo) {
+                  receiptCell += `${r.receiptNo}<div style="font-size:11px;color:var(--text-muted);">${getReceiptTypeLabel(r.receiptType)}</div>`;
+              }
+              if (r.receiptImage) {
+                  receiptCell += `<div style="margin-top:4px;"><a class="btn-view-attach" onclick="viewRecordReceipt('${r.id}')">🧾 查看回单</a></div>`;
+              }
+          }
+
+          let actions = '';
+          if (r.status === 'PENDING') {
+              actions = `<button class="btn-mini" onclick="advanceStatus('${r.id}','done')">确认办理</button>`;
+          } else if (r.status === 'DONE') {
+              actions = `<button class="btn-mini btn-mini-primary" onclick="advanceStatus('${r.id}','post')">入账</button>`;
+          } else {
+              actions = `<span style="color:var(--match); font-size:12px;">✓ 已完成</span>`;
+          }
+
+          return `<tr>
+            <td>${r.date}</td>
+            <td>${typeLabel}${pairTag}</td>
+            <td class="${cls}">${sign}¥${(r.amount || 0).toFixed(2)}</td>
+            <td>${getAccountName(r.account)}</td>
+            <td>${r.counterparty || '-'}</td>
+            <td>${r.sourceDocNo || '-'}</td>
+            <td>${receiptCell}</td>
+            <td><span class="status-pill ${r.status}">${statusLabel}</span></td>
+            <td>${actions}</td>
+          </tr>`;
+      }).join('');
+  }
+
+  window.resetCashFilters = function() {
+      document.getElementById('cash-filter-type').value = '';
+      document.getElementById('cash-filter-status').value = '';
+      document.getElementById('cash-filter-start').value = '';
+      document.getElementById('cash-filter-end').value = '';
+      renderRegister();
+  };
+
+  ['cash-filter-type', 'cash-filter-status', 'cash-filter-start', 'cash-filter-end'].forEach(id => {
+      document.getElementById(id).addEventListener('change', renderRegister);
+  });
+
+  /* ---- 出纳日报 ---- */
+  function renderDaily() {
+      const groups = {};
+      cashierRecords.forEach(r => {
+          if (!groups[r.date]) groups[r.date] = [];
+          groups[r.date].push(r);
+      });
+      const dates = Object.keys(groups).sort().reverse();
+      const container = document.getElementById('cash-daily-list');
+
+      if (!dates.length) {
+          container.innerHTML = `<p style="padding:24px; color:var(--text-muted); text-align:center;">暂无日报数据</p>`;
+          return;
+      }
+
+      container.innerHTML = dates.map(d => {
+          const recs = groups[d];
+          const inSum = recs.filter(isCashIn).reduce((s, r) => s + r.amount, 0);
+          const outSum = recs.filter(r => !isCashIn(r)).reduce((s, r) => s + r.amount, 0);
+          const postedCount = recs.filter(r => r.status === 'POSTED').length;
+
+          const rows = recs.map(r => {
+              const positive = isCashIn(r);
+              let receiptHtml = r.receiptNo || '-';
+              if (r.receiptImage) {
+                  receiptHtml += ` <a class="btn-view-attach" style="margin-left:4px;" onclick="viewRecordReceipt('${r.id}')">🧾</a>`;
+              }
+              return `<tr>
+                <td>${CASH_TYPE_LABEL[r.type] || r.type}</td>
+                <td>${getAccountName(r.account)}</td>
+                <td>${r.counterparty || '-'}</td>
+                <td>${receiptHtml}</td>
+                <td style="text-align:right;" class="${positive ? 'cash-in' : 'cash-out'}">${positive ? '+' : '-'}¥${(r.amount || 0).toFixed(2)}</td>
+                <td><span class="status-pill ${r.status}">${CASH_STATUS_LABEL[r.status]}</span></td>
+              </tr>`;
+          }).join('');
+
+          return `<div class="daily-group">
+            <div class="daily-head" onclick="toggleDaily(this)">
+              <span style="font-weight:600;">📅 ${d}</span>
+              <span class="cash-in">收款 ¥${inSum.toFixed(2)}</span>
+              <span class="cash-out">付款 ¥${outSum.toFixed(2)}</span>
+              <span style="color:var(--text-muted);">净额 ¥${(inSum - outSum).toFixed(2)}</span>
+              <span style="color:var(--text-muted);">共 ${recs.length} 笔 · 已入账 ${postedCount} 笔</span>
+              <span class="arrow">▾</span>
+            </div>
+            <div class="daily-body">
+              <table class="cash-table">
+                <thead><tr><th>类型</th><th>账户</th><th>对方</th><th>回单号</th><th style="text-align:right;">金额</th><th>状态</th></tr></thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>
+          </div>`;
+      }).join('');
+  }
+
+  window.toggleDaily = function(headEl) {
+      headEl.parentElement.classList.toggle('open');
+  };
+
+  /* ---- 票据台账 ---- */
+  function renderNotes() {
+      const list = cashierRecords.filter(r => r.receiptNo || r.receiptImage);
+      const tb = document.getElementById('cash-notes-body');
+      if (!list.length) {
+          tb.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:36px;">暂无票据 / 回单记录</td></tr>`;
+          return;
+      }
+      tb.innerHTML = list.map(r => `<tr>
+        <td style="font-weight:500;">${r.receiptNo || '-'}</td>
+        <td>${getReceiptTypeLabel(r.receiptType)}</td>
+        <td>${r.date}</td>
+        <td>${CASH_TYPE_LABEL[r.type] || r.type}</td>
+        <td style="text-align:right;">¥${(r.amount || 0).toFixed(2)}</td>
+        <td>${r.noteInfo || '-'}</td>
+        <td>${r.receiptImage ? `<a class="btn-view-attach" onclick="viewRecordReceipt('${r.id}')">🧾 查看</a>` : '-'}</td>
+        <td><span class="status-pill ${r.status}">${CASH_STATUS_LABEL[r.status]}</span></td>
+      </tr>`).join('');
+  }
+
+  /* ---- 日记账 ---- */
+  function renderJournal() {
+      const filterAcc = document.getElementById('cash-journal-account').value;
+      const accs = filterAcc ? ACCOUNTS.filter(a => a.id === filterAcc) : ACCOUNTS;
+      const container = document.getElementById('cash-journal-body');
+
+      container.innerHTML = accs.map(acc => {
+          const recs = cashierRecords
+              .filter(r => r.account === acc.id && (r.status === 'DONE' || r.status === 'POSTED'))
+              .sort((a, b) => {
+                  const d = (a.date || '').localeCompare(b.date || '');
+                  if (d !== 0) return d;
+                  return (a.createdAt || 0) - (b.createdAt || 0);
+              });
+
+          let balance = 0;
+          const rows = recs.map(r => {
+              const positive = isCashIn(r);
+              balance += signedAmount(r);
+              return `<tr>
+                <td>${r.date}</td>
+                <td>${CASH_TYPE_LABEL[r.type] || r.type}${r.counterparty ? ' · ' + r.counterparty : ''}</td>
+                <td style="text-align:right; color:var(--match);">${positive ? '¥' + r.amount.toFixed(2) : '-'}</td>
+                <td style="text-align:right; color:var(--diff);">${!positive ? '¥' + r.amount.toFixed(2) : '-'}</td>
+                <td style="text-align:right; font-weight:500;">¥${balance.toFixed(2)}</td>
+              </tr>`;
+          }).join('') || `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:20px;">暂无流水</td></tr>`;
+
+          return `<div class="journal-account">
+            <h3>${acc.name} <span class="acc-kind">${acc.kind === 'CASH' ? '现金' : '银行存款'}</span></h3>
+            <table class="cash-table">
+              <thead><tr><th>日期</th><th>摘要</th><th style="text-align:right;">收入</th><th style="text-align:right;">支出</th><th style="text-align:right;">余额</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`;
+      }).join('');
+  }
+
+  document.getElementById('cash-journal-account').addEventListener('change', renderJournal);
+
+  /* ---- 输出区 Tab ---- */
+  document.querySelectorAll('#module-cashier .cash-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+          document.querySelectorAll('#module-cashier .cash-tab').forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('#module-cashier .cash-tab-panel').forEach(p => p.classList.remove('active'));
+          tab.classList.add('active');
+          document.getElementById('cash-tab-' + tab.dataset.tab).classList.add('active');
+      });
+  });
+
+  /* ---- 初始化出纳模块 ---- */
+  const now = new Date();
+  document.getElementById('cash-date').value =
+      `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+  setCashierType('RECEIPT');
+  await loadCashier();
 });
 </script>
 </body>
