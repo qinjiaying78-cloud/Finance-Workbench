@@ -3,116 +3,397 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>财务工作台 | 多级容灾存储版</title>
+<title>财务流程工作台 | 极简高级版</title>
+<!-- 引入 Excel 库和 GSAP 动画库 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<!-- 引入 Google Fonts (Inter 用于正文，Playfair Display 用于标题艺术字) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
 <style>
-:root{
-  --bg:#F9F9F8;--card:#FFF;--primary:#D97757;--primary-h:#C46545;
-  --text:#1D1C1B;--muted:#6B6A68;--border:#E5E5E0;--input-bg:#F3F3F0;
-  --match:#5D9C7A;--bank-only:#E0A25E;--company-only:#6B8CBA;--diff:#D96262;--error:#A3A3A3;
+/* ================= 核心设计系统 (Anthropic 研报风格) ================= */
+:root {
+  /* 色彩 */
+  --bg: #F5F4ED;            /* 暖米白 */
+  --card: #FFFFFF;          /* 卡片纯白 */
+  --border: #E8E6DC;        /* 暖灰色极细边框 */
+  --text-main: #141413;     /* 近黑深灰 */
+  --text-muted: #6B6A65;    /* 次要文字 */
+  --primary: #D97757;       /* 陶土橙 */
+  --primary-hover: #C46545;
+  --accent-blue: #6B8CBA;   /* 辅助湖蓝 */
+  --input-bg: #F9F9F6;
+  --radius: 12px;
+  
+  /* 字体 */
+  --font-serif: "Playfair Display", "Georgia", "Tiempos Headline", serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  
+  /* 状态色 */
+  --match: #5D9C7A; --match-bg: #F0FDF4;
+  --bank-only: #E0A25E; --bank-only-bg: #FFF7ED;
+  --company-only: #6B8CBA; --company-only-bg: #EFF6FF;
+  --diff: #D96262; --diff-bg: #FEF2F2;
+  --error: #A3A3A3; --error-bg: #F8FAFC;
 }
-*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-body{margin:0;background:var(--bg);color:var(--text);line-height:1.5}
-.app-header{background:var(--bg);padding:20px 40px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
-.app-logo{font-size:18px;font-weight:600;display:flex;gap:10px;align-items:center}
-.app-logo span{color:var(--primary);font-size:22px}
-.nav-tabs{display:flex;gap:8px;background:var(--input-bg);padding:4px;border-radius:12px}
-.nav-btn{padding:8px 20px;border:none;background:transparent;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;border-radius:8px}
-.nav-btn.active{background:var(--card);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.05);font-weight:600}
-.module{display:none;padding:40px;max-width:1300px;margin:0 auto}
-.module.active{display:block}
-.btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-weight:500;font-size:14px;background:var(--text);color:#fff}
-.btn-primary{background:var(--primary)}
-.btn:disabled{background:var(--border);color:var(--muted);cursor:not-allowed}
-input,select,textarea{width:100%;padding:10px 14px;background:var(--input-bg);border:1px solid transparent;border-radius:8px;font-size:14px;outline:none;transition: 0.2s;}
-input:focus,select:focus,textarea:focus{background:var(--card);border-color:var(--primary);box-shadow:0 0 0 3px rgba(217,119,87,.1)}
-#toast{visibility:hidden;min-width:250px;background:var(--text);color:#fff;text-align:center;border-radius:8px;padding:16px;position:fixed;z-index:1000;left:50%;bottom:30px;transform:translateX(-50%);font-size:14px;opacity:0;transition:opacity .3s,bottom .3s}
-#toast.show{visibility:visible;opacity:1;bottom:50px}
 
-/* 对账部分样式 */
-#module-recon .upload-container{display:flex;gap:24px;margin-bottom:30px}
-#module-recon .drop-zone{flex:1;border:1.5px dashed var(--border);border-radius:16px;padding:40px;text-align:center;background:var(--card);cursor:pointer}
-#module-recon .mapping-area{display:none;background:var(--card);padding:24px;border-radius:16px;margin-bottom:24px;border:1px solid var(--border)}
-#module-recon .mapping-row{display:flex;gap:24px;margin-bottom:16px}
-#module-recon .mapping-group{flex:1;display:flex;align-items:center;gap:12px}
-#module-recon .result-area{display:none;background:var(--card);border-radius:16px;border:1px solid var(--border);overflow:hidden;margin-top:24px}
-#module-recon .tabs{display:flex;border-bottom:1px solid var(--border);padding:0 20px;gap:8px;overflow-x:auto}
-#module-recon .tab{padding:16px 12px;cursor:pointer;border-bottom:2px solid transparent;font-size:14px;font-weight:500;color:var(--muted);white-space:nowrap}
-#module-recon .tab.active{border-bottom-color:var(--text);color:var(--text)}
-#module-recon .tab .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:12px;color:#fff;margin-left:6px}
-#module-recon table{width:100%;border-collapse:collapse;text-align:left}
-#module-recon th,#module-recon td{padding:14px 18px;border-bottom:1px solid var(--border);font-size:14px;vertical-align:top}
-#module-recon th{background:#FAFAFA;color:var(--muted);font-weight:500}
-.row-match{background:var(--card)}.row-diff{background:#FEF2F2}.row-bank-only{background:#FFF7ED}.row-company-only{background:#EFF6FF}.row-error{background:#F8FAFC}
-.status-tag{display:inline-flex;font-weight:600;font-size:13px;padding:4px 8px;border-radius:6px;white-space:nowrap}
-.status-tag.MATCH{color:var(--match);background:rgba(93,156,122,.1)}.status-tag.BANK_ONLY{color:var(--bank-only);background:rgba(224,162,94,.1)}.status-tag.COMPANY_ONLY{color:var(--company-only);background:rgba(107,140,186,.1)}.status-tag.DIFF{color:var(--diff);background:rgba(217,98,98,.1)}.status-tag.ERROR{color:var(--error);background:rgba(163,163,163,.1)}
-.missing-detail{font-size:13px;line-height:1.7;color:var(--text)}.missing-detail .label{color:var(--muted);display:inline-block;min-width:72px}.diff-amount{color:var(--diff);font-weight:600}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg);
+  color: var(--text-main);
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
 
-/* 发票部分样式 */
-#module-invoice .layout{display:flex;gap:32px;align-items:flex-start}
-#module-invoice .form-panel{flex:1.2;background:var(--card);padding:32px;border-radius:16px;border:1px solid var(--border);min-width:480px}
-#module-invoice .invoice-panel{flex:1;background:var(--card);padding:40px;border-radius:16px;border:1px solid var(--border);min-width:420px}
-#module-invoice h2{margin-top:0;font-size:18px;font-weight:600;margin-bottom:20px}
-#module-invoice .form-group{margin-bottom:16px}
-#module-invoice .form-group label{display:block;margin-bottom:8px;font-size:13px;color:var(--muted)}
+h1, h2, h3, .serif-title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.5px;
+}
+p { color: var(--text-muted); }
 
-.additional-info{background:var(--input-bg);padding:20px;border-radius:12px;margin-bottom:20px;margin-top:32px;border: 1px solid var(--border);}
-.additional-info h3{font-size:14px;font-weight:600;margin-top:0;margin-bottom:15px;display:flex;align-items:center;gap:6px;color:var(--text)}
-.upload-zone-mini{border:1px dashed var(--border);border-radius:8px;padding:15px;text-align:center;cursor:pointer;background:var(--card);transition:0.2s;margin-bottom:15px}
-.upload-zone-mini:hover{border-color:var(--primary)}
-.upload-zone-mini p{margin:0;font-size:13px;color:var(--muted)}
-.attachment-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:15px}
-.attach-item{background:var(--card);border:1px solid var(--border);padding:6px 12px;border-radius:20px;font-size:12px;display:flex;align-items:center;gap:8px;color:var(--text)}
-.attach-item button{background:transparent;border:none;color:var(--diff);cursor:pointer;font-size:14px;padding:0;line-height:1}
-.additional-info textarea{resize:vertical;min-height:80px;font-family:inherit}
+/* 顶部导航 */
+.app-header {
+  padding: 24px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--bg);
+  position: sticky; top: 0; z-index: 100;
+}
+.app-logo { 
+  font-family: var(--font-serif); 
+  font-size: 22px; 
+  font-weight: 600;
+  display: flex; gap: 12px; align-items: center; cursor: pointer; 
+}
+.app-logo span { color: var(--primary); font-size: 24px; }
+.nav-tabs { display: flex; gap: 8px; }
+.nav-btn {
+  padding: 8px 16px; border: none; background: transparent; font-size: 14px; font-weight: 500;
+  color: var(--text-muted); cursor: pointer; border-radius: var(--radius);
+  transition: all 0.2s ease; font-family: var(--font-sans);
+}
+.nav-btn:hover { color: var(--text-main); background: var(--card); }
+.nav-btn.active { color: var(--text-main); background: var(--card); border: 1px solid var(--border); font-weight: 600; }
 
-#module-invoice .items-table{width:100%;border-collapse:collapse;margin-bottom:20px;table-layout:fixed}
-#module-invoice .items-table th{padding:8px 4px;text-align:left;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border)}
-#module-invoice .items-table td{padding:8px 4px;border-bottom:1px solid var(--border)}
-#module-invoice .items-table input{border:none;padding:8px;background:transparent}
-#module-invoice .btn-add{background:var(--input-bg);color:var(--text);width:100%;padding:10px;margin-bottom:20px;border-radius:8px;border:none;cursor:pointer;font-weight:500;}
-#module-invoice .btn-submit{width:100%;padding:14px;font-size:15px;font-weight:600;background:var(--match);color:white;}
-#module-invoice .btn-del{background:transparent;color:var(--diff);border:none;cursor:pointer}
+/* 模块容器与动画 */
+.module { display: none; padding: 48px; max-width: 1400px; margin: 0 auto; width: 100%; flex: 1; opacity: 0; }
+.module.active { display: block; }
 
-#module-invoice .invoice-header{text-align:center;border-bottom:2px solid var(--primary);padding-bottom:16px;margin-bottom:24px}
-#module-invoice .invoice-header h1{color:var(--primary);margin:0;font-size:22px;letter-spacing:4px;font-weight:500}
-#module-invoice .invoice-meta{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:16px}
-#module-invoice .invoice-info{background:var(--input-bg);padding:16px;border-radius:8px;font-size:13px;margin-bottom:24px;line-height:1.8}
-#module-invoice .invoice-table{width:100%;border-collapse:collapse;margin-bottom:24px;text-align:left}
-#module-invoice .invoice-table th,#module-invoice .invoice-table td{padding:12px 8px;border-bottom:1px solid var(--border);font-size:13px}
-#module-invoice .invoice-table th{color:var(--muted);font-weight:500}
-#module-invoice .invoice-total{text-align:right;font-size:13px;line-height:2;margin-bottom:24px;color:var(--muted)}
-#module-invoice .total-amount{font-size:20px;font-weight:600;color:var(--text)}
-#module-invoice .stamp{text-align:right}
-#module-invoice .stamp-circle{display:inline-block;width:90px;height:90px;border:2px solid var(--primary);border-radius:50%;color:var(--primary);text-align:center;line-height:24px;font-weight:500;transform:rotate(-15deg);opacity:.6;font-size:12px;padding-top:20px}
+/* 按钮与输入框 */
+.btn {
+  padding: 10px 24px; border-radius: var(--radius); border: none; cursor: pointer;
+  font-weight: 500; font-size: 14px; font-family: var(--font-sans);
+  transition: all 0.2s ease; background: var(--card); color: var(--text-main); border: 1px solid var(--border);
+}
+.btn:hover { background: var(--bg); }
+.btn-primary { background: var(--primary); color: #FFF; border-color: var(--primary); }
+.btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-#module-invoice .ledger-panel{margin-top:32px;background:var(--card);padding:32px;border-radius:16px;border:1px solid var(--border)}
-#module-invoice .ledger-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
-#module-invoice .ledger-table{width:100%;border-collapse:collapse}
-#module-invoice .ledger-table th,#module-invoice .ledger-table td{padding:16px 8px;border-bottom:1px solid var(--border);text-align:left;font-size:13px}
-#module-invoice .ledger-table th{color:var(--muted);font-weight:500}
-.btn-view-attach{background:#EFF6FF;color:#3B82F6;padding:4px 8px;border-radius:4px;font-size:12px;text-decoration:none;cursor:pointer;border:1px solid #BFDBFE;margin-left:8px;display:inline-block;}
-.btn-view-attach:hover{background:#DBEAFE;}
+input, select, textarea {
+  width: 100%; padding: 12px 16px; background: var(--input-bg);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  font-size: 14px; color: var(--text-main); font-family: var(--font-sans);
+  outline: none; transition: border-color 0.2s ease;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--primary); background: var(--card); }
 
-@media print{body{background:#fff}.app-header,#module-recon,#module-invoice .form-panel,#module-invoice .ledger-panel,.no-print{display:none!important}#module-invoice{padding:0;margin:0;display:block!important}#module-invoice .layout{display:block}#module-invoice .invoice-panel{box-shadow:none;border:none;width:100%;padding:0}}
+/* Toast */
+#toast {
+  visibility: hidden; min-width: 250px; background: var(--text-main); color: var(--bg);
+  text-align: center; border-radius: var(--radius); padding: 16px;
+  position: fixed; z-index: 1000; left: 50%; bottom: 30px;
+  font-size: 14px; opacity: 0; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+/* ================= 首页 (完全复刻研报排版) ================= */
+.home-container { 
+  display: flex; flex-direction: column; 
+  justify-content: center; min-height: 75vh; 
+  max-width: 1100px; margin: 0 auto;
+}
+
+/* 头部排版 */
+.home-header-text {
+  margin-bottom: 64px;
+}
+.home-subtitle-top {
+  font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;
+  color: var(--primary); margin-bottom: 16px;
+}
+/* 艺术字大标题 */
+.home-title { 
+  font-size: 80px; 
+  color: var(--text-main); 
+  line-height: 1.05; 
+  margin-bottom: 24px; 
+  font-weight: 400;
+  letter-spacing: -1.5px;
+}
+.home-title i {
+  font-style: italic;
+  font-weight: 400;
+}
+.home-desc { 
+  font-size: 18px; color: var(--text-muted); max-width: 600px; line-height: 1.7;
+}
+
+/* 卡片网格 */
+.home-cards { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 32px; 
+  width: 100%;
+}
+
+/* 卡片设计 */
+.home-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 4px; padding: 48px; cursor: pointer;
+  transition: all 0.3s ease; display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.02);
+}
+.home-card:hover { border-color: var(--primary); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.06); }
+
+/* 卡片内部布局 */
+.home-card-content { flex: 1; z-index: 2; position: relative; }
+.home-card h3 { font-size: 32px; color: var(--text-main); margin-bottom: 12px; }
+.home-card p { font-size: 15px; margin-bottom: 32px; max-width: 80%; line-height: 1.7; }
+.home-card .btn-enter { 
+  background: var(--text-main); color: #fff; padding: 10px 20px; border-radius: 4px; border: none; font-weight: 500; cursor: pointer; 
+  transition: background 0.2s;
+}
+.home-card:hover .btn-enter { background: var(--primary); }
+
+/* 纯 SVG 极简线稿绘图 */
+.card-svg-bg {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 180px;
+  height: 180px;
+  z-index: 1;
+  opacity: 0.85;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.home-card:hover .card-svg-bg {
+  transform: scale(1.05) rotate(2deg);
+}
+
+/* ================= 对账模块 ================= */
+#module-recon .upload-container { display: flex; gap: 32px; margin-bottom: 40px; }
+#module-recon .drop-zone {
+  flex: 1; border: 1.5px dashed var(--border); border-radius: var(--radius);
+  padding: 48px; text-align: center; background: var(--card); cursor: pointer;
+  transition: all 0.2s ease;
+}
+#module-recon .drop-zone:hover { border-color: var(--primary); }
+#module-recon .mapping-area { display: none; background: var(--card); padding: 32px; border-radius: var(--radius); margin-bottom: 32px; border: 1px solid var(--border); }
+#module-recon .mapping-row { display: flex; gap: 24px; margin-bottom: 16px; }
+#module-recon .mapping-group { flex: 1; display: flex; align-items: center; gap: 12px; }
+#module-recon .result-area { display: none; background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; margin-top: 32px; }
+#module-recon .tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 24px; gap: 8px; overflow-x: auto; background: var(--bg); }
+#module-recon .tab { padding: 16px 12px; cursor: pointer; border-bottom: 2px solid transparent; font-size: 14px; font-weight: 500; color: var(--text-muted); }
+#module-recon .tab.active { border-bottom-color: var(--primary); color: var(--text-main); }
+#module-recon .tab .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; color: #fff; margin-left: 6px; }
+#module-recon table { width: 100%; border-collapse: collapse; text-align: left; }
+#module-recon th, #module-recon td { padding: 16px 24px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: top; }
+#module-recon th { background: var(--bg); color: var(--text-muted); font-weight: 500; }
+.row-match { background: var(--card); }
+.row-diff { background: var(--diff-bg); }
+.row-bank-only { background: var(--bank-only-bg); }
+.row-company-only { background: var(--company-only-bg); }
+.row-error { background: var(--error-bg); }
+.status-tag { display: inline-flex; font-weight: 500; font-size: 13px; padding: 4px 10px; border-radius: 6px; white-space: nowrap; }
+.status-tag.MATCH { color: var(--match); border: 1px solid var(--match); }
+.status-tag.BANK_ONLY { color: var(--bank-only); border: 1px solid var(--bank-only); }
+.status-tag.COMPANY_ONLY { color: var(--company-only); border: 1px solid var(--company-only); }
+.status-tag.DIFF { color: var(--diff); border: 1px solid var(--diff); }
+.status-tag.ERROR { color: var(--error); border: 1px solid var(--error); }
+.missing-detail { font-size: 13px; line-height: 1.6; color: var(--text-main); }
+.missing-detail .label { color: var(--text-muted); display: inline-block; min-width: 72px; }
+.diff-amount { color: var(--diff); font-weight: 600; }
+
+/* ================= 开票模块 ================= */
+#module-invoice .layout { display: flex; gap: 40px; align-items: flex-start; }
+#module-invoice .form-panel { flex: 1.2; background: var(--card); padding: 40px; border-radius: var(--radius); border: 1px solid var(--border); }
+#module-invoice .invoice-panel { flex: 1; background: var(--card); padding: 48px; border-radius: var(--radius); border: 1px solid var(--border); position: relative; box-shadow: 0 8px 32px rgba(0,0,0,0.04); }
+#module-invoice h2 { font-size: 24px; margin-bottom: 24px; }
+#module-invoice .form-group { margin-bottom: 20px; }
+#module-invoice .form-group label { display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-muted); }
+
+/* 附加信息 */
+.additional-info { background: var(--bg); padding: 24px; border-radius: var(--radius); margin-bottom: 24px; margin-top: 40px; border: 1px solid var(--border); }
+.additional-info h3 { font-size: 18px; margin-bottom: 16px; }
+.upload-zone-mini { border: 1px dashed var(--border); border-radius: var(--radius); padding: 16px; text-align: center; cursor: pointer; background: var(--card); margin-bottom: 16px; }
+.upload-zone-mini:hover { border-color: var(--primary); }
+.attachment-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.attach-item { background: var(--card); border: 1px solid var(--border); padding: 6px 12px; border-radius: 20px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+.attach-item button { background: transparent; border: none; color: var(--diff); cursor: pointer; font-size: 14px; }
+.additional-info textarea { resize: vertical; min-height: 100px; }
+
+/* 明细表格 */
+#module-invoice .items-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; table-layout: fixed; }
+#module-invoice .items-table th { padding: 12px 8px; text-align: left; font-size: 13px; color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 500; }
+#module-invoice .items-table td { padding: 8px 4px; border-bottom: 1px solid var(--border); }
+#module-invoice .items-table input { border: none; border-radius: 0; padding: 8px; background: transparent; border-bottom: 1px solid transparent; }
+#module-invoice .items-table input:focus { border-bottom-color: var(--primary); }
+#module-invoice .btn-add { background: var(--bg); color: var(--text-main); width: 100%; padding: 12px; margin-bottom: 24px; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer; font-weight: 500; }
+#module-invoice .btn-submit { width: 100%; padding: 16px; font-size: 16px; background: var(--primary); color: #fff; border: none; border-radius: var(--radius); cursor: pointer; font-weight: 500; }
+#module-invoice .btn-del { background: transparent; color: var(--diff); border: none; cursor: pointer; }
+
+/* 发票预览排版 */
+#module-invoice .invoice-header { text-align: center; border-bottom: 2px solid var(--primary); padding-bottom: 24px; margin-bottom: 32px; }
+#module-invoice .invoice-header h1 { color: var(--primary); font-size: 32px; letter-spacing: 4px; }
+#module-invoice .invoice-meta { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+#module-invoice .invoice-info { background: var(--bg); padding: 20px; border-radius: var(--radius); font-size: 14px; margin-bottom: 32px; line-height: 1.8; }
+#module-invoice .invoice-table { width: 100%; border-collapse: collapse; margin-bottom: 32px; text-align: left; }
+#module-invoice .invoice-table th, #module-invoice .invoice-table td { padding: 14px 8px; border-bottom: 1px solid var(--border); font-size: 14px; }
+#module-invoice .invoice-table th { color: var(--text-muted); font-weight: 500; }
+#module-invoice .invoice-total { text-align: right; font-size: 14px; line-height: 2; margin-bottom: 24px; color: var(--text-muted); }
+#module-invoice .total-amount { font-size: 28px; color: var(--text-main); margin-top: 8px; }
+
+/* 印章区域 */
+#invoice-stamp-area {
+  position: absolute; bottom: 60px; right: 60px; width: 140px; height: 140px;
+  display: flex; align-items: center; justify-content: center; opacity: 0.85;
+  pointer-events: none;
+}
+#invoice-stamp-area img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+
+/* 总账面板 */
+#module-invoice .ledger-panel { margin-top: 40px; background: var(--card); padding: 40px; border-radius: var(--radius); border: 1px solid var(--border); }
+#module-invoice .ledger-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+#module-invoice .filter-bar { display: flex; gap: 16px; margin-bottom: 24px; background: var(--bg); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); flex-wrap: wrap; }
+#module-invoice .filter-bar input, #module-invoice .filter-bar select { padding: 10px; font-size: 13px; flex: 1; min-width: 140px; }
+#module-invoice .ledger-table { width: 100%; border-collapse: collapse; }
+#module-invoice .ledger-table th, #module-invoice .ledger-table td { padding: 16px 12px; border-bottom: 1px solid var(--border); text-align: left; font-size: 14px; }
+#module-invoice .ledger-table th { color: var(--text-muted); font-weight: 500; background: var(--bg); }
+.btn-view-attach { background: var(--bg); color: var(--accent-blue); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); display: inline-block; text-decoration: none; }
+.btn-view-invoice { background: var(--bg); color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); }
+
+/* 打印样式 */
+@media print {
+  body { background: #FFF; }
+  .app-header, #module-home, #module-recon, #module-invoice .form-panel, #module-invoice .ledger-panel, .no-print { display: none !important; }
+  #module-invoice { padding: 0; margin: 0; display: block !important; max-width: 100%; }
+  #module-invoice .layout { display: block; }
+  .invoice-panel { box-shadow: none !important; border: none !important; width: 100% !important; padding: 0 !important; margin: 0 !important; }
+  #invoice-stamp-area { bottom: 40px; right: 40px; }
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .home-cards { grid-template-columns: 1fr; }
+  .home-title { font-size: 56px; }
+  .card-svg-bg { width: 120px; height: 120px; bottom: 10px; right: 10px; }
+  #module-invoice .layout { flex-direction: column; }
+  #module-invoice .form-panel, #module-invoice .invoice-panel { width: 100%; min-width: 100%; }
+  .app-header { padding: 16px 24px; flex-direction: column; gap: 16px; }
+  .module { padding: 24px; }
+  #module-recon .upload-container { flex-direction: column; }
+  #module-recon .mapping-row { flex-direction: column; }
+  #module-invoice .filter-bar { flex-direction: column; }
+}
 </style>
 </head>
 <body>
 <div id="toast">操作提示</div>
 
 <header class="app-header no-print">
-  <div class="app-logo"><span>✻</span> 财务智能工作台</div>
+  <div class="app-logo" onclick="switchModule('module-home')">
+    <span>✻</span> 财务流程工作台
+  </div>
   <div class="nav-tabs">
-    <button type="button" class="nav-btn active" data-target="module-recon">数据对账</button>
+    <button type="button" class="nav-btn" data-target="module-home">首页</button>
+    <button type="button" class="nav-btn" data-target="module-recon">数据对账</button>
     <button type="button" class="nav-btn" data-target="module-invoice">智能开票</button>
   </div>
 </header>
 
+<!-- ================= 首页 (研报排版) ================= -->
+<div id="module-home" class="module active">
+  <div class="home-container">
+    
+    <!-- 头部文本：修改为艺术字样式 -->
+    <div class="home-header-text">
+      <div class="home-subtitle-top">FINANCE WORKSPACE</div>
+      <h1 class="home-title serif-title">
+        Finance<br>
+        <i>Workspace</i>
+      </h1>
+      <p class="home-desc">安全、精准的本地化财务工具。系统提供深度的数据比对与优雅的票据归档功能，请选择要处理的工作。</p>
+    </div>
+    
+    <!-- 卡片网格 -->
+    <div class="home-cards">
+      
+      <!-- 对账卡片 -->
+      <div class="home-card" onclick="switchModule('module-recon')">
+        <div class="home-card-content">
+          <h3 class="serif-title">数据对账</h3>
+          <p>支持 Excel 流水导入。智能比对，精准定位差异、漏记与异常单号。</p>
+          <button class="btn-enter">进入对账 →</button>
+        </div>
+        <!-- 极简手绘线稿：手托网络节点 (参考 Anthropic 风格) -->
+        <svg class="card-svg-bg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M30 70 C 20 70, 15 80, 20 90 C 25 95, 40 95, 50 85 C 60 75, 65 50, 65 30" stroke="#141413" stroke-width="2" stroke-linecap="round"/>
+          <path d="M40 80 C 50 80, 60 70, 60 50 C 60 30, 50 20, 40 20" stroke="#141413" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 4"/>
+          <circle cx="65" cy="30" r="8" fill="#FFFFFF" stroke="#141413" stroke-width="2"/>
+          <circle cx="80" cy="15" r="4" fill="#FFFFFF" stroke="#141413" stroke-width="2"/>
+          <circle cx="90" cy="40" r="6" fill="#FFFFFF" stroke="#141413" stroke-width="2"/>
+          <circle cx="75" cy="55" r="5" fill="#FFFFFF" stroke="#141413" stroke-width="2"/>
+          <line x1="65" y1="30" x2="80" y2="15" stroke="#141413" stroke-width="1.5"/>
+          <line x1="65" y1="30" x2="90" y2="40" stroke="#141413" stroke-width="1.5"/>
+          <line x1="65" y1="30" x2="75" y2="55" stroke="#141413" stroke-width="1.5"/>
+          <circle cx="65" cy="30" r="2" fill="#D97757"/>
+        </svg>
+      </div>
+
+      <!-- 开票卡片 -->
+      <div class="home-card" onclick="switchModule('module-invoice')">
+        <div class="home-card-content">
+          <h3 class="serif-title">智能开票</h3>
+          <p>录入明细，自动计算金额。支持上传真实印章、合同凭证及历史总账管理。</p>
+          <button class="btn-enter">进入开票 →</button>
+        </div>
+        <!-- 极简手绘线稿：手与几何形状 (参考 Anthropic 风格) -->
+        <svg class="card-svg-bg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 80 C 10 70, 15 50, 30 45 C 40 40, 50 50, 60 50 C 70 50, 75 60, 75 70" stroke="#141413" stroke-width="2" stroke-linecap="round"/>
+          <path d="M30 90 L 70 90 L 80 70 L 60 70 L 50 90" stroke="#141413" stroke-width="2" stroke-linejoin="round"/>
+          <rect x="50" y="30" width="30" height="30" fill="#FFFFFF" stroke="#141413" stroke-width="2"/>
+          <rect x="60" y="15" width="20" height="20" fill="#D97757"/>
+          <circle cx="35" cy="55" r="2" fill="#141413"/>
+        </svg>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <!-- ================= 对账模块 ================= -->
-<div id="module-recon" class="module active">
+<div id="module-recon" class="module">
   <div class="upload-container">
-    <div class="drop-zone" id="recon-drop-bank"><h3>上传【银行流水】</h3><p>支持 .xlsx / .xls</p><input type="file" id="recon-file-bank" accept=".xlsx,.xls" style="display:none"></div>
-    <div class="drop-zone" id="recon-drop-company"><h3>上传【内部记账】</h3><p>支持 .xlsx / .xls</p><input type="file" id="recon-file-company" accept=".xlsx,.xls" style="display:none"></div>
+    <div class="drop-zone" id="recon-drop-bank">
+      <h3 class="serif-title">上传【银行流水】</h3>
+      <p>支持 .xlsx / .xls 格式</p>
+      <input type="file" id="recon-file-bank" accept=".xlsx,.xls" style="display:none">
+    </div>
+    <div class="drop-zone" id="recon-drop-company">
+      <h3 class="serif-title">上传【内部记账】</h3>
+      <p>支持 .xlsx / .xls 格式</p>
+      <input type="file" id="recon-file-company" accept=".xlsx,.xls" style="display:none">
+    </div>
   </div>
   <div class="mapping-area" id="recon-mapping-area">
     <div class="mapping-row">
@@ -124,17 +405,21 @@ input:focus,select:focus,textarea:focus{background:var(--card);border-color:var(
       <div class="mapping-group"><label>企业金额列</label><select id="recon-map-company-amount"></select></div>
     </div>
   </div>
-  <div style="text-align:center;margin-top:24px"><button type="button" class="btn btn-primary" id="recon-btn-reconcile" disabled>开始对账</button></div>
+  <div style="text-align:center; margin-top: 32px;">
+    <button type="button" class="btn btn-primary" id="recon-btn-reconcile" disabled>开始对账</button>
+  </div>
   <div class="result-area" id="recon-result-area">
     <div class="tabs" id="recon-tabs">
-      <div class="tab active" data-type="ALL">全部 <span class="badge" id="badge-ALL" style="background:#A3A3A3">0</span></div>
-      <div class="tab" data-type="MATCH">匹配 <span class="badge" id="badge-MATCH" style="background:var(--match)">0</span></div>
+      <div class="tab active" data-type="ALL">全部记录 <span class="badge" id="badge-ALL" style="background:var(--text-muted)">0</span></div>
+      <div class="tab" data-type="MATCH">完全匹配 <span class="badge" id="badge-MATCH" style="background:var(--match)">0</span></div>
       <div class="tab" data-type="BANK_ONLY">企业漏记 <span class="badge" id="badge-BANK_ONLY" style="background:var(--bank-only)">0</span></div>
       <div class="tab" data-type="COMPANY_ONLY">银行缺失 <span class="badge" id="badge-COMPANY_ONLY" style="background:var(--company-only)">0</span></div>
       <div class="tab" data-type="DIFF">金额不符 <span class="badge" id="badge-DIFF" style="background:var(--diff)">0</span></div>
       <div class="tab" data-type="ERROR">异常 <span class="badge" id="badge-ERROR" style="background:var(--error)">0</span></div>
     </div>
-    <div style="padding:16px 20px;text-align:right;border-bottom:1px solid var(--border);background:#FAFAFA"><button type="button" class="btn" id="recon-btn-export" style="background:#fff;color:var(--text);border:1px solid var(--border)">导出当前分类</button></div>
+    <div style="padding:16px 24px; text-align:right; border-bottom:1px solid var(--border);">
+      <button type="button" class="btn" id="recon-btn-export">导出当前分类</button>
+    </div>
     <div style="overflow:auto">
       <table id="recon-result-table">
         <thead><tr><th width="16%">单号</th><th width="13%">状态</th><th width="12%">银行金额</th><th width="12%">账面金额</th><th width="47%">缺失/差异详情</th></tr></thead>
@@ -144,26 +429,22 @@ input:focus,select:focus,textarea:focus{background:var(--card);border-color:var(
   </div>
 </div>
 
-<!-- ================= 发票模块 ================= -->
+<!-- ================= 开票模块 ================= -->
 <div id="module-invoice" class="module">
   <div class="layout">
-    <!-- 左侧：表单 -->
+    <!-- 左侧录入 -->
     <div class="form-panel no-print">
-      <h2>发票信息录入</h2>
-      
-      <div style="background:#F8FAFC; padding:15px; border-radius:8px; margin-bottom:16px; border:1px dashed var(--border);">
-        <div class="form-group" style="margin-bottom:10px;"><label>销售方名称 (我方)</label><input type="text" id="inv-input-seller" class="inv-sync" placeholder="您的企业名称" value="深圳市星辰科技有限公司"></div>
+      <h2 class="serif-title">发票信息录入</h2>
+      <div style="background:var(--bg); padding:20px; border-radius:var(--radius); margin-bottom:24px; border:1px solid var(--border);">
+        <div class="form-group" style="margin-bottom:12px;"><label>销售方名称 (我方)</label><input type="text" id="inv-input-seller" class="inv-sync" placeholder="您的企业名称" value="深圳市星辰科技有限公司"></div>
         <div class="form-group" style="margin-bottom:0;"><label>销售方税号</label><input type="text" id="inv-input-seller-taxno" class="inv-sync" placeholder="您的纳税人识别号" value="91440300MA5F123456"></div>
       </div>
-
       <div class="form-group"><label>购买方名称 (客户) <span style="color:var(--diff)">*</span></label><input type="text" id="inv-input-buyer" class="inv-sync" autocomplete="off"></div>
       <div class="form-group"><label>购买方税号</label><input type="text" id="inv-input-taxno" class="inv-sync" autocomplete="off"></div>
-      
-      <div class="form-group" style="display:flex;gap:16px">
-        <div style="flex:1"><label>发票号码</label><input type="text" id="inv-input-no" readonly style="background:transparent;border:1px dashed var(--border)"></div>
+      <div class="form-group" style="display:flex; gap:16px;">
+        <div style="flex:1"><label>发票号码</label><input type="text" id="inv-input-no" readonly style="background:transparent; border:1px dashed var(--border);"></div>
         <div style="flex:1"><label>开票日期</label><input type="date" id="inv-input-date" class="inv-sync"></div>
       </div>
-      
       <div class="form-group">
         <label>收款方式</label>
         <select id="inv-input-payment" class="inv-sync">
@@ -175,7 +456,7 @@ input:focus,select:focus,textarea:focus{background:var(--card);border-color:var(
         </select>
       </div>
 
-      <h2 style="margin-top:32px">商品明细</h2>
+      <h2 class="serif-title" style="margin-top:40px;">商品明细</h2>
       <table class="items-table" id="inv-items-table">
         <thead><tr><th width="40%">商品名称</th><th width="15%">数量</th><th width="20%">单价</th><th width="20%">小计</th><th width="5%"></th></tr></thead>
         <tbody id="inv-items-body"></tbody>
@@ -183,388 +464,300 @@ input:focus,select:focus,textarea:focus{background:var(--card);border-color:var(
       <button type="button" class="btn-add" id="inv-btn-add">+ 添加明细</button>
       
       <div class="additional-info">
-        <h3>📎 附加信息与凭证</h3>
+        <h3 class="serif-title">附加信息与凭证</h3>
         
-        <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:8px;">上传发货单、合同等证明文件（多级存储自适应）：</label>
+        <!-- 附件上传 -->
+        <label style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:8px;">上传发货单、合同等证明文件：</label>
         <div class="upload-zone-mini" id="attach-upload-zone">
-          <p>点击选择文件 (支持 PDF / JPG / PNG)</p>
+          <p style="margin:0;">点击选择文件 (PDF / JPG / PNG)</p>
           <input type="file" id="attach-file-input" multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none">
         </div>
         <div class="attachment-list" id="attachment-list"></div>
 
-        <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:8px;">补充日志 / 备注说明：</label>
-        <textarea id="inv-input-logs" placeholder="记录特殊说明，如：已核对纸质发货单，金额无误..."></textarea>
-      </div>
+        <!-- 印章上传 -->
+        <label style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:8px; margin-top:16px;">上传发票专用章 (PNG透明底最佳)：</label>
+        <div class="upload-zone-mini" id="stamp-upload-zone">
+          <p style="margin:0; color:var(--primary);">点击上传印章图片</p>
+          <input type="file" id="stamp-file-input" accept=".png,.jpg,.jpeg" style="display:none">
+        </div>
+        <div id="stamp-preview-mini" style="display:none; margin-top:10px;">
+            <img id="stamp-preview-img" style="max-height:60px; border:1px solid var(--border); border-radius:4px; padding:4px; background:#fff;">
+            <button type="button" class="btn" style="padding:4px 8px; font-size:12px; margin-left:8px;" onclick="removeStamp()">清除印章</button>
+        </div>
 
+        <label style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:8px; margin-top:16px;">补充日志 / 备注说明：</label>
+        <textarea id="inv-input-logs" placeholder="记录特殊说明..."></textarea>
+      </div>
       <button type="button" class="btn btn-submit" id="inv-btn-submit">生成发票并存入总账</button>
     </div>
 
-    <!-- 右侧：发票预览 -->
+    <!-- 右侧发票预览 -->
     <div class="invoice-panel" id="inv-print-area">
-      <div class="invoice-header"><h1>增值税电子普通发票</h1></div>
-      <div class="invoice-meta"><span>发票代码: 044001900111</span><span>发票号码: <span id="inv-prev-no">-</span></span></div>
-      <div class="invoice-meta"><span>开票日期: <span id="inv-prev-date">-</span></span><span>收款方式: <span id="inv-prev-payment">-</span></span></div>
+      <div class="invoice-header"><h1 class="serif-title">增值税电子普通发票</h1></div>
+      <div class="invoice-meta">
+        <span>发票代码: 044001900111</span>
+        <span>发票号码: <span id="inv-prev-no">-</span></span>
+      </div>
+      <div class="invoice-meta">
+        <span>开票日期: <span id="inv-prev-date">-</span></span>
+        <span>收款方式: <span id="inv-prev-payment">-</span></span>
+      </div>
       
       <div class="invoice-info">
-        <div style="font-weight:600;margin-bottom:8px;">购买方信息</div>
+        <div style="font-weight:500; margin-bottom:8px; color:var(--text-main);">购买方信息</div>
         <div>名称：<span id="inv-prev-buyer">-</span></div>
         <div>纳税人识别号：<span id="inv-prev-taxno">-</span></div>
-        <div style="font-weight:600;margin-top:12px;margin-bottom:8px;">销售方信息</div>
+        <div style="font-weight:500; margin-top:16px; margin-bottom:8px; color:var(--text-main);">销售方信息</div>
         <div>名称：<span id="inv-prev-seller">-</span></div>
         <div>纳税人识别号：<span id="inv-prev-seller-taxno">-</span></div>
       </div>
 
-      <table class="invoice-table"><thead><tr><th>服务名称</th><th>数量</th><th>单价</th><th>金额</th></tr></thead><tbody id="inv-prev-items-body"></tbody></table>
+      <table class="invoice-table">
+        <thead><tr><th>服务名称</th><th>数量</th><th>单价</th><th>金额</th></tr></thead>
+        <tbody id="inv-prev-items-body"></tbody>
+      </table>
+      
       <div class="invoice-total">
         <div>合计金额：￥<span id="inv-prev-total">0.00</span></div>
-        <div>价税合计(大写)：<span id="inv-prev-upper" style="color:var(--text);font-weight:500">零元整</span></div>
-        <div class="total-amount">(小写) ￥<span id="inv-prev-total-small">0.00</span></div>
+        <div>价税合计(大写)：<span id="inv-prev-upper" style="color:var(--text-main); font-weight:500;">零元整</span></div>
+        <div class="total-amount serif-title">(小写) ￥<span id="inv-prev-total-small">0.00</span></div>
       </div>
-      <div class="stamp"><div class="stamp-circle">发票专用章<br>XXXX公司</div></div>
+      
+      <!-- 动态印章区域 -->
+      <div id="invoice-stamp-area">
+        <img id="invoice-stamp-img" src="" alt="印章" style="display:none;">
+      </div>
     </div>
   </div>
 
-  <!-- 底部：总账单 -->
+  <!-- 总账面板 -->
   <div class="ledger-panel no-print">
     <div class="ledger-header">
-      <div><h2 style="display:inline-block;margin:0">历史开票总账</h2><button type="button" class="btn" id="inv-btn-clear" style="background:transparent;color:var(--diff);font-size:13px;padding:4px 8px;margin-left:12px;border:none">清空记录</button></div>
-      <div style="display:flex;align-items:center;gap:16px">
-        <span id="inv-summary-text" style="font-size:14px;font-weight:500;color:var(--muted)">共 0 张 | ￥0.00</span>
-        <button type="button" class="btn" id="inv-btn-export" style="background:#fff;color:var(--text);border:1px solid var(--border)">导出 Excel</button>
-        <button type="button" class="btn" onclick="window.print()" style="background:var(--input-bg);color:var(--text)">打印发票</button>
+      <div>
+        <h2 class="serif-title" style="display:inline-block; margin:0;">历史开票总账</h2>
+        <button type="button" class="btn" id="inv-btn-clear" style="background:transparent; color:var(--diff); font-size:13px; padding:4px 8px; margin-left:12px; border:none;">清空</button>
+      </div>
+      <div style="display:flex; align-items:center; gap:16px;">
+        <button type="button" class="btn" id="inv-btn-export">导出 Excel</button>
       </div>
     </div>
+    
+    <div class="filter-bar">
+      <input type="text" id="f-invoice-no" placeholder="🔍 发票号码">
+      <input type="text" id="f-buyer" placeholder="🔍 购买方名称">
+      <select id="f-payment">
+        <option value="">全部收款方式</option>
+        <option value="银行转账">银行转账</option>
+        <option value="支付宝">支付宝</option>
+        <option value="微信支付">微信支付</option>
+        <option value="现金">现金</option>
+        <option value="支票">支票</option>
+      </select>
+      <div style="display:flex; align-items:center; gap:8px; flex:1;">
+        <input type="date" id="f-date-start" title="开始日期" style="width:auto;">
+        <span style="color:var(--text-muted);">至</span>
+        <input type="date" id="f-date-end" title="结束日期" style="width:auto;">
+      </div>
+      <button type="button" class="btn" onclick="document.getElementById('f-invoice-no').value='';document.getElementById('f-buyer').value='';document.getElementById('f-payment').value='';document.getElementById('f-date-start').value='';document.getElementById('f-date-end').value='';filterLedger();" style="background:#9CA3AF; padding:8px 16px; font-size:13px; color:#fff;">重置</button>
+    </div>
+
     <table class="ledger-table">
-      <thead><tr><th>发票号码</th><th>开票日期</th><th>购买方</th><th>金额</th><th>收款方式</th><th>凭证与日志</th></tr></thead>
+      <thead><tr><th>操作</th><th>发票号码</th><th>开票日期</th><th>购买方</th><th>金额</th><th>收款方式</th><th>凭证与日志</th></tr></thead>
       <tbody id="inv-ledger-body"></tbody>
+      <tfoot>
+        <tr style="background:var(--bg); font-weight:bold;">
+          <td colspan="4" style="text-align:right; padding-right:24px;">筛选结果总计：</td>
+          <td style="color:var(--primary); font-size:16px;" id="filtered-total-amount">¥0.00</td>
+          <td colspan="2" style="color:var(--text-muted);" id="filtered-total-count">共 0 张</td>
+        </tr>
+      </tfoot>
     </table>
   </div>
 </div>
 
 <script>
-/* ================= 1. 自适应多级存储引擎 ================= */
-const DB_NAME = 'FinanceWorkbenchDB';
-const STORE_NAME = 'Invoices';
-const LS_KEY = 'finance_ledger_fallback';
+/* ================= 1. 路由导航与 GSAP 动画 ================= */
+function switchModule(targetId) {
+    const currentActive = document.querySelector('.module.active');
+    const target = document.getElementById(targetId);
+    
+    if (currentActive === target) return;
 
-let storageMode = 'MEMORY'; // 默认为内存
-let db = null;
-let memoryStore = [];
+    if (currentActive) {
+        currentActive.classList.remove('active');
+        currentActive.style.display = 'none';
+    }
 
-// 环境探测与初始化
+    target.classList.add('active');
+    target.style.display = 'block';
+    
+    gsap.fromTo(target, 
+        { opacity: 0, y: 15 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
+    );
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        if(btn.dataset.target === targetId) btn.classList.add('active');
+        else btn.classList.remove('active');
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', e => switchModule(e.target.dataset.target)));
+
+/* ================= 2. 状态存储引擎 ================= */
+const DB_NAME = 'FinanceWorkbenchDB'; const STORE_NAME = 'Invoices'; const LS_KEY = 'finance_ledger_fallback';
+let storageMode = 'MEMORY'; let db = null; let memoryStore = [];
+
 async function initStorage() {
     return new Promise((resolve) => {
-        // 1. 尝试探测 IndexedDB
         try {
-            if (window.location.protocol === 'file:' && !window.indexedDB) throw new Error('File protocol restricted');
             const request = indexedDB.open(DB_NAME, 1);
-            
-            // 设定 1 秒超时防挂起
-            const timeout = setTimeout(() => {
-                console.warn('IndexedDB 响应超时，降级至 LocalStorage');
-                tryLSFallback(resolve);
-            }, 1000);
-
-            request.onerror = (e) => {
-                clearTimeout(timeout);
-                console.warn('IndexedDB 打开失败:', e.target.error);
-                tryLSFallback(resolve);
-            };
-
-            request.onsuccess = (e) => {
-                clearTimeout(timeout);
-                db = e.target.result;
-                storageMode = 'INDEXEDDB';
-                console.log('✅ 存储引擎: IndexedDB');
-                resolve(storageMode);
-            };
-
+            const timeout = setTimeout(() => tryLSFallback(resolve), 1000);
+            request.onerror = () => { clearTimeout(timeout); tryLSFallback(resolve); };
+            request.onsuccess = (e) => { clearTimeout(timeout); db = e.target.result; storageMode = 'INDEXEDDB'; resolve(storageMode); };
             request.onupgradeneeded = (e) => {
                 const dbInstance = e.target.result;
-                if (!dbInstance.objectStoreNames.contains(STORE_NAME)) {
-                    dbInstance.createObjectStore(STORE_NAME, { keyPath: 'invoiceNo' });
-                }
+                if (!dbInstance.objectStoreNames.contains(STORE_NAME)) dbInstance.createObjectStore(STORE_NAME, { keyPath: 'invoiceNo' });
             };
-        } catch (err) {
-            console.warn('IndexedDB 环境受限:', err);
-            tryLSFallback(resolve);
-        }
+        } catch (err) { tryLSFallback(resolve); }
     });
 }
-
 function tryLSFallback(resolve) {
-    // 2. 尝试探测 LocalStorage
-    try {
-        const testKey = '__storage_test__';
-        localStorage.setItem(testKey, '1');
-        localStorage.removeItem(testKey);
-        storageMode = 'LOCALSTORAGE';
-        console.log('⚠️ 存储引擎: LocalStorage (IndexedDB 受限)');
-    } catch (e) {
-        // 3. 兜底内存模式
-        storageMode = 'MEMORY';
-        console.log('❌ 存储引擎: 内存模式 (仅当前会话有效)');
-    }
+    try { localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); storageMode = 'LOCALSTORAGE'; } catch (e) { storageMode = 'MEMORY'; }
     resolve(storageMode);
 }
-
-/* 数据操作抽象层 */
 async function saveRecordToDB(record) {
     if (storageMode === 'INDEXEDDB') {
         return new Promise((resolve, reject) => {
-            const tx = db.transaction([STORE_NAME], 'readwrite');
-            const store = tx.objectStore(STORE_NAME);
-            const req = store.put(record);
-            req.onsuccess = () => resolve();
-            req.onerror = (e) => reject(e.target.error);
+            const req = db.transaction([STORE_NAME], 'readwrite').objectStore(STORE_NAME).put(record);
+            req.onsuccess = () => resolve(); req.onerror = (e) => reject(e.target.error);
         });
     } else if (storageMode === 'LOCALSTORAGE') {
-        try {
-            let data = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
-            const idx = data.findIndex(d => d.invoiceNo === record.invoiceNo);
-            if (idx >= 0) data[idx] = record;
-            else data.push(record);
-            localStorage.setItem(LS_KEY, JSON.stringify(data));
-        } catch (err) {
-            console.warn('LocalStorage 容量超限，自动切换至内存模式', err);
-            storageMode = 'MEMORY';
-            throw err;
-        }
+        let data = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+        const idx = data.findIndex(d => d.invoiceNo === record.invoiceNo);
+        if (idx >= 0) data[idx] = record; else data.push(record);
+        localStorage.setItem(LS_KEY, JSON.stringify(data));
     } else {
-        // 内存模式
         const idx = memoryStore.findIndex(d => d.invoiceNo === record.invoiceNo);
-        if (idx >= 0) memoryStore[idx] = record;
-        else memoryStore.push(record);
+        if (idx >= 0) memoryStore[idx] = record; else memoryStore.push(record);
     }
 }
-
 async function getAllRecordsFromDB() {
     if (storageMode === 'INDEXEDDB') {
         return new Promise((resolve, reject) => {
-            const tx = db.transaction([STORE_NAME], 'readonly');
-            const req = tx.objectStore(STORE_NAME).getAll();
-            req.onsuccess = () => resolve(req.result);
-            req.onerror = (e) => reject(e.target.error);
+            const req = db.transaction([STORE_NAME], 'readonly').objectStore(STORE_NAME).getAll();
+            req.onsuccess = () => resolve(req.result); req.onerror = (e) => reject(e.target.error);
         });
-    } else if (storageMode === 'LOCALSTORAGE') {
-        return JSON.parse(localStorage.getItem(LS_KEY) || '[]');
-    } else {
-        return [...memoryStore];
-    }
+    } else if (storageMode === 'LOCALSTORAGE') { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } 
+    else { return [...memoryStore]; }
 }
-
 async function clearAllDB() {
     if (storageMode === 'INDEXEDDB') {
         return new Promise((resolve, reject) => {
-            const tx = db.transaction([STORE_NAME], 'readwrite');
-            const req = tx.objectStore(STORE_NAME).clear();
-            req.onsuccess = () => resolve();
-            req.onerror = (e) => reject(e.target.error);
+            const req = db.transaction([STORE_NAME], 'readwrite').objectStore(STORE_NAME).clear();
+            req.onsuccess = () => resolve(); req.onerror = (e) => reject(e.target.error);
         });
-    } else if (storageMode === 'LOCALSTORAGE') {
-        localStorage.removeItem(LS_KEY);
-    } else {
-        memoryStore = [];
-    }
+    } else if (storageMode === 'LOCALSTORAGE') { localStorage.removeItem(LS_KEY); } 
+    else { memoryStore = []; }
 }
 
-/* ================= 2. 全局工具 ================= */
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.innerText = msg; t.className = 'show'; clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.className = '', 4000);
+/* ================= 3. 全局工具与页面逻辑 ================= */
+function showToast(msg) { 
+    const t = document.getElementById('toast'); 
+    t.innerText = msg; 
+    t.style.visibility = 'visible'; 
+    
+    gsap.killTweensOf(t);
+    gsap.fromTo(t, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" });
+    
+    clearTimeout(t._timer); 
+    t._timer = setTimeout(() => { 
+        gsap.to(t, { opacity: 0, y: 20, duration: 0.3, onComplete: () => t.style.visibility = 'hidden' });
+    }, 3000); 
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // 导航切换
-  document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', e => {
-    document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
-    document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
-    e.target.classList.add('active'); document.getElementById(e.target.dataset.target).classList.add('active');
-  }));
+  await initStorage();
+  
+  // 初始化首页动画
+  gsap.fromTo('.home-header-text', 
+    { opacity: 0, y: 20 }, 
+    { opacity: 1, y: 0, duration: 0.8, ease: "power2.out", delay: 0.1 }
+  );
+  gsap.fromTo('.home-card', 
+    { opacity: 0, y: 30 }, 
+    { opacity: 1, y: 0, duration: 0.8, stagger: 0.15, ease: "power2.out", delay: 0.2 }
+  );
 
-  // 初始化存储引擎
-  const mode = await initStorage();
-  if (mode === 'MEMORY') {
-      showToast('⚠️ 浏览器禁用了本地存储，附件功能受限，刷新后数据将丢失。建议使用本地服务器(localhost)打开。');
-  }
-
-  /* ================= 模块 1：对账工具 ================= */
-  (function() {
-    let bankData = [], companyData = [], reconciledResults = [], currentTab = 'ALL';
-    const statusText = { MATCH: '✓ 匹配', BANK_ONLY: '⚠️ 企业漏记', COMPANY_ONLY: '⚠️ 银行缺失', DIFF: '❌ 金额不符', ERROR: '🔄 异常' };
-    const rowClass = { MATCH: 'row-match', BANK_ONLY: 'row-bank-only', COMPANY_ONLY: 'row-company-only', DIFF: 'row-diff', ERROR: 'row-error' };
-    const dropBank = document.getElementById('recon-drop-bank'), fileBank = document.getElementById('recon-file-bank');
-    const dropCompany = document.getElementById('recon-drop-company'), fileCompany = document.getElementById('recon-file-company');
-    const mappingArea = document.getElementById('recon-mapping-area'), btnReconcile = document.getElementById('recon-btn-reconcile');
-    const resultArea = document.getElementById('recon-result-area'), resultBody = document.getElementById('recon-result-body');
-
-    function setupUpload(drop, input, isBank) {
-      drop.addEventListener('click', () => input.click());
-      drop.addEventListener('dragover', e => { e.preventDefault(); drop.style.borderColor = '#D97757'; });
-      drop.addEventListener('dragleave', () => drop.style.borderColor = '#E5E5E0');
-      drop.addEventListener('drop', e => { e.preventDefault(); drop.style.borderColor = '#E5E5E0'; if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0], isBank); });
-      input.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0], isBank); });
-    }
-    setupUpload(dropBank, fileBank, true); setupUpload(dropCompany, fileCompany, false);
-
-    function handleFile(file, isBank) {
-      const reader = new FileReader();
-      reader.onload = e => {
-        try {
-          const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: true, codepage: 65001 });
-          const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
-          if (!data.length) return showToast('表格为空');
-          if (isBank) { bankData = data; dropBank.querySelector('h3').innerText = `已加载: ${file.name}`; dropBank.querySelector('p').innerText = `共 ${data.length} 行`; populateMapping(data, 'recon-map-bank-id', 'recon-map-bank-amount'); }
-          else { companyData = data; dropCompany.querySelector('h3').innerText = `已加载: ${file.name}`; dropCompany.querySelector('p').innerText = `共 ${data.length} 行`; populateMapping(data, 'recon-map-company-id', 'recon-map-company-amount'); }
-          if (bankData.length && companyData.length) { mappingArea.style.display = 'block'; btnReconcile.disabled = false; }
-        } catch (err) { showToast('解析失败：' + err.message); }
-      };
-      reader.readAsArrayBuffer(file);
-    }
-
-    function populateMapping(data, idSelectId, amountSelectId) {
-      const headers = Object.keys(data[0]);
-      const idSel = document.getElementById(idSelectId), amtSel = document.getElementById(amountSelectId);
-      idSel.innerHTML = ''; amtSel.innerHTML = '';
-      headers.forEach(h => {
-        const cleanH = h.replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
-        const isId = /单号|订单|编号|ID/i.test(cleanH), isAmt = /金额|发生额|价格/i.test(cleanH);
-        idSel.add(new Option(cleanH, h, isId, isId)); amtSel.add(new Option(cleanH, h, isAmt, isAmt));
-      });
-    }
-
-    btnReconcile.addEventListener('click', () => {
-      const bIdCol = document.getElementById('recon-map-bank-id').value, bAmtCol = document.getElementById('recon-map-bank-amount').value;
-      const cIdCol = document.getElementById('recon-map-company-id').value, cAmtCol = document.getElementById('recon-map-company-amount').value;
-      if (!bIdCol || !bAmtCol || !cIdCol || !cAmtCol) return showToast('请完成字段映射');
-      const bankMap = new Map(), companyMap = new Map();
-      
-      const getAmt = (val) => {
-          if (val === null || val === undefined) return 0;
-          const str = String(val).replace(/[^\d.-]/g, '');
-          const num = parseFloat(str);
-          return isNaN(num) ? 0 : num;
-      };
-
-      bankData.forEach(row => { const id = String(row[bIdCol] ?? '').trim().toLowerCase(); if (!id) return; const amount = getAmt(row[bAmtCol]); if (bankMap.has(id)) bankMap.get(id).isDuplicate = true; else bankMap.set(id, { id, amount, raw: row, isDuplicate: false }); });
-      companyData.forEach(row => { const id = String(row[cIdCol] ?? '').trim().toLowerCase(); if (!id) return; const amount = getAmt(row[cAmtCol]); if (companyMap.has(id)) companyMap.get(id).isDuplicate = true; else companyMap.set(id, { id, amount, raw: row, isDuplicate: false }); });
-
-      const results = [], processedBank = new Set(), processedCompany = new Set();
-      bankMap.forEach((b, id) => {
-        if (b.isDuplicate) { results.push({ id, status: 'ERROR', bankAmt: b.amount, compAmt: '-', missing: buildMissing('银行流水内单号重复', b.raw, Object.keys(b.raw)), detail: `银行流水中“${id}”出现了多次。` }); processedBank.add(id); return; }
-        if (companyMap.has(id)) {
-          const c = companyMap.get(id); processedCompany.add(id);
-          if (c.isDuplicate) results.push({ id, status: 'ERROR', bankAmt: b.amount, compAmt: c.amount, missing: buildMissing('内部记账单号重复', c.raw, Object.keys(c.raw)), detail: `内部记账中“${id}”出现了多次。` });
-          else if (Math.abs(b.amount - c.amount) < 0.01) results.push({ id, status: 'MATCH', bankAmt: b.amount, compAmt: c.amount, missing: null, detail: '金额与单号完全一致。' });
-          else { const diff = b.amount - c.amount; results.push({ id, status: 'DIFF', bankAmt: b.amount, compAmt: c.amount, missing: null, detail: `单号一致，金额不等。差额 <span class="diff-amount">¥${diff.toFixed(2)}</span>（${diff > 0 ? '银行多出' : '账面多出'}）。` }); }
-        } else results.push({ id, status: 'BANK_ONLY', bankAmt: b.amount, compAmt: '-', missing: buildMissing('企业账面缺失（漏记）', b.raw, Object.keys(b.raw)), detail: `银行已发生该笔业务，但内部记账中未找到单号“${id}”。` });
-      });
-      companyMap.forEach((c, id) => {
-        if (processedCompany.has(id) || processedBank.has(id)) return;
-        if (c.isDuplicate) results.push({ id, status: 'ERROR', bankAmt: '-', compAmt: c.amount, missing: buildMissing('内部记账单号重复', c.raw, Object.keys(c.raw)), detail: `内部记账中“${id}”出现了多次。` });
-        else results.push({ id, status: 'COMPANY_ONLY', bankAmt: '-', compAmt: c.amount, missing: buildMissing('银行流水缺失', c.raw, Object.keys(c.raw)), detail: `内部记账已登记单号“${id}”，但银行流水中无对应记录。` });
-      });
-
-      reconciledResults = results; renderResults(); resultArea.style.display = 'block'; btnReconcile.disabled = true; btnReconcile.innerText = '对账完成';
-    });
-
-    function buildMissing(reason, raw, headers) {
-      if (!raw) return { reason, fields: [] };
-      const meaningful = headers.filter(h => { const v = raw[h]; if (v === null || v === undefined || String(v).trim() === '') return false; if (/^(序号|No\.?|行号)$/i.test(String(h))) return false; return true; }).slice(0, 6);
-      const fields = meaningful.map(h => {
-          let val = raw[h]; if (val instanceof Date) val = val.toISOString().split('T')[0];
-          let cleanH = h.replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim(); if (/[Ã¢Â°Ã]/.test(cleanH)) cleanH = "字段(乱码)";
-          return { label: cleanH, value: String(val).trim() };
-      });
-      return { reason, fields };
-    }
-
-    function renderResults() {
-      const counts = { ALL: reconciledResults.length, MATCH: 0, BANK_ONLY: 0, COMPANY_ONLY: 0, DIFF: 0, ERROR: 0 };
-      reconciledResults.forEach(r => counts[r.status]++);
-      Object.keys(counts).forEach(k => { const el = document.getElementById(`badge-${k}`); if (el) el.innerText = counts[k]; });
-      const filtered = currentTab === 'ALL' ? reconciledResults : reconciledResults.filter(r => r.status === currentTab);
-      if (!filtered.length) { resultBody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#A3A3A3;padding:40px">暂无此类数据</td></tr>`; return; }
-      resultBody.innerHTML = filtered.map(row => {
-        const bAmt = row.bankAmt !== '-' ? `¥${row.bankAmt.toFixed(2)}` : '-', cAmt = row.compAmt !== '-' ? `¥${row.compAmt.toFixed(2)}` : '-';
-        let missingHtml = '';
-        if (row.missing && row.missing.fields.length) {
-          const list = row.missing.fields.map(f => `<div><span class="label">${f.label}：</span>${f.value}</div>`).join('');
-          missingHtml = `<div class="missing-detail"><div style="font-weight:600;margin-bottom:6px;color:var(--diff)">🔍 ${row.missing.reason}</div>${list}</div>`;
-        } else if (row.missing) missingHtml = `<div class="missing-detail"><span style="color:var(--muted)">${row.missing.reason}</span></div>`;
-        return `<tr class="${rowClass[row.status] || ''}"><td style="font-weight:500;word-break:break-all">${row.id}</td><td><span class="status-tag ${row.status}">${statusText[row.status]}</span></td><td>${bAmt}</td><td>${cAmt}</td><td>${missingHtml}<div style="margin-top:6px;font-size:12px;color:var(--muted)">${row.detail}</div></td></tr>`;
-      }).join('');
-    }
-
-    document.querySelectorAll('#recon-tabs .tab').forEach(tab => { tab.addEventListener('click', e => { document.querySelectorAll('#recon-tabs .tab').forEach(t => t.classList.remove('active')); e.currentTarget.classList.add('active'); currentTab = e.currentTarget.dataset.type; renderResults(); }); });
-    document.getElementById('recon-btn-export').addEventListener('click', () => {
-      try {
-        const filtered = currentTab === 'ALL' ? reconciledResults : reconciledResults.filter(r => r.status === currentTab);
-        if (!filtered.length) return showToast('当前分类无数据');
-        if (typeof XLSX === 'undefined') throw new Error('XLSX 未加载');
-        const rows = filtered.map(r => ({ '单号': r.id, '对账状态': statusText[r.status].replace(/[^\u4e00-\u9fa5]/g, ''), '银行金额': r.bankAmt !== '-' ? r.bankAmt : '', '账面金额': r.compAmt !== '-' ? r.compAmt : '', '缺失/差异详情': r.missing ? r.missing.reason + '；' + r.missing.fields.map(f => `${f.label}=${f.value}`).join('，') : r.detail.replace(/<[^>]+>/g, '') }));
-        const ws = XLSX.utils.json_to_sheet(rows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '对账结果'); XLSX.writeFile(wb, `对账报告_${Date.now()}.xlsx`); showToast('导出成功');
-      } catch (err) { showToast('导出失败：' + err.message); }
-    });
-  })();
-
-  /* ================= 模块 2：发票与存储归档 ================= */
+  /* ================= 发票归档 ================= */
   let currentAttachments = []; 
+  let currentStamp = null; 
   let allRecords = []; 
-
+  
   const itemsBody = document.getElementById('inv-items-body'), prevBody = document.getElementById('inv-prev-items-body');
   const today = new Date();
   document.getElementById('inv-input-date').value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
   document.getElementById('inv-input-no').value = 'INV' + Date.now().toString().slice(-8);
 
-  // 附件上传与Base64转换
-  const uploadZone = document.getElementById('attach-upload-zone');
-  const fileInput = document.getElementById('attach-file-input');
-  const attachList = document.getElementById('attachment-list');
-
+  // 附件上传
+  const uploadZone = document.getElementById('attach-upload-zone'), fileInput = document.getElementById('attach-file-input'), attachList = document.getElementById('attachment-list');
   uploadZone.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', (e) => {
       if (e.target.files.length > 0) {
           Array.from(e.target.files).forEach(file => {
-              // 内存与LocalStorage模式下限制大小
-              if (storageMode !== 'INDEXEDDB' && file.size > 800 * 1024) {
-                  showToast(`当前存储模式(${storageMode})不支持超大文件，请控制在 800KB 内`);
-                  return;
-              }
+              if (storageMode !== 'INDEXEDDB' && file.size > 800 * 1024) return showToast(`当前存储模式不支持超大文件`);
               const reader = new FileReader();
-              reader.onload = (ev) => {
-                  currentAttachments.push({ name: file.name, data: ev.target.result });
-                  renderAttachments();
-              };
+              reader.onload = (ev) => { currentAttachments.push({ name: file.name, data: ev.target.result }); renderAttachments(); };
               reader.readAsDataURL(file);
           });
           fileInput.value = ''; 
       }
   });
+  function renderAttachments() { attachList.innerHTML = currentAttachments.map((file, index) => `<div class="attach-item">📄 ${file.name}<button type="button" onclick="removeAttachment(${index})">×</button></div>`).join(''); }
+  window.removeAttachment = function(index) { currentAttachments.splice(index, 1); renderAttachments(); };
 
-  function renderAttachments() {
-      attachList.innerHTML = currentAttachments.map((file, index) => `
-          <div class="attach-item">
-              📄 ${file.name}
-              <button type="button" onclick="removeAttachment(${index})">×</button>
-          </div>
-      `).join('');
-  }
+  // 印章上传
+  const stampZone = document.getElementById('stamp-upload-zone'), stampInput = document.getElementById('stamp-file-input');
+  const stampPrevArea = document.getElementById('stamp-preview-mini'), stampPrevImg = document.getElementById('stamp-preview-img');
+  const invStampImg = document.getElementById('invoice-stamp-img');
 
-  window.removeAttachment = function(index) {
-      currentAttachments.splice(index, 1);
-      renderAttachments();
+  stampZone.addEventListener('click', () => stampInput.click());
+  stampInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+          const file = e.target.files[0];
+          const reader = new FileReader();
+          reader.onload = (ev) => { 
+              currentStamp = ev.target.result; 
+              stampPrevImg.src = currentStamp;
+              stampPrevArea.style.display = 'block';
+              
+              invStampImg.src = currentStamp;
+              invStampImg.style.display = 'block';
+              
+              gsap.fromTo(invStampImg, { scale: 0.8, rotation: -10, opacity: 0 }, { scale: 1, rotation: 0, opacity: 0.85, duration: 0.4, ease: "back.out(1.5)" });
+          };
+          reader.readAsDataURL(file);
+          stampInput.value = '';
+      }
+  });
+
+  window.removeStamp = function() {
+      currentStamp = null;
+      stampPrevArea.style.display = 'none';
+      stampPrevImg.src = '';
+      invStampImg.style.display = 'none';
+      invStampImg.src = '';
   };
 
-  function addRow() {
+  function addRow(item = null) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input type="text" placeholder="商品名称" class="item-name" autocomplete="off"></td>
-      <td><input type="number" min="1" value="1" class="item-qty" style="text-align:right"></td>
-      <td><input type="number" min="0" step="0.01" value="0.00" class="item-price" style="text-align:right"></td>
-      <td class="item-subtotal" style="text-align:right;padding-right:12px;font-weight:500">0.00</td>
-      <td style="text-align:center"><button type="button" class="btn-del">移除</button></td>`;
+      <td><input type="text" placeholder="商品名称" class="item-name" value="${item ? item.name : ''}" autocomplete="off"></td>
+      <td><input type="number" min="1" value="${item ? item.qty : 1}" class="item-qty" style="text-align:right"></td>
+      <td><input type="number" min="0" step="0.01" value="${item ? item.price : '0.00'}" class="item-price" style="text-align:right"></td>
+      <td class="item-subtotal" style="text-align:right; padding-right:12px; font-weight:500">0.00</td>
+      <td style="text-align:center"><button type="button" class="btn-del" style="font-size:18px;">×</button></td>`;
     itemsBody.appendChild(tr); updatePreview();
   }
 
@@ -599,142 +792,157 @@ document.addEventListener('DOMContentLoaded', async () => {
   itemsBody.addEventListener('click', e => { if (e.target.classList.contains('btn-del')) { e.target.closest('tr').remove(); updatePreview(); } });
   itemsBody.addEventListener('input', e => { if (e.target.tagName === 'INPUT') updatePreview(); });
 
+  // 存入总账
   document.getElementById('inv-btn-submit').addEventListener('click', async (e) => {
     e.preventDefault();
-    
     try {
         const seller = document.getElementById('inv-input-seller').value.trim();
         const buyer = document.getElementById('inv-input-buyer').value.trim();
-        const totalStr = document.getElementById('inv-prev-total-small').textContent;
-        const total = parseFloat(totalStr);
+        const total = parseFloat(document.getElementById('inv-prev-total-small').textContent);
         const logs = document.getElementById('inv-input-logs').value.trim();
-        
-        if (!seller) return showToast('请填写销售方名称');
-        if (!buyer) return showToast('请填写购买方名称');
-        if (isNaN(total) || total <= 0) return showToast('开票金额需大于 0，请检查明细');
+        if (!seller || !buyer) return showToast('请填写销售方和购买方');
+        if (isNaN(total) || total <= 0) return showToast('开票金额需大于 0');
+
+        const items = [];
+        itemsBody.querySelectorAll('tr').forEach(row => {
+            const name = row.querySelector('.item-name')?.value;
+            if (name) items.push({ name, qty: parseFloat(row.querySelector('.item-qty')?.value), price: parseFloat(row.querySelector('.item-price')?.value) });
+        });
 
         const record = { 
-            invoiceNo: document.getElementById('inv-input-no').value, 
-            date: document.getElementById('inv-input-date').value, 
-            seller: seller,
-            sellerTaxno: document.getElementById('inv-input-seller-taxno').value,
-            buyer: buyer, 
-            buyerTaxno: document.getElementById('inv-input-taxno').value,
+            invoiceNo: document.getElementById('inv-input-no').value, date: document.getElementById('inv-input-date').value, 
+            seller: seller, sellerTaxno: document.getElementById('inv-input-seller-taxno').value,
+            buyer: buyer, buyerTaxno: document.getElementById('inv-input-taxno').value,
             paymentMethod: document.getElementById('inv-input-payment').value,
-            total: total, 
-            logs: logs,
-            attachments: JSON.parse(JSON.stringify(currentAttachments)),
+            total: total, items: items, logs: logs, attachments: JSON.parse(JSON.stringify(currentAttachments)), 
+            stampData: currentStamp, 
             status: '已入账' 
         };
 
-        // 调用底层存储
         await saveRecordToDB(record);
-        
-        showToast(`✅ 已存入总账 (${storageMode})`);
-        
+        showToast(`✅ 已存入总账`);
         await loadAndRenderLedger();
         
         // 重置表单
         document.getElementById('inv-input-buyer').value = ''; 
         document.getElementById('inv-input-taxno').value = '';
-        document.getElementById('inv-input-logs').value = '';
+        document.getElementById('inv-input-logs').value = ''; 
         document.getElementById('inv-input-no').value = 'INV' + Date.now().toString().slice(-8);
         itemsBody.innerHTML = ''; 
-        currentAttachments = [];
-        renderAttachments();
+        currentAttachments = []; 
+        renderAttachments(); 
+        removeStamp(); 
         addRow();
-
-    } catch (err) {
-        console.error("保存异常:", err);
-        if (err.name === 'QuotaExceededError' || (err.message && err.message.includes('quota'))) {
-            showToast('❌ 存储空间已满！请清理旧数据或移除大型附件。');
-        } else {
-            showToast('❌ 保存失败: ' + (err.message || '未知错误'));
-        }
-    }
+    } catch (err) { showToast('❌ 保存失败'); }
   });
 
   document.getElementById('inv-btn-clear').addEventListener('click', async () => { 
       if (confirm('⚠️ 警告：确定要清空所有历史记录吗？')) { 
-          try {
-              await clearAllDB();
-              await loadAndRenderLedger();
-              showToast('已清空所有数据');
-          } catch(e) {
-              showToast('清空失败: ' + e.message);
-          }
+          try { await clearAllDB(); await loadAndRenderLedger(); showToast('已清空'); } catch(e) { showToast('清空失败'); }
       } 
   });
   
   document.getElementById('inv-btn-export').addEventListener('click', () => {
     try {
       if (!allRecords.length) return showToast('总账为空'); 
-      if (typeof XLSX === 'undefined') throw new Error('XLSX 未加载');
-      const rows = allRecords.map(i => ({ 
-          发票号码: i.invoiceNo, 
-          开票日期: i.date, 
-          销售方: i.seller,
-          购买方: i.buyer, 
-          金额: i.total, 
-          收款方式: i.paymentMethod,
-          补充日志: i.logs || '',
-          凭证数量: i.attachments ? i.attachments.length : 0,
-          状态: i.status 
-      }));
+      const rows = allRecords.map(i => ({ 发票号码: i.invoiceNo, 开票日期: i.date, 销售方: i.seller, 购买方: i.buyer, 金额: i.total, 收款方式: i.paymentMethod, 补充日志: i.logs || '', 凭证数量: i.attachments ? i.attachments.length : 0, 是否有印章: i.stampData ? '是' : '否' }));
       const ws = XLSX.utils.json_to_sheet(rows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '总账单'); XLSX.writeFile(wb, `总账单_${Date.now()}.xlsx`); showToast('导出成功');
-    } catch (err) { showToast('导出失败：' + err.message); }
+    } catch (err) { showToast('导出失败'); }
   });
 
   async function loadAndRenderLedger() {
       try {
           allRecords = await getAllRecordsFromDB();
           allRecords.sort((a, b) => b.invoiceNo.localeCompare(a.invoiceNo));
-
-          const tb = document.getElementById('inv-ledger-body'); tb.innerHTML = ''; let sum = 0;
-          allRecords.forEach(i => { 
-              sum += i.total; 
-              
-              let attachHtml = '';
-              if (i.attachments && i.attachments.length > 0) {
-                  const firstAtt = i.attachments[0];
-                  attachHtml += `<a class="btn-view-attach" onclick="viewAttachment('${firstAtt.data.replace(/'/g, "\\'")}')">📄 查看凭证</a>`;
-                  if (i.attachments.length > 1) attachHtml += `<span style="font-size:12px;color:var(--muted);margin-left:4px;">等${i.attachments.length}个</span>`;
-              } else {
-                  attachHtml = `<span style="color:#A3A3A3;font-size:12px;">无凭证</span>`;
-              }
-
-              const logHtml = i.logs ? `<div style="font-size:12px;color:var(--muted);margin-top:4px;" title="${i.logs}">📝 ${i.logs.length > 15 ? i.logs.substring(0,15)+'...' : i.logs}</div>` : '';
-
-              const tr = document.createElement('tr'); 
-              tr.innerHTML = `
-                <td>${i.invoiceNo}</td>
-                <td>${i.date}</td>
-                <td>${i.buyer}</td>
-                <td style="font-weight:600">¥${i.total.toFixed(2)}</td>
-                <td>${i.paymentMethod}</td>
-                <td>${attachHtml} ${logHtml}</td>
-              `; 
-              tb.appendChild(tr); 
-          });
-          document.getElementById('inv-summary-text').innerText = `共 ${allRecords.length} 张 | 总金额 ¥${sum.toFixed(2)} [${storageMode}]`;
-      } catch (err) {
-          console.error("加载数据失败", err);
-          showToast("加载历史数据失败");
-      }
+          filterLedger(); 
+      } catch (err) { showToast("加载历史数据失败"); }
   }
+
+  window.filterLedger = function() {
+      const fNo = document.getElementById('f-invoice-no').value.toLowerCase();
+      const fBuyer = document.getElementById('f-buyer').value.toLowerCase();
+      const fPay = document.getElementById('f-payment').value;
+      const fStart = document.getElementById('f-date-start').value;
+      const fEnd = document.getElementById('f-date-end').value;
+
+      const filtered = allRecords.filter(i => {
+          let match = true;
+          if (fNo && !i.invoiceNo.toLowerCase().includes(fNo)) match = false;
+          if (fBuyer && !i.buyer.toLowerCase().includes(fBuyer)) match = false;
+          if (fPay && i.paymentMethod !== fPay) match = false;
+          if (fStart && i.date < fStart) match = false;
+          if (fEnd && i.date > fEnd) match = false;
+          return match;
+      });
+
+      const tb = document.getElementById('inv-ledger-body'); tb.innerHTML = ''; let sum = 0;
+      filtered.forEach(i => { 
+          sum += i.total; 
+          let attachHtml = '';
+          if (i.attachments && i.attachments.length > 0) attachHtml += `<a class="btn-view-attach" onclick="viewAttachment('${i.attachments[0].data.replace(/'/g, "\\'")}')">📄 凭证</a>`;
+          const logHtml = i.logs ? `<div style="font-size:12px; color:var(--text-muted); margin-top:6px;" title="${i.logs}">📝 ${i.logs.length > 15 ? i.logs.substring(0,15)+'...' : i.logs}</div>` : '';
+
+          const tr = document.createElement('tr'); 
+          tr.innerHTML = `
+            <td><button class="btn-view-invoice" onclick="viewInvoice('${i.invoiceNo}')">查看发票</button></td>
+            <td>${i.invoiceNo}</td><td>${i.date}</td><td>${i.buyer}</td><td style="font-weight:500">¥${i.total.toFixed(2)}</td><td>${i.paymentMethod}</td>
+            <td>${attachHtml} ${logHtml}</td>
+          `; 
+          tb.appendChild(tr); 
+      });
+
+      document.getElementById('filtered-total-amount').innerText = `¥${sum.toFixed(2)}`;
+      document.getElementById('filtered-total-count').innerText = `共 ${filtered.length} 张`;
+  };
+
+  document.getElementById('f-invoice-no').addEventListener('input', filterLedger);
+  document.getElementById('f-buyer').addEventListener('input', filterLedger);
+  document.getElementById('f-payment').addEventListener('change', filterLedger);
+  document.getElementById('f-date-start').addEventListener('change', filterLedger);
+  document.getElementById('f-date-end').addEventListener('change', filterLedger);
+
+  window.viewInvoice = function(invoiceNo) {
+      const record = allRecords.find(r => r.invoiceNo === invoiceNo);
+      if (!record) return;
+      
+      document.getElementById('inv-input-seller').value = record.seller || ''; 
+      document.getElementById('inv-input-seller-taxno').value = record.sellerTaxno || '';
+      document.getElementById('inv-input-buyer').value = record.buyer || ''; 
+      document.getElementById('inv-input-taxno').value = record.buyerTaxno || '';
+      document.getElementById('inv-input-no').value = record.invoiceNo; 
+      document.getElementById('inv-input-date').value = record.date;
+      document.getElementById('inv-input-payment').value = record.paymentMethod || '银行转账'; 
+      document.getElementById('inv-input-logs').value = record.logs || '';
+
+      itemsBody.innerHTML = '';
+      if (record.items && record.items.length > 0) record.items.forEach(it => addRow(it));
+      else addRow();
+
+      currentAttachments = record.attachments || []; 
+      renderAttachments(); 
+      
+      currentStamp = record.stampData || null;
+      if (currentStamp) {
+          stampPrevImg.src = currentStamp;
+          stampPrevArea.style.display = 'block';
+          invStampImg.src = currentStamp;
+          invStampImg.style.display = 'block';
+          gsap.fromTo(invStampImg, { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 0.85, duration: 0.3 });
+      } else {
+          removeStamp();
+      }
+
+      updatePreview(); 
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      showToast(`已载入发票 ${invoiceNo}`);
+  };
 
   window.viewAttachment = function(dataUrl) {
       try {
           const win = window.open();
-          if (win) {
-              win.document.write(`<iframe src="${dataUrl}" frameborder="0" style="border:0;width:100%;height:100vh;" allowfullscreen></iframe>`);
-              win.document.title = "凭证预览";
-          } else {
-              showToast("浏览器拦截了弹窗，请允许弹窗后重试。");
-          }
-      } catch(e) {
-          showToast("无法预览该文件格式");
-      }
+          if (win) { win.document.write(`<iframe src="${dataUrl}" frameborder="0" style="border:0;width:100%;height:100vh;" allowfullscreen></iframe>`); win.document.title = "凭证预览"; } 
+          else showToast("浏览器拦截了弹窗");
+      } catch(e) { showToast("无法预览该文件格式"); }
   };
 
   function digitUppercase(n) {
