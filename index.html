@@ -600,13 +600,16 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
     <div class="form-panel no-print">
       <h2 class="serif-title">发票信息录入</h2>
       <div style="background:var(--bg); padding:20px; border-radius:var(--radius); margin-bottom:24px; border:1px solid var(--border);">
-        <div class="form-group" style="margin-bottom:12px;"><label>销售方名称 (我方)</label><input type="text" id="inv-input-seller" class="inv-sync" value="深圳市星辰科技有限公司"></div>
-        <div class="form-group" style="margin-bottom:0;"><label>销售方税号</label><input type="text" id="inv-input-seller-taxno" class="inv-sync" value="91440300MA5F123456"></div>
+        <div class="form-group" style="margin-bottom:12px;"><label>销售方名称 (我方)</label><input type="text" id="inv-input-seller" class="inv-sync"></div>
+        <div class="form-group" style="margin-bottom:0;"><label>销售方税号</label><input type="text" id="inv-input-seller-taxno" class="inv-sync"></div>
       </div>
       <div class="form-group"><label>购买方名称 (客户) <span style="color:var(--diff)">*</span></label><input type="text" id="inv-input-buyer" class="inv-sync" autocomplete="off"></div>
+      <div class="form-group"><label>合同 / 开票通知编号</label><input id="inv-source"></div>
+      <div class="form-group"><label>办理状态</label><select id="inv-status"><option>待开票</option><option>已开票</option><option>办理失败</option></select></div>
+      <div class="form-group"><label>回执编号 / 失败原因</label><input id="inv-evidence"></div>
       <div class="form-group"><label>购买方税号</label><input type="text" id="inv-input-taxno" class="inv-sync" autocomplete="off"></div>
       <div class="form-group" style="display:flex; gap:16px;">
-        <div style="flex:1"><label>发票号码</label><input type="text" id="inv-input-no" readonly style="background:transparent; border:1px dashed var(--border);"></div>
+        <div style="flex:1"><label>实际发票号码</label><input type="text" id="inv-input-no" class="inv-sync" style="background:transparent; border:1px dashed var(--border);"></div>
         <div style="flex:1"><label>开票日期</label><input type="date" id="inv-input-date" class="inv-sync"></div>
       </div>
       <div class="form-group">
@@ -1122,10 +1125,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
       <p style="max-width:800px;">汇总客户应收及回款，核实账面余额，编制并跟踪年末询证函。余额按账务记录计算，回款分配总额不得超过实际到账额。</p>
     </div>
     <div style="display:flex; gap:12px;">
-      <select id="ar-period" style="width:150px;" onchange="loadARData()">
-        <option value="2026-06">2026年06月</option>
-        <option value="2026-12">2026年12月 (年末)</option>
-      </select>
+      <input type="month" id="ar-period" style="width:150px;">
       <button type="button" class="btn btn-primary" onclick="generateConfirmation()">生成/更新询证函</button>
     </div>
   </div>
@@ -1155,8 +1155,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
       <p class="note-text" style="margin-bottom:12px;">为保证余额准确，需将未分配回款与应收明细进行冲销核销。</p>
       <div style="margin-bottom:16px;">
         <select id="ar-unallocated" style="width:100%; margin-bottom:8px;">
-          <option value="50,000">2026-06-15 招商银行回款 50,000 元 (待分配)</option>
-          <option value="120,000">2026-06-20 工商银行回款 120,000 元 (待分配)</option>
         </select>
         <button type="button" class="btn" style="width:100%;" onclick="allocatePayment()">核销至选中客户</button>
       </div>
@@ -1187,11 +1185,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
       <p style="max-width:800px;">处理月末增值税及附加测算、季末企业所得税测算，跟踪申报任务与完税证明。</p>
     </div>
     <div style="display:flex; gap:12px;">
-      <select id="tax-period" style="width:150px;">
-        <option value="2026-06">2026年06月 (二季度末)</option>
-        <option value="2026-07">2026年07月</option>
-      </select>
-      <button type="button" class="btn btn-primary" onclick="calculateTax()">开始测算</button>
+      <input type="month" id="tax-period" style="width:150px;">
+      <button type="button" class="btn btn-primary" onclick="calculateTax()">预览测算底稿</button>
     </div>
   </div>
 
@@ -1229,8 +1224,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
     <div class="card-block">
       <h3>2. 申报任务与完税归档</h3>
       <div class="filter-bar" style="margin-bottom:12px; padding:10px;">
-        <span style="font-size:12px; font-weight:500;">当前税期：2026年06月</span>
-        <span style="font-size:12px; color:var(--diff);">截止日：2026-07-15</span>
+        <span style="font-size:12px; font-weight:500;">所选税期</span>
+        <span style="font-size:12px; color:var(--diff);">截止日以任务记录为准</span>
       </div>
       <table class="data-table">
         <thead><tr><th>任务</th><th>状态</th><th>回执/证明</th><th>操作</th></tr></thead>
@@ -1249,9 +1244,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
       <p style="max-width:800px;">完成月末损益结转、成本折旧、资产摊销，以及结账前检查与财务档案整理。</p>
     </div>
     <div style="display:flex; gap:12px;">
-      <select id="closing-period" style="width:150px;">
-        <option value="2026-06">2026年06月</option>
-      </select>
+      <input type="month" id="closing-period" style="width:150px;">
       <button type="button" class="btn btn-primary" onclick="executeSettlement()">执行期末结转</button>
     </div>
   </div>
@@ -1265,7 +1258,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
       <div class="list-item"><span>无形资产摊销</span><span id="cost-amort">待计算</span></div>
       <div class="list-item"><span>工资社保计提</span><span id="cost-payroll">待计算</span></div>
       <div style="margin-top:16px;">
-        <button type="button" class="btn" style="width:100%;" onclick="calculateCost()">读取业务数据并计算</button>
+        <button type="button" class="btn" style="width:100%;" onclick="calculateCost()">刷新作业汇总</button>
       </div>
       <div id="cost-missing" style="display:none; color:var(--diff); font-size:12px; margin-top:8px;">
         ⚠️ 缺少存货计价依据，暂无法计算结转成本。
@@ -1305,19 +1298,19 @@ function switchModule(targetId) {
     if (!target) return;
     const currentActive = document.querySelector('.module.active');
     if (currentActive === target) {
-        gsap.set(target, { opacity: 1, y: 0 });
+        animation.set(target, { opacity: 1, y: 0 });
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
     }
     if (currentActive) {
-        gsap.killTweensOf(currentActive);
+        animation.killTweensOf(currentActive);
         currentActive.classList.remove('active');
         currentActive.style.display = 'none';
     }
     target.classList.add('active');
     target.style.display = 'block';
-    gsap.killTweensOf(target);
-    gsap.fromTo(target, { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" });
+    animation.killTweensOf(target);
+    animation.fromTo(target, { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" });
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.target === targetId);
     });
@@ -1331,32 +1324,40 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => switchModule(btn.dataset.target));
 });
 
+const animation = window.gsap || {
+    killTweensOf() {},
+    set(target, values) { target.style.opacity = values.opacity; },
+    fromTo(target, from, to) { if (target instanceof HTMLElement) target.style.opacity = to.opacity; }
+};
+
 /* ================= 2. 存储引擎 ================= */
-const DB_NAME = 'FinanceWorkbenchDB';
-const DB_VERSION = 4;
+const DB_NAME = 'FinanceWorkbenchCleanBooks';
+const DB_VERSION = 5;
+const STORE_WORK = 'Workpapers';
 const STORE_NAME = 'Invoices';
 const STORE_CASHIER = 'CashierRecords';
 const STORE_VOUCHER = 'VoucherRecords';
-const LS_KEY = 'finance_ledger_fallback';
-const LS_KEY_CASHIER = 'finance_cashier_fallback';
-const LS_KEY_VOUCHER = 'finance_voucher_fallback';
+const LS_KEY = 'clean_finance_ledger_fallback';
+const LS_KEY_CASHIER = 'clean_finance_cashier_fallback';
+const LS_KEY_VOUCHER = 'clean_finance_voucher_fallback';
 
 let storageMode = 'MEMORY';
 let db = null;
-const memoryData = { 'Invoices': [], 'CashierRecords': [], 'VoucherRecords': [] };
+const memoryData = { 'Invoices': [], 'CashierRecords': [], 'VoucherRecords': [], 'Workpapers': [] };
 
-function lsKeyFor(s) { return s === STORE_CASHIER ? LS_KEY_CASHIER : (s === STORE_VOUCHER ? LS_KEY_VOUCHER : LS_KEY); }
-function pkFor(s) { return s === STORE_CASHIER || s === STORE_VOUCHER ? 'id' : 'invoiceNo'; }
+function lsKeyFor(s) { return s === STORE_WORK ? 'clean_finance_workpapers' : s === STORE_CASHIER ? LS_KEY_CASHIER : (s === STORE_VOUCHER ? LS_KEY_VOUCHER : LS_KEY); }
+function pkFor(s) { return s === STORE_NAME ? 'invoiceNo' : 'id'; }
 
 async function initStorage() {
     return new Promise((resolve) => {
         try {
             const request = indexedDB.open(DB_NAME, DB_VERSION);
-            const timeout = setTimeout(() => tryLSFallback(resolve), 1200);
-            request.onerror = () => { clearTimeout(timeout); tryLSFallback(resolve); };
-            request.onsuccess = (e) => { clearTimeout(timeout); db = e.target.result; storageMode = 'INDEXEDDB'; resolve(storageMode); };
+            request.onblocked = () => showToast('请关闭其他工作台页面后重试');
+            request.onerror = () => { tryLSFallback(resolve); };
+            request.onsuccess = (e) => { db = e.target.result; storageMode = 'INDEXEDDB'; resolve(storageMode); };
             request.onupgradeneeded = (e) => {
                 const dbInstance = e.target.result;
+                if (!dbInstance.objectStoreNames.contains(STORE_WORK)) dbInstance.createObjectStore(STORE_WORK, { keyPath: 'id' });
                 if (!dbInstance.objectStoreNames.contains(STORE_NAME)) dbInstance.createObjectStore(STORE_NAME, { keyPath: 'invoiceNo' });
                 if (!dbInstance.objectStoreNames.contains(STORE_CASHIER)) dbInstance.createObjectStore(STORE_CASHIER, { keyPath: 'id' });
                 if (!dbInstance.objectStoreNames.contains(STORE_VOUCHER)) dbInstance.createObjectStore(STORE_VOUCHER, { keyPath: 'id' });
@@ -1369,19 +1370,26 @@ function tryLSFallback(resolve) {
     resolve(storageMode);
 }
 async function saveToStore(storeName, record) {
+    return saveRecords(storeName, [record]);
+}
+async function saveRecords(storeName, records, insert = false) {
+    if (storageMode === 'MEMORY') throw new Error('浏览器存储不可用，资料未保存');
     if (storageMode === 'INDEXEDDB') {
         return new Promise((resolve, reject) => {
-            const req = db.transaction([storeName], 'readwrite').objectStore(storeName).put(record);
-            req.onsuccess = () => resolve(); req.onerror = (e) => reject(e.target.error);
+            const tx = db.transaction(storeName, 'readwrite');
+            tx.oncomplete = () => resolve();
+            tx.onabort = () => reject(tx.error || new Error('保存失败'));
+            const store = tx.objectStore(storeName);
+            for (const record of records) store[insert ? 'add' : 'put'](record);
         });
-    } else if (storageMode === 'LOCALSTORAGE') {
-        const key = lsKeyFor(storeName); let data = JSON.parse(localStorage.getItem(key) || '[]'); const pk = pkFor(storeName);
-        const idx = data.findIndex(d => d[pk] === record[pk]); if (idx >= 0) data[idx] = record; else data.push(record);
-        localStorage.setItem(key, JSON.stringify(data));
-    } else {
-        const arr = memoryData[storeName]; const pk = pkFor(storeName);
-        const idx = arr.findIndex(d => d[pk] === record[pk]); if (idx >= 0) arr[idx] = record; else arr.push(record);
     }
+    const key = lsKeyFor(storeName), pk = pkFor(storeName);
+    const data = new Map(JSON.parse(localStorage.getItem(key) || '[]').map(row => [row[pk], row]));
+    for (const record of records) {
+        if (insert && data.has(record[pk])) throw new Error('记录编号已存在');
+        data.set(record[pk], record);
+    }
+    localStorage.setItem(key, JSON.stringify([...data.values()]));
 }
 async function getAllFromStore(storeName) {
     if (storageMode === 'INDEXEDDB') {
@@ -1395,8 +1403,9 @@ async function getAllFromStore(storeName) {
 async function clearStore(storeName) {
     if (storageMode === 'INDEXEDDB') {
         return new Promise((resolve, reject) => {
-            const req = db.transaction([storeName], 'readwrite').objectStore(storeName).clear();
-            req.onsuccess = () => resolve(); req.onerror = (e) => reject(e.target.error);
+            const tx = db.transaction(storeName, 'readwrite');
+            tx.oncomplete = () => resolve(); tx.onabort = () => reject(tx.error);
+            tx.objectStore(storeName).clear();
         });
     } else if (storageMode === 'LOCALSTORAGE') { localStorage.removeItem(lsKeyFor(storeName)); }
     else { memoryData[storeName] = []; }
@@ -1408,7 +1417,7 @@ async function clearAllDB() { return clearStore(STORE_NAME); }
 /* ================= 3. 全局工具 ================= */
 function showToast(msg) {
     const t = document.getElementById('toast'); t.innerText = msg; t.style.visibility = 'visible';
-    gsap.killTweensOf(t); gsap.fromTo(t, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" });
+    animation.killTweensOf(t); animation.fromTo(t, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" });
     clearTimeout(t._timer);
     t._timer = setTimeout(() => { gsap.to(t, { opacity: 0, y: 20, duration: 0.3, onComplete: () => t.style.visibility = 'hidden' }); }, 3000);
 }
@@ -1452,11 +1461,11 @@ const VOUCHER_ACCOUNTS = [
 
 const ACCOUNTS_INIT = [
   { id: 'CASH', name: '库存现金', kind: 'CASH' },
-  { id: 'ICBC', name: '工商银行 · 6222 **** 1234', kind: 'BANK' },
-  { id: 'CMB',  name: '招商银行 · 6225 **** 5678', kind: 'BANK' }
+  { id: 'ICBC', name: '工商银行', kind: 'BANK' },
+  { id: 'CMB',  name: '招商银行', kind: 'BANK' }
 ];
-let ACCOUNTS = (() => { try { const s = JSON.parse(localStorage.getItem('cashier_accounts') || 'null'); if (Array.isArray(s) && s.length) return s; } catch (e) {} return [...ACCOUNTS_INIT]; })();
-function saveCashierAccounts() { try { localStorage.setItem('cashier_accounts', JSON.stringify(ACCOUNTS)); } catch (e) {} }
+let ACCOUNTS = (() => { try { const s = JSON.parse(localStorage.getItem('clean_cashier_accounts') || 'null'); if (Array.isArray(s) && s.length) return s; } catch (e) {} return [...ACCOUNTS_INIT]; })();
+function saveCashierAccounts() { try { localStorage.setItem('clean_cashier_accounts', JSON.stringify(ACCOUNTS)); } catch (e) {} }
 function getAccountName(val) {
     if (!val) return '-';
     const byId = ACCOUNTS.find(x => x.id === val); if (byId) return byId.name;
@@ -1467,11 +1476,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   window.scrollTo(0, 0);
   document.querySelectorAll('.module').forEach(m => { m.classList.remove('active'); m.style.display = 'none'; m.style.opacity = 0; });
-  const homeEl = document.getElementById('module-home'); homeEl.classList.add('active'); homeEl.style.display = 'block'; gsap.set(homeEl, { opacity: 1, y: 0 });
+  const homeEl = document.getElementById('module-home'); homeEl.classList.add('active'); homeEl.style.display = 'block'; animation.set(homeEl, { opacity: 1, y: 0 });
   document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.target === 'module-home'));
   await initStorage();
-  gsap.fromTo('.home-header-text', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out", delay: 0.1 });
-  gsap.fromTo('.home-card', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.08, ease: "power2.out", delay: 0.2 });
+  animation.fromTo('.home-header-text', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out", delay: 0.1 });
+  animation.fromTo('.home-card', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.08, ease: "power2.out", delay: 0.2 });
 
   // 依赖模块的初始化挂载
   initInvoiceModule();
@@ -1482,6 +1491,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   initARModule();
   initTaxModule();
   initCostModule();
+  initBackup();
+  if (storageMode === 'MEMORY') showToast('浏览器存储不可用，无法保存资料');
 });
 
 /* ================= 5. 各模块逻辑 ================= */
@@ -1490,8 +1501,9 @@ function initInvoiceModule() {
   let currentAttachments = [], currentStamp = null, allRecords = [];
   const itemsBody = document.getElementById('inv-items-body'), prevBody = document.getElementById('inv-prev-items-body');
   const today = new Date();
+  let viewedKey = null;
   document.getElementById('inv-input-date').value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-  document.getElementById('inv-input-no').value = 'INV' + Date.now().toString().slice(-8);
+  byId('inv-input-no').value = '';
   const fileInput = document.getElementById('attach-file-input'), attachList = document.getElementById('attachment-list');
   document.getElementById('attach-upload-zone').addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', (e) => {
@@ -1505,7 +1517,9 @@ function initInvoiceModule() {
           fileInput.value = '';
       }
   });
-  function renderAttachments() { attachList.innerHTML = currentAttachments.map((file, index) => `<div class="attach-item">📄 ${file.name}<button type="button" onclick="removeAttachment(${index})">×</button></div>`).join(''); }
+  function renderAttachments() { attachList.innerHTML = currentAttachments.map((file, index) => `<div class="attach-item">📄 ${escapeHtml(file.name)}<button type="button" onclick="removeAttachment(${index})">×</button></div>`).join(''); currentAttachments.forEach((file, index) => {
+      if (file.data || file.dataUrl) attachList.children[index].prepend(action('下载', () => downloadAttachment(file)));
+  }); }
   window.removeAttachment = function(index) { currentAttachments.splice(index, 1); renderAttachments(); };
   const stampInput = document.getElementById('stamp-file-input');
   document.getElementById('stamp-upload-zone').addEventListener('click', () => stampInput.click());
@@ -1526,7 +1540,7 @@ function initInvoiceModule() {
   window.removeStamp = function() { currentStamp = null; document.getElementById('stamp-preview-mini').style.display = 'none'; document.getElementById('invoice-stamp-img').style.display = 'none'; };
   function addRow(item = null) {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td><input type="text" placeholder="商品名称" class="item-name" value="${item ? item.name : ''}"></td>
+    tr.innerHTML = `<td><input type="text" placeholder="商品名称" class="item-name" value="${escapeHtml(item?.name || '')}"></td>
       <td><input type="number" min="1" value="${item ? item.qty : 1}" class="item-qty" style="text-align:right"></td>
       <td><input type="number" min="0" step="0.01" value="${item ? item.price : '0.00'}" class="item-price" style="text-align:right"></td>
       <td class="item-subtotal" style="text-align:right; padding-right:12px; font-weight:500">0.00</td>
@@ -1548,7 +1562,7 @@ function initInvoiceModule() {
         const price = parseFloat(row.querySelector('.item-price')?.value) || 0;
         let sub = qty * price; if (isNaN(sub)) sub = 0; total += sub;
         row.querySelector('.item-subtotal').textContent = sub.toFixed(2);
-        const tr = document.createElement('tr'); tr.innerHTML = `<td>${name}</td><td>${qty}</td><td>${price.toFixed(2)}</td><td>${sub.toFixed(2)}</td>`; prevBody.appendChild(tr);
+        const tr = document.createElement('tr'); tr.innerHTML = `<td>${escapeHtml(name)}</td><td>${qty}</td><td>${price.toFixed(2)}</td><td>${sub.toFixed(2)}</td>`; prevBody.appendChild(tr);
       });
       const safe = isNaN(total) ? 0 : total;
       document.getElementById('inv-prev-total').textContent = safe.toFixed(2);
@@ -1559,49 +1573,85 @@ function initInvoiceModule() {
   document.getElementById('inv-btn-add').addEventListener('click', () => addRow());
   itemsBody.addEventListener('click', e => { if (e.target.classList.contains('btn-del')) { e.target.closest('tr').remove(); updatePreview(); } });
   itemsBody.addEventListener('input', () => updatePreview());
-  document.getElementById('inv-btn-submit').addEventListener('click', async () => {
-      const seller = document.getElementById('inv-input-seller').value.trim();
-      const buyer = document.getElementById('inv-input-buyer').value.trim();
-      const total = parseFloat(document.getElementById('inv-prev-total-small').textContent);
-      if (!seller || !buyer) return showToast('请填写销售方和购买方');
-      if (isNaN(total) || total <= 0) return showToast('开票金额需大于 0');
-      const items = [];
-      itemsBody.querySelectorAll('tr').forEach(row => { const name = row.querySelector('.item-name')?.value; if (name) items.push({ name, qty: parseFloat(row.querySelector('.item-qty')?.value), price: parseFloat(row.querySelector('.item-price')?.value) }); });
-      const record = { invoiceNo: document.getElementById('inv-input-no').value, date: document.getElementById('inv-input-date').value, seller, buyer, total, items, status: '已入账' };
+  function resetInvoice() {
+      viewedKey = null;
+      for (const id of ['buyer', 'taxno', 'no']) byId('inv-input-' + id).value = '';
+      byId('inv-source').value = ''; byId('inv-evidence').value = '';
+      byId('inv-status').selectedIndex = 0;
+      byId('inv-input-date').value = localDay();
+      itemsBody.replaceChildren(); currentAttachments = []; renderAttachments(); removeStamp(); addRow();
+  }
+  byId('inv-btn-submit').after(action('新建记录', resetInvoice));
+  onAction('inv-btn-submit', async () => {
+      const invoiceNumber = val('inv-input-no'), status = val('inv-status');
+      const seller = val('inv-input-seller'), buyer = val('inv-input-buyer'), date = val('inv-input-date');
+      const source = val('inv-source'), evidence = val('inv-evidence');
+      const sellerTax = val('inv-input-seller-taxno'), buyerTax = val('inv-input-taxno');
+      if (!seller || !buyer || !date || !source) throw Error('请填写购销双方、日期及来源编号');
+      if (status === '已开票' && (!invoiceNumber || !sellerTax || !buyerTax || (!evidence && !currentAttachments.length))) {
+          throw Error('已开票须填写实际发票号、双方税号，并附发票或回执依据');
+      }
+      if (status === '办理失败' && !evidence) throw Error('请填写失败原因');
+      const items = [...itemsBody.rows].map(row => ({
+          name: row.querySelector('.item-name').value.trim(),
+          qty: Number(row.querySelector('.item-qty').value),
+          price: Number(row.querySelector('.item-price').value)
+      }));
+      if (!items.length || items.some(i => !i.name || !Number.isFinite(i.qty) || i.qty <= 0 || !i.price || i.price < 0 || !Number.isFinite(i.price))) throw Error('请填写完整商品、数量和单价');
+      const total = items.reduce((sum, i) => sum + Math.round(i.qty * i.price * 100), 0) / 100;
+      if (!Number.isSafeInteger(Math.round(total * 100)) || total <= 0) throw Error('金额无效');
+      const all = await getAllRecordsFromDB();
+      if (invoiceNumber && all.some(i => i.invoiceNumber === invoiceNumber && i.invoiceNo !== viewedKey)) throw Error('该发票号码已登记');
+      const record = { invoiceNo: viewedKey || recordId(), invoiceNumber, date, seller, buyer, sellerTax, buyerTax,
+          total, items, status, source, evidence, payment: val('inv-input-payment'), attachments: [...currentAttachments], stamp: currentStamp };
       await saveRecordToDB(record);
-      showToast(`✅ 已存入总账`);
-      await loadAndRenderLedger();
-      document.getElementById('inv-input-buyer').value = ''; document.getElementById('inv-input-no').value = 'INV' + Date.now().toString().slice(-8); itemsBody.innerHTML = ''; currentAttachments = []; renderAttachments(); removeStamp(); addRow();
+      await loadAndRenderLedger(); resetInvoice(); showToast('发票记录已保存');
   });
   async function loadAndRenderLedger() {
-      allRecords = await getAllRecordsFromDB();
-      const tb = document.getElementById('inv-ledger-body'); tb.innerHTML = '';
-      allRecords.forEach(i => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td><button class="btn-view-invoice" onclick="viewInvoice('${i.invoiceNo}')">查看</button></td><td>${i.invoiceNo}</td><td>${i.date}</td><td>${i.buyer}</td><td>¥${i.total.toFixed(2)}</td><td>-</td><td>-</td>`;
-          tb.appendChild(tr);
-      });
-      document.getElementById('filtered-total-count').textContent = `共 ${allRecords.length} 张`;
+      allRecords = await getAllRecordsFromDB(); filterLedger();
   }
+  function filtered() {
+      return allRecords.filter(i => (i.invoiceNumber || '').includes(val('f-invoice-no')) &&
+          (i.buyer.includes(val('f-buyer')) || (i.source || '').includes(val('f-buyer'))) &&
+          (!val('f-payment') || i.payment === val('f-payment')) &&
+          (!val('f-date-start') || i.date >= val('f-date-start')) && (!val('f-date-end') || i.date <= val('f-date-end')));
+  }
+  window.filterLedger = function() {
+      const list = filtered(), tb = byId('inv-ledger-body'); tb.replaceChildren();
+      for (const i of list) {
+          const row = tableRow(tb, ['', i.invoiceNumber || '—', i.date, i.buyer, money(i.total), i.source, i.status]);
+          row.cells[0].append(action('查看', () => viewInvoice(i.invoiceNo)));
+      }
+      byId('filtered-total-count').textContent = '共 ' + list.length + ' 张';
+      byId('filtered-total-amount').textContent = money(list.reduce((sum, i) => sum + i.total, 0));
+  };
   window.viewInvoice = function(no) {
       const r = allRecords.find(x => x.invoiceNo === no); if (!r) return;
-      document.getElementById('inv-input-buyer').value = r.buyer; document.getElementById('inv-input-no').value = r.invoiceNo;
-      itemsBody.innerHTML = ''; r.items.forEach(it => addRow(it)); updatePreview();
+      const fields = {'input-buyer':r.buyer, 'input-no':r.invoiceNumber, 'input-seller':r.seller, 'input-taxno':r.buyerTax,
+          'input-seller-taxno':r.sellerTax, 'input-date':r.date, 'input-payment':r.payment, source:r.source, status:r.status, evidence:r.evidence};
+      Object.entries(fields).forEach(([key, value]) => byId('inv-' + key).value = value || '');
+      viewedKey = no;
+      currentAttachments = [...(r.attachments || [])]; renderAttachments(); removeStamp();
+      if (r.stamp) {
+          currentStamp = r.stamp;
+          for (const id of ['stamp-preview-img', 'invoice-stamp-img']) { byId(id).src = r.stamp; byId(id).style.display = ''; }
+      }
+      if (r.stamp) byId('stamp-preview-mini').style.display = '';
+      itemsBody.replaceChildren(); r.items.forEach(addRow); updatePreview();
+      byId('inv-input-no').focus();
   };
-  addRow(); loadAndRenderLedger();
+  for (const id of ['f-invoice-no','f-buyer','f-payment','f-date-start','f-date-end']) byId(id).addEventListener('input', filterLedger);
+  byId('f-buyer').placeholder = '购买方 / 合同编号';
+  onAction('inv-btn-clear', async () => {
+      if (confirm('清空本账套全部发票记录？')) { await clearAllDB(); await loadAndRenderLedger(); resetInvoice(); }
+  });
+  onAction('inv-btn-export', () => exportRows('发票台账', ['发票号码','日期','购方','合同编号','金额','状态'],
+      filtered().map(i => [i.invoiceNumber,i.date,i.buyer,i.source,i.total,i.status])));
+  resetInvoice(); loadAndRenderLedger();
 }
 
 // 5.2 对账 (简略实现，保持可用)
-function initReconModule() {
-    document.getElementById('recon-drop-bank').addEventListener('click', () => document.getElementById('recon-file-bank').click());
-    document.getElementById('recon-file-bank').addEventListener('change', (e) => {
-        if(e.target.files[0]) { document.querySelector('#recon-drop-bank p').textContent = '已加载：' + e.target.files[0].name; document.getElementById('recon-mapping-area').style.display = 'block'; document.getElementById('recon-btn-reconcile').disabled = false; }
-    });
-    document.getElementById('recon-btn-reconcile').addEventListener('click', () => {
-        document.getElementById('recon-result-area').style.display = 'block';
-        document.getElementById('recon-result-body').innerHTML = '<tr><td>TX001</td><td><span class="status-tag MATCH">完全匹配</span></td><td>¥1000</td><td>¥1000</td><td>-</td></tr>';
-    });
-}
+
 
 // 5.3 出纳
 function initCashierModule() {
@@ -1644,34 +1694,88 @@ function initCashierModule() {
         document.getElementById('cash-btn-submit').textContent = type === 'RECEIPT' ? '登记收款' : (type === 'PAYMENT' ? '登记付款' : '登记转账');
     };
 
+    let attachment = null;
+    filePicker('cash-receipt-upload-zone', 'cash-receipt-file-input', 'cash-receipt-preview', file => attachment = file);
+    const statusNames = {PENDING:'待办理', DONE:'已办理', POSTED:'已入账'};
+    const types = {RECEIPT:'收款', PAYMENT:'付款', TRANSFER_OUT:'转出', TRANSFER_IN:'转入'};
+    const signed = r => (['RECEIPT','TRANSFER_IN'].includes(r.type) ? 1 : -1) * Math.round(r.amount * 100);
+    const cashFilterIds = ['cash-filter-type','cash-filter-status','cash-filter-start','cash-filter-end'];
+    window.resetCashFilters = () => { for (const id of cashFilterIds) byId(id).value = ''; renderCash(); };
+    for (const id of cashFilterIds) byId(id).addEventListener('change', renderCash);
+    byId('cash-journal-account').addEventListener('change', renderCash);
+    tabs('#module-cashier .cash-tab', 'cash-tab-', '#module-cashier .cash-tab-panel');
+    function renderCash() {
+        const [type, status, start, end] = cashFilterIds.map(val);
+        const register = byId('cash-register-body'), notes = byId('cash-notes-body'),
+            daily = byId('cash-daily-list'), journal = byId('cash-journal-body');
+        for (const node of [register, notes, daily, journal]) node.replaceChildren();
+        const groups = new Map(), selected = val('cash-journal-account');
+        for (const r of [...cashierRecords].sort((a,b) => a.date.localeCompare(b.date))) {
+            const amount = money(signed(r) / 100), name = getAccountName(r.account);
+            if ((!type || r.type === type || (type === 'TRANSFER' && r.transferId)) &&
+                (!status || r.status === status) && (!start || r.date >= start) && (!end || r.date <= end)) {
+                const row = tableRow(register, [r.date, types[r.type], amount, name, r.counterparty, r.sourceDoc, r.receiptNo, statusNames[r.status], '']);
+                if (r.status !== 'POSTED') row.lastChild.append(action(r.status === 'PENDING' ? '确认办理' : '确认入账', async () => {
+                    const current = await getAllFromStore(STORE_CASHIER);
+                    const next = current.filter(item => r.transferId ? item.transferId === r.transferId : item.id === r.id);
+                    if (next.some(item => item.status !== r.status)) throw Error('状态已变化，请刷新');
+                    if (r.status === 'PENDING' && !r.receiptNo && !r.attachment && !r.note) throw Error('缺少回单或票据依据，请补交资料');
+                    await saveRecords(STORE_CASHIER, next.map(item => ({...item, status:r.status === 'PENDING' ? 'DONE' : 'POSTED'})));
+                    await loadCashier();
+                }));
+                if (r.status === 'PENDING') row.lastChild.append(action('补录回单号', async () => {
+                    const number = prompt('回单 / 收据编号', r.receiptNo || '')?.trim(); if (!number) return;
+                    const current = await getAllFromStore(STORE_CASHIER);
+                    const same = item => r.transferId ? item.transferId === r.transferId : item.id === r.id;
+                    if (current.some(item => !same(item) && item.receiptNo === number)) throw Error('该回单已登记');
+                    const records = current.filter(same);
+                    if (records.some(item => item.status !== 'PENDING')) throw Error('状态已变化，请刷新');
+                    await saveRecords(STORE_CASHIER, records.map(item => ({...item, receiptNo:number}))); await loadCashier();
+                }));
+            }
+            if ((r.receiptNo || r.attachment || r.note) && r.type !== 'TRANSFER_IN') {
+                const row = tableRow(notes, [r.receiptNo, r.receiptType, r.date, types[r.type], money(r.amount), r.note, '', statusNames[r.status]]);
+                if (r.attachment) row.cells[6].append(action('下载', () => downloadAttachment(r.attachment)));
+            }
+            if (r.status === 'PENDING') continue;
+            const group = groups.get(r.date) || [];
+            group.push([name, types[r.type], amount, r.receiptNo || '']); groups.set(r.date, group);
+            if (!selected || name === selected) journal.append(document.createElement('div'));
+            if (!selected || name === selected) journal.lastChild.textContent = [r.date, name, types[r.type], amount].join('　');
+        }
+        for (const [date, rows] of groups) {
+            const details = document.createElement('details'), title = document.createElement('summary');
+            title.textContent = date + ' · ' + rows.length + ' 笔';
+            details.append(title);
+            rows.forEach(row => { const line = document.createElement('div'); line.textContent = row.join('　'); details.append(line); });
+            daily.append(details);
+        }
+    }
     async function loadCashier() {
         cashierRecords = await getAllFromStore(STORE_CASHIER);
-        const tb = document.getElementById('cash-register-body'); tb.innerHTML = '';
-        cashierRecords.forEach(r => {
-            const positive = r.type === 'RECEIPT' || r.type === 'TRANSFER_IN';
-            tb.innerHTML += `<tr><td>${r.date}</td><td>${r.type}</td><td class="${positive ? 'cash-in' : 'cash-out'}">${positive ? '+' : '-'}¥${r.amount.toFixed(2)}</td><td>${escapeHtml(getAccountName(r.account))}</td><td>${r.counterparty || '-'}</td><td><span class="status-pill ${r.status}">${r.status}</span></td><td>-</td></tr>`;
-        });
-        refreshJournalAccountOptions();
+        refreshJournalAccountOptions(); renderCash();
     }
 
-    document.getElementById('cash-btn-submit').addEventListener('click', async () => {
-        const account = document.getElementById('cash-account').value.trim();
-        const amount = parseFloat(document.getElementById('cash-amount').value);
-        const date = document.getElementById('cash-date').value;
-        if (!account) return showToast('请填写账户');
-        if (!amount || amount <= 0) return showToast('金额需大于 0');
-        if (cashierCurrentType === 'TRANSFER') {
-            const inAcc = document.getElementById('cash-in-account').value.trim();
-            if (!inAcc) return showToast('请填写转入账户');
-            if (inAcc === account) return showToast('转入转出不能相同');
-            await saveToStore(STORE_CASHIER, { id: 'C'+Date.now()+'O', type: 'TRANSFER_OUT', status: 'DONE', date, amount, account });
-            await saveToStore(STORE_CASHIER, { id: 'C'+Date.now()+'I', type: 'TRANSFER_IN', status: 'DONE', date, amount, account: inAcc });
-            showToast('✅ 转账成功');
-        } else {
-            await saveToStore(STORE_CASHIER, { id: 'C'+Date.now(), type: cashierCurrentType, status: 'DONE', date, amount, account, counterparty: document.getElementById('cash-counterparty').value });
-            showToast('✅ 登记成功');
-        }
-        loadCashier();
+    byId('cash-btn-submit').before(makeField('办理状态','cash-entry-status','select',[['PENDING','待办理'],['DONE','已办理']]));
+    onAction('cash-btn-submit', async () => {
+        const account = val('cash-account'), date = val('cash-date'), amount = cents(val('cash-amount')) / 100;
+        const sourceDoc = val('cash-source-doc'), receiptNo = val('cash-receipt-no'), note = val('cash-note-info');
+        const status = val('cash-entry-status'), type = cashierCurrentType, incoming = val('cash-in-account');
+        if (!account || !date || !sourceDoc || amount <= 0) throw Error('请填写账户、日期、来源单号和有效金额');
+        if (type === 'TRANSFER' && (!incoming || incoming === account)) throw Error('请填写不同的转出和转入账户');
+        if (status === 'DONE' && !receiptNo && !attachment && !note) throw Error('已办理需要回单、附件或票据信息');
+        const all = await getAllFromStore(STORE_CASHIER);
+        if (receiptNo && all.some(r => r.receiptNo === receiptNo)) throw Error('该回单已登记');
+        const details = { status,date,amount,sourceDoc,receiptNo,note,attachment,sourceType:val('cash-source-type'),
+            receiptType:val('cash-receipt-type'), memo:val('cash-memo'), counterpartyAccount:val('cash-counterparty-account') };
+        const id = recordId();
+        const records = type === 'TRANSFER'
+            ? [{...details,id:id+'O',type:'TRANSFER_OUT',account,transferId:id},{...details,id:id+'I',type:'TRANSFER_IN',account:incoming,transferId:id}]
+            : [{...details,id,type,account,counterparty:val('cash-counterparty')}];
+        await saveRecords(STORE_CASHIER, records, true);
+        for (const field of ['amount','source-doc','receipt-no','note-info','memo','counterparty','counterparty-account','in-account']) byId('cash-' + field).value = '';
+        attachment = null; byId('cash-receipt-preview').replaceChildren();
+        await loadCashier(); showToast('出纳登记已保存');
     });
 
     const now = new Date(); document.getElementById('cash-date').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
@@ -1681,6 +1785,9 @@ function initCashierModule() {
 // 5.4 制证
 function initVoucherModule() {
     const V_BIZ = {
+        BANK: { label: '银行往来', template: [{ account:'1002', summary:'银行往来', side:'D' },{ account:'1122', summary:'银行往来', side:'C' }] },
+        PAYROLL: { label: '工资计提', template: [{ account:'6602', summary:'工资计提', side:'D' },{ account:'2211', summary:'工资计提', side:'C' }] },
+        PURCHASE: { label: '采购成本', template: [{ account:'1405', summary:'采购成本', side:'D' },{ account:'2202', summary:'采购成本', side:'C' }] },
         EXPENSE: { label: '费用报销', template: [{ account: '6602', summary: '报销费用', side: 'D' }, { account: '1002', summary: '银行付款', side: 'C' }] },
         SALES: { label: '销售收入', template: [{ account: '1122', summary: '确认收入', side: 'D' }, { account: '6001', summary: '确认收入', side: 'C' }] }
     };
@@ -1692,7 +1799,7 @@ function initVoucherModule() {
     function accOpts(sel) { return VOUCHER_ACCOUNTS.map(a => `<option value="${a.code}" ${sel === a.code ? 'selected' : ''}>${a.code} ${a.name}</option>`).join(''); }
     function addVEntry(data) {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td><select class="entry-account">${accOpts(data?.account || '1002')}</select></td><td><input type="text" class="entry-summary" value="${data?.summary || ''}"></td><td><input type="number" class="entry-debit num" value="${data?.debit || ''}"></td><td><input type="number" class="entry-credit num" value="${data?.credit || ''}"></td><td><button type="button" class="btn-remove-row" onclick="this.closest('tr').remove(); recalcV();">×</button></td>`;
+        tr.innerHTML = `<td><select class="entry-account">${accOpts(data?.account || '1002')}</select></td><td><input type="text" class="entry-summary" value="${escapeHtml(data?.summary || '')}"></td><td><input type="number" class="entry-debit num" value="${data?.debit || ''}"></td><td><input type="number" class="entry-credit num" value="${data?.credit || ''}"></td><td><button type="button" class="btn-remove-row" onclick="this.closest('tr').remove(); recalcV();">×</button></td>`;
         document.getElementById('voucher-entries-body').appendChild(tr);
         tr.querySelectorAll('input').forEach(i => i.addEventListener('input', recalcV)); recalcV();
     }
@@ -1708,32 +1815,67 @@ function initVoucherModule() {
         if (Math.abs(d - c) < 0.005 && d > 0) { status.className = 'voucher-balance-status ok'; status.textContent = `借贷平衡 ¥${d.toFixed(2)}`; }
         else { status.className = 'voucher-balance-status bad'; status.textContent = `借贷不平 差额 ¥${(d - c).toFixed(2)}`; }
     };
-    document.getElementById('voucher-btn-submit').addEventListener('click', async () => {
-        let d = parseFloat(document.getElementById('voucher-debit-total').textContent);
-        let c = parseFloat(document.getElementById('voucher-credit-total').textContent);
-        if (Math.abs(d - c) >= 0.005 || d === 0) return showToast('借贷不平或金额为0');
-        const date = document.getElementById('voucher-date').value || new Date().toISOString().slice(0,10);
-        const vNo = '记-'+date.replace(/-/g,'')+'-'+String(vRecords.filter(v=>v.date===date).length+1).padStart(3,'0');
-        const entries = [];
-        document.querySelectorAll('#voucher-entries-body tr').forEach(tr => {
-            entries.push({ account: tr.querySelector('.entry-account').value, summary: tr.querySelector('.entry-summary').value, debit: parseFloat(tr.querySelector('.entry-debit').value)||0, credit: parseFloat(tr.querySelector('.entry-credit').value)||0 });
+    let attachment = null;
+    filePicker('voucher-attach-zone', 'voucher-attach-input', 'voucher-attach-list', file => {
+        attachment = file; byId('voucher-attach-count').textContent = file ? '1' : '0';
+    });
+    byId('voucher-source-type').replaceChildren(...['合同','发票','银行回单','报销单','工资表','其他'].map(name => new Option(name,name)));
+    function setVoucherPeriod() { byId('voucher-period').value = val('voucher-date').slice(0,7); }
+    byId('voucher-date').addEventListener('change', setVoucherPeriod);
+    window.resetVoucherForm = () => {
+        for (const id of ['voucher-source-no','voucher-counterparty','voucher-memo']) byId(id).value = '';
+        attachment = null; byId('voucher-attach-list').replaceChildren(); byId('voucher-attach-count').textContent = '0';
+        resetVEntries();
+    };
+    window.addVoucherEntry = () => addVEntry();
+    window.addEntryRow = () => addVEntry();
+    async function refreshClosed() {
+        const records = await getAllFromStore(STORE_WORK);
+        byId('voucher-closed-periods').textContent = records.filter(r => r.id.startsWith('closed:')).map(r => r.period).sort().join('、') || '无';
+    }
+    window.closePeriod = () => runAction(async () => {
+        const period = val('voucher-period-input'); if (!period) throw Error('请选择期间');
+        if (!confirm('锁定该期间的制证、审核和记账？')) return;
+        await lockPeriod(period, '手动锁定'); await refreshClosed();
+    });
+    onAction('voucher-btn-submit', async () => {
+        const date = val('voucher-date'), period = date.slice(0,7), source = val('voucher-source-no');
+        if (!date || (!source && !attachment)) throw Error('请填写日期并关联来源单号或附件');
+        await ensureOpen(period);
+        const all = await getAllFromStore(STORE_VOUCHER);
+        const duplicates = source && all.some(v => v.source === source && v.sourceType === val('voucher-source-type'));
+        if (duplicates && !confirm('已存在相同来源的凭证，确认属于一单多凭证？')) return;
+        const entries = [...byId('voucher-entries-body').rows].map(tr => {
+            const read = cls => tr.querySelector('.entry-' + cls).value;
+            const debit = cents(read('debit') || '0'), credit = cents(read('credit') || '0');
+            if (debit < 0 || credit < 0 || Boolean(debit) === Boolean(credit) || !read('summary').trim()) throw Error('每行须填写摘要，并只在借方或贷方录入正金额');
+            return {account:read('account'), summary:read('summary'), debit:debit/100, credit:credit/100};
         });
-        await saveToStore(STORE_VOUCHER, { id: 'V'+Date.now(), voucherNo: vNo, date, period: date.slice(0,7), bizLabel: V_BIZ[vType].label, entries, totalDebit: d, totalCredit: c, status: 'PENDING' });
-        showToast('✅ 凭证已提交审核'); resetVEntries(); loadVList();
+        const [d,c] = ['debit','credit'].map(key => entries.reduce((sum,row) => sum + Math.round(row[key]*100),0));
+        if (!Number.isSafeInteger(d) || d <= 0 || d !== c) throw Error('借贷金额不平或无有效分录');
+        const voucherNo = '记-'+date.replace(/-/g,'')+'-'+String(all.filter(v=>v.date===date).length+1).padStart(3,'0');
+        await saveRecords(STORE_VOUCHER, [{id:recordId(), voucherNo,date,period,bizLabel:V_BIZ[vType].label,entries,
+            totalDebit:d/100,totalCredit:c/100,status:'PENDING',source,sourceType:val('voucher-source-type'),
+            counterparty:val('voucher-counterparty'),memo:val('voucher-memo'),attachment}], true);
+        byId('voucher-no-badge').textContent = voucherNo;
+        resetVoucherForm(); await loadVList(); showToast('凭证已提交审核');
     });
     async function loadVList() {
         vRecords = await getAllFromStore(STORE_VOUCHER);
-        const tb = document.getElementById('voucher-list-body'); tb.innerHTML = '';
-        vRecords.sort((a,b)=>b.id.localeCompare(a.id)).forEach(v => {
-            tb.innerHTML += `<tr><td>${v.voucherNo}</td><td>${v.date}</td><td>${v.bizLabel}</td><td>${v.entries[0]?.summary || '-'}</td><td style="text-align:right;">¥${v.totalDebit.toFixed(2)}</td><td style="text-align:right;">¥${v.totalCredit.toFixed(2)}</td><td>-</td><td><span class="voucher-status ${v.status}">${v.status}</span></td><td><button class="btn-mini btn-mini-primary" onclick="approveV('${v.id}')">审核通过</button></td></tr>`;
-        });
+        const tb = byId('voucher-list-body'); tb.replaceChildren();
+        byId('voucher-list-count').textContent = vRecords.length;
+        for (const v of [...vRecords].reverse()) {
+            const row = tableRow(tb,[v.voucherNo,v.date,v.bizLabel,v.entries[0]?.summary,money(v.totalDebit),money(v.totalCredit),
+                v.source, {PENDING:'待审核',APPROVED:'已审核',POSTED:'已记账'}[v.status],'']);
+            if (v.attachment) row.cells[6].append(action('附件', () => downloadAttachment(v.attachment)));
+            if (v.status === 'PENDING') row.lastChild.append(action('审核通过', async () => {
+                await changeVoucherStatus([v.id], 'PENDING', 'APPROVED'); await loadVList(); showToast('已审核');
+            }));
+        }
     }
-    window.approveV = async function(id) {
-        const all = await getAllFromStore(STORE_VOUCHER); const v = all.find(x=>x.id===id); if(!v) return;
-        v.status = 'APPROVED'; await saveToStore(STORE_VOUCHER, v); loadVList(); showToast('已审核');
-    };
-    renderTypes(); resetVEntries(); loadVList();
-    document.getElementById('voucher-date').value = new Date().toISOString().slice(0,10);
+    window.refreshVouchers = loadVList;
+    renderTypes(); resetVEntries(); loadVList(); refreshClosed();
+    byId('voucher-date').value = localDay(); setVoucherPeriod();
 }
 
 // 5.5 会计记账
@@ -1741,143 +1883,670 @@ function initAccountingModule() {
     let accV = [], accPeriod = '';
     async function loadAcc() {
         accV = await getAllFromStore(STORE_VOUCHER);
-        const set = new Set(['2026-06', '2026-07']);
+        const set = new Set([localDay().slice(0, 7), ...(await getAllFromStore(STORE_WORK)).map(r => r.period).filter(Boolean)]);
         accV.forEach(v => set.add(v.period));
         const periods = Array.from(set).sort().reverse();
-        if (!accPeriod) accPeriod = periods[0];
+        if (!accPeriod || !set.has(accPeriod)) accPeriod = periods[0];
         document.getElementById('acc-period-select').innerHTML = periods.map(p => `<option value="${p}">${p}</option>`).join('');
         document.getElementById('acc-period-select').value = accPeriod;
-        renderPending(); updateBadge();
+        renderPending(); updateBadge(); await renderBooks(accV, accPeriod);
     }
-    window.onAccPeriodChange = function(p) { accPeriod = p; renderPending(); };
+    window.onAccPeriodChange = function(p) { accPeriod = p; renderPending(); updateBadge(); runAction(() => renderBooks(accV, p)); };
     function renderPending() {
         const list = accV.filter(v => v.status === 'APPROVED' && v.period === accPeriod);
         const tb = document.getElementById('acc-pending-body');
         if (!list.length) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;">无待记账凭证</td></tr>'; return; }
-        tb.innerHTML = list.map(v => `<tr><td>${v.voucherNo}</td><td>${v.date}</td><td>${v.bizLabel}</td><td>${v.entries[0]?.summary || '-'}</td><td style="text-align:right;">¥${v.totalDebit.toFixed(2)}</td><td style="text-align:right;">¥${v.totalCredit.toFixed(2)}</td><td><span class="voucher-status APPROVED">已审核</span></td><td><button class="btn-mini btn-mini-primary" onclick="postV('${v.id}')">记账</button></td></tr>`).join('');
+        tb.replaceChildren();
+        for (const v of list) {
+            const row = tableRow(tb,[v.voucherNo,v.date,v.bizLabel,v.entries[0]?.summary,money(v.totalDebit),money(v.totalCredit),'已审核','']);
+            row.lastChild.append(action('记账', () => postV(v.id)));
+        }
     }
-    window.postV = async function(id) {
-        const all = await getAllFromStore(STORE_VOUCHER); const v = all.find(x=>x.id===id); if(!v) return;
-        v.status = 'POSTED'; await saveToStore(STORE_VOUCHER, v); await loadAcc(); showToast('已记账');
-    };
-    window.postAllPending = async function() {
-        const list = accV.filter(v => v.status === 'APPROVED' && v.period === accPeriod);
-        for (let v of list) { v.status = 'POSTED'; await saveToStore(STORE_VOUCHER, v); }
-        await loadAcc(); showToast('全部记账完成');
-    };
+    window.postV = id => runAction(async () => {
+        await changeVoucherStatus([id], 'APPROVED', 'POSTED'); await loadAcc(); await refreshVouchers(); showToast('已记账');
+    });
+    window.postAllPending = () => runAction(async () => {
+        const ids = accV.filter(v => v.status === 'APPROVED' && v.period === accPeriod).map(v => v.id);
+        if (!ids.length) return showToast('无待记账凭证');
+        await changeVoucherStatus(ids, 'APPROVED', 'POSTED'); await loadAcc(); await refreshVouchers(); showToast('全部记账完成');
+    });
+    tabs('#acc-tabs .acc-tab','acc-panel-','#module-accounting .acc-tab-panel');
+    wireBookEditors(() => accPeriod, loadAcc);
     function updateBadge() { document.getElementById('acc-badge-pending').textContent = accV.filter(v => v.status === 'APPROVED' && v.period === accPeriod).length; }
+    window.refreshAccounting = () => runAction(loadAcc);
     loadAcc();
 }
 
 // 5.6 应收账款
+const byId = id => document.getElementById(id);
+const val = id => byId(id).value.trim();
+const recordId = () => crypto.randomUUID?.() || Array.from(crypto.getRandomValues(new Uint32Array(4)), n => n.toString(16)).join('-');
+const money = amount => '¥' + Number(amount).toFixed(2);
+function localDay() {
+    const now = new Date();
+    return [now.getFullYear(), now.getMonth()+1, now.getDate()].map(n => String(n).padStart(2,'0')).join('-');
+}
+function cents(value) {
+    const text = String(value).trim();
+    const number = Math.round(Number(text)*100);
+    if (!/^-?\d+(?:\.\d{1,2})?$/.test(text) || !Number.isSafeInteger(number)) throw Error('请输入有效金额，最多保留两位小数');
+    return number;
+}
+async function runAction(handler, button) {
+    if (button) {
+        if (button.disabled) return;
+        button.disabled = true;
+    }
+    try { await handler(); }
+    catch (error) { showToast(error.name === 'QuotaExceededError' ? '存储空间不足，资料未保存' : (error.message || '操作失败')); }
+    finally { if (button) button.disabled = false; }
+}
+function onAction(id, handler) { const button = byId(id); button.addEventListener('click', () => runAction(handler, button)); }
+function action(label, handler) {
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'btn-mini'; button.textContent = label;
+    button.addEventListener('click', () => runAction(handler, button));
+    return button;
+}
+function tableRow(body, values) {
+    const row = body.insertRow();
+    values.forEach(value => row.insertCell().textContent = value ?? '—');
+    return row;
+}
+function makeField(label, id, type = 'text', options = []) {
+    const group = document.createElement('div'); group.className = 'form-group';
+    const title = document.createElement('label'); title.htmlFor = id; title.textContent = label;
+    const input = document.createElement(type === 'select' || type === 'textarea' ? type : 'input');
+    input.id = id;
+    if (type === 'select') input.append(...options.map(([value,name]) => new Option(name,value)));
+    else if (type !== 'textarea') { input.type = type; if (type === 'number') input.step = '0.01'; }
+    group.append(title,input); return group;
+}
+function filePicker(zoneId, inputId, listId, update) {
+    const input = byId(inputId), list = byId(listId);
+    byId(zoneId).addEventListener('click', event => { if (event.target !== input) input.click(); });
+    input.addEventListener('change', async () => {
+        const file = input.files[0]; input.value = '';
+        if (!file) return;
+        await runAction(async () => {
+            const data = await new Promise((resolve,reject) => {
+                const reader = new FileReader(); reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(Error('附件读取失败')); reader.readAsDataURL(file);
+            });
+            update({name:file.name,data});
+            list.replaceChildren(document.createTextNode(file.name + ' '), action('移除', () => { update(null); list.replaceChildren(); }));
+        });
+    });
+}
+function downloadAttachment(file) {
+    const data = file.data || file.dataUrl;
+    if (!/^data:[^,]*;base64,/i.test(data)) throw Error('附件格式无效');
+    const link = document.createElement('a'); link.href = data; link.download = file.name; link.click();
+}
+function downloadFile(name, content, mime) {
+    const url = URL.createObjectURL(new Blob([content], {type:mime}));
+    const link = document.createElement('a'); link.href = url; link.download = name; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function exportRows(name, headers, rows) {
+    if (window.XLSX) {
+        const book = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(book,XLSX.utils.aoa_to_sheet([headers,...rows]),'数据');
+        XLSX.writeFile(book,name+'.xlsx'); return;
+    }
+    const cell = value => '"' + String(typeof value === 'string' && /^[=+\-@\t\r]/.test(value) ? "'"+value : value ?? '').replaceAll('"','""') + '"';
+    downloadFile(name+'.csv', '\ufeff' + [headers,...rows].map(row => row.map(cell).join(',')).join('\r\n'), 'text/csv;charset=utf-8');
+}
+function tabs(selector, prefix, panels) {
+    const items = [...document.querySelectorAll(selector)];
+    for (const item of items) item.addEventListener('click', () => {
+        items.forEach(tab => tab.classList.toggle('active',tab === item));
+        document.querySelectorAll(panels).forEach(panel => panel.classList.toggle('active',panel.id === prefix + item.dataset.tab));
+    });
+}
+async function work(id) {
+    return (await getAllFromStore(STORE_WORK)).find(item => item.id === id);
+}
+async function ensureOpen(period) {
+    if (!period || await work('closed:'+period)) throw Error('请选择有效的开放期间');
+}
+async function lockPeriod(period, reason, archive = null) {
+    await ensureOpen(period);
+    const all = await getAllFromStore(STORE_VOUCHER);
+    if (all.some(v => v.period === period && v.status !== 'POSTED')) throw Error('期间仍有未记账凭证');
+    await saveRecords(STORE_WORK, [{id:'closed:'+period,period,reason,archive,createdAt:new Date().toISOString()}],true);
+}
+async function changeVoucherStatus(ids, from, to) {
+    const all = await getAllFromStore(STORE_VOUCHER), records = ids.map(id => all.find(v => v.id === id));
+    if (records.some(v => !v || v.status !== from)) throw Error('凭证状态已变化，请刷新');
+    for (const period of new Set(records.map(v => v.period))) await ensureOpen(period);
+    await saveRecords(STORE_VOUCHER, records.map(v => ({...v,status:to})));
+}
+
+let bookReport = 'bs', currentBook = [];
+function bookRows(records, period, opening = {}) {
+    return VOUCHER_ACCOUNTS.map(account => {
+        const entries = records.filter(v => v.period === period && v.status === 'POSTED')
+            .sort((a,b) => a.date.localeCompare(b.date) || a.voucherNo.localeCompare(b.voucherNo))
+            .flatMap(v => v.entries.filter(e => e.account === account.code).map(e => ({...e,date:v.date,no:v.voucherNo,source:v.source,biz:v.bizLabel})));
+        const debit = entries.reduce((sum,e) => sum+Math.round(e.debit*100),0);
+        const credit = entries.reduce((sum,e) => sum+Math.round(e.credit*100),0);
+        const initial = opening[account.code] || 0;
+        return {...account,entries,debit,credit,initial,end:initial+debit-credit};
+    });
+}
+async function openingFor(records, period) {
+    const snapshots = (await getAllFromStore(STORE_WORK)).filter(r => r.id.startsWith('opening:') && r.period <= period)
+        .sort((a,b) => b.period.localeCompare(a.period));
+    const baseline = snapshots[0], balances = {...baseline?.balances};
+    for (const v of records) {
+        if (v.status !== 'POSTED' || v.period >= period || (baseline && v.period < baseline.period)) continue;
+        for (const e of v.entries) balances[e.account] = (balances[e.account] || 0) + Math.round(e.debit*100)-Math.round(e.credit*100);
+    }
+    return balances;
+}
+function fromCents(value) { return money(value / 100); }
+function renderBookDetail() {
+    const tb = byId('acc-detail-body'); tb.replaceChildren();
+    const account = currentBook.find(row => row.code === val('acc-detail-account'));
+    if (!account) return;
+    let running = account.initial;
+    for (const e of account.entries) {
+        running += Math.round(e.debit*100)-Math.round(e.credit*100);
+        const row = tableRow(tb,[e.date,e.no,e.summary,money(e.debit),money(e.credit),fromCents(running)]);
+        if (e.source) row.cells[1].title = '来源：'+e.source;
+    }
+}
+function renderBookReport() {
+    const node = byId('acc-report-content'); node.replaceChildren();
+    const table = document.createElement('table'); table.className='acc-table'; node.append(table);
+    const body = table.createTBody();
+    const rows = bookReport === 'bs'
+        ? currentBook.filter(r => /^[1245]/.test(r.code)).map(r => [r,r.end])
+        : currentBook.filter(r => r.code.startsWith('6')).map(r => [r,r.entries.filter(e => e.biz !== '期末结转').reduce((sum,e) => sum+Math.round(e.credit*100)-Math.round(e.debit*100),0)]);
+    const total = prefix => rows.filter(([r]) => prefix.test(r.code)).reduce((sum,[,amount]) => sum+amount,0);
+    tableRow(body,['科目','账套内部核对金额']);
+    if (bookReport === 'bs') {
+        const profit = currentBook.filter(r => r.code.startsWith('6')).reduce((sum,r) => sum-r.end,0);
+        tableRow(body,['资产合计',fromCents(total(/^[15]/))]);
+        tableRow(body,['负债合计',fromCents(-total(/^2/))]);
+        tableRow(body,['权益及未结转损益合计',fromCents(-total(/^4/) + profit)]);
+    } else tableRow(body,['本期损益合计',fromCents(total(/^6/))]);
+    for (const [r,amount] of rows) {
+        const row = tableRow(body,['',fromCents(bookReport === 'bs' && !/^[15]/.test(r.code) ? -amount : amount)]);
+        row.firstChild.append(action(r.code+' '+r.name, () => {
+            byId('acc-detail-account').value = r.code; renderBookDetail();
+            document.querySelector('#acc-tabs [data-tab="detail"]').click();
+        }));
+    }
+}
+async function renderBooks(records, period) {
+    const opening = await openingFor(records,period), note = await work('report-note:'+period);
+    if (byId('acc-period-select').value !== period) return;
+    currentBook = bookRows(records,period,opening);
+    for (const id of ['summary-body','ledger-body','trial-body','summary-foot','trial-foot']) byId('acc-'+id).replaceChildren();
+    const trial = currentBook.map(r => [Math.max(r.initial,0),Math.max(-r.initial,0),r.debit,r.credit,Math.max(r.end,0),Math.max(-r.end,0)]);
+    currentBook.forEach((r,i) => {
+        tableRow(byId('acc-summary-body'),[r.code,r.name,fromCents(r.debit),fromCents(r.credit)]);
+        tableRow(byId('acc-ledger-body'),[r.code,r.name,...[r.initial,r.debit,r.credit,r.end].map(fromCents)]);
+        tableRow(byId('acc-trial-body'),[r.code,r.name,...trial[i].map(fromCents)]);
+    });
+    const sums = trial[0].map((_,i) => trial.reduce((sum,row) => sum+row[i],0));
+    tableRow(byId('acc-summary-foot'),['合计','',...sums.slice(2,4).map(fromCents)]);
+    tableRow(byId('acc-trial-foot'),['合计','',...sums.map(fromCents)]);
+    byId('acc-trial-check').textContent = [0,2,4].every(i => sums[i] === sums[i+1]) ? '期初、本期、期末借贷合计相等' : '试算不平，请复核';
+    byId('acc-period-summary').textContent = '已记账 '+records.filter(v => v.period===period && v.status==='POSTED').length+' 张';
+    byId('acc-report-note').value = note?.note || '';
+    renderBookDetail(); renderBookReport();
+}
+function wireBookEditors(period, refresh) {
+    const accounts = byId('acc-detail-account');
+    accounts.replaceChildren(...VOUCHER_ACCOUNTS.map(a => new Option(a.code+' '+a.name,a.code)));
+    accounts.addEventListener('change',renderBookDetail);
+    window.switchReportTab = type => {
+        bookReport = type;
+        document.querySelectorAll('.acc-report-subtab').forEach(tab => tab.classList.toggle('active',tab.dataset.rtab === type));
+        renderBookReport();
+    };
+    window.toggleOpeningEditor = () => {
+        const box = byId('acc-opening-editor'), body = byId('acc-opening-body');
+        if (box.style.display !== 'none') { box.style.display = 'none'; return; }
+        const selectedPeriod = period(); body.dataset.period = selectedPeriod;
+        body.replaceChildren();
+        for (const a of currentBook) {
+            const row = tableRow(body,[a.code,a.name,'','']);
+            const toInput = (cell,value) => {
+                const input = document.createElement('input'); input.type='number'; input.step='0.01'; input.min='0';
+                input.value = value ? (value/100).toFixed(2) : ''; cell.append(input);
+            };
+            toInput(row.cells[2],Math.max(a.initial,0)); toInput(row.cells[3],Math.max(-a.initial,0));
+        }
+        box.style.display = 'block';
+    };
+    window.saveOpeningFromEditor = () => runAction(async () => {
+        const p = period(), body = byId('acc-opening-body');
+        if (p !== body.dataset.period) throw Error('期间已变化，请重新打开期初设置');
+        await ensureOpen(p);
+        const history = await getAllFromStore(STORE_VOUCHER);
+        if (history.some(v => v.status === 'POSTED' && v.period < p)) throw Error('该期由前期账簿结转，请在启用期间设置期初');
+        const balances = {};
+        for (const row of body.rows) {
+            const [d,c] = [...row.querySelectorAll('input')].map(input => cents(input.value || '0'));
+            if (d < 0 || c < 0 || (d && c)) throw Error('期初每科目只能填写一侧正金额');
+            balances[row.cells[0].textContent] = d-c;
+        }
+        if (Object.values(balances).reduce((a,b)=>a+b,0) !== 0) throw Error('期初借贷不平');
+        await saveToStore(STORE_WORK,{id:'opening:'+p,period:p,balances});
+        await refresh(); byId('acc-opening-editor').style.display='none'; showToast('期初余额已保存');
+    });
+    window.saveReportNote = () => runAction(async () => {
+        const p = period(); await saveToStore(STORE_WORK,{id:'report-note:'+p,period:p,note:val('acc-report-note')}); showToast('编制说明已保存');
+    });
+}
+
+function readCsv(text) {
+    const rows = []; let row = [], value = '', quoted = false;
+    text = text.replace(/^\ufeff/,'');
+    for (let i=0;i<text.length;i++) {
+        const c = text[i];
+        if (c === '"') {
+            if (quoted && text[i+1] === '"') { value += '"'; i++; }
+            else quoted = !quoted;
+        } else if (!quoted && (c === ',' || c === '\n' || c === '\r')) {
+            row.push(value); value = '';
+            if (c !== ',') {
+                if (row.some(Boolean)) rows.push(row);
+                row = []; if (c === '\r' && text[i+1] === '\n') i++;
+            }
+        } else value += c;
+    }
+    if (quoted) throw Error('CSV 引号未闭合');
+    row.push(value); if (row.some(Boolean)) rows.push(row);
+    return rows;
+}
+function compareFlows(bank, company) {
+    const grouped = new Map();
+    for (const [side,rows] of [['bank',bank],['company',company]]) {
+        for (const row of rows) {
+            const key = row.id || side + ':' + row.line;
+            if (!grouped.has(key)) grouped.set(key,{id:row.id,bank:[],company:[]});
+            grouped.get(key)[side].push(row);
+        }
+    }
+    return [...grouped.values()].map(({id,bank,company}) => {
+        const b = bank[0], c = company[0];
+        const bad = !id || bank.length>1 || company.length>1 || [...bank,...company].some(r => r.amount === null);
+        const status = bad ? 'ERROR' : !b ? 'COMPANY_ONLY' : !c ? 'BANK_ONLY' : b.amount === c.amount ? 'MATCH' : 'DIFF';
+        const note = bad ? '单号重复、缺失或金额无效' : status === 'MATCH' ? '单号与金额相同' : '待核实';
+        return {id,status,bank,company,note};
+    });
+}
+function initReconModule() {
+    const data = {}, sides = ['bank','company'], tabs = [...document.querySelectorAll('#recon-tabs .tab')];
+    const labels = {MATCH:'完全匹配', BANK_ONLY:'仅银行有',COMPANY_ONLY:'仅账面有',DIFF:'金额不符',ERROR:'异常'};
+    let filter = 'ALL', results = [], verified = false, resultKey = null;
+    const area = byId('recon-mapping-area');
+    const control = document.createElement('div'); control.className = 'mapping-area'; control.style.display = 'block';
+    const balances = [['银行期末余额','recon-bank-end'],['账面期末余额','recon-book-end'],['银行侧已核实调整净额','recon-bank-adjust'],['账面侧已核实调整净额','recon-book-adjust']];
+    control.append(makeField('对账期间','recon-period','month'), makeField('银行账户','recon-account'));
+    const inputs = document.createElement('div'); inputs.className='form-grid';
+    for (const spec of balances) inputs.append(makeField(...spec,'number'));
+    inputs.append(makeField('调整及差异核实依据','recon-evidence')); control.append(inputs); area.before(control);
+    const key = () => val('recon-period')+':'+val('recon-account');
+    let adjustment = null;
+    function readAdjustment() {
+        if (!val('recon-bank-end') || !val('recon-book-end')) return null;
+        const [bank,book,bankAdj,bookAdj] = balances.map(([,id])=>cents(val(id)||'0'));
+        return {bank,book,bankAdj,bookAdj,evidence:val('recon-evidence'),gap:bank+bankAdj-book-bookAdj};
+    }
+    byId('recon-period').value = localDay().slice(0,7);
+    const btn = byId('recon-btn-reconcile');
+    const summary = document.createElement('p'); summary.className='note-text'; btn.parentNode.after(summary);
+    const save = action('保存对账结果',async () => {
+        const period=val('recon-period'), account=val('recon-account');
+        if (!period || !account || !results.length || resultKey !== key()) throw Error('请填写期间、账户并运行对账');
+        await ensureOpen(period);
+        adjustment = readAdjustment();
+        verified = Boolean(adjustment && adjustment.gap === 0 &&
+            (adjustment.evidence || (!adjustment.bankAdj && !adjustment.bookAdj && results.every(r=>r.status==='MATCH'))) &&
+            !results.some(r=>r.status==='ERROR'));
+        await saveToStore(STORE_WORK,{id:'recon:'+period+':'+account,period,account,results,verified,adjustment,createdAt:new Date().toISOString()}); render();
+        showToast('对账记录已保存');
+    });
+    btn.after(save);
+    summary.after(action('读取已保存对账',async () => {
+        const saved = await work('recon:'+val('recon-period')+':'+val('recon-account'));
+        if (!saved) throw Error('该期间及账户暂无对账记录');
+        results = saved.results; resultKey=key(); verified=saved.verified; adjustment=saved.adjustment;
+        ['bank','book','bankAdj','bookAdj'].forEach((field,i)=>byId(balances[i][1]).value=adjustment ? adjustment[field]/100 : '');
+        byId('recon-evidence').value=adjustment?.evidence || ''; render();
+    }));
+    const visible = () => filter === 'ALL' ? results : results.filter(r => r.status === filter);
+    const amounts = rows => rows.map(r => r.amount === null ? '无效' : fromCents(r.amount)).join(' / ');
+    function render() {
+        byId('recon-result-area').style.display = 'block';
+        const tb = byId('recon-result-body'); tb.replaceChildren();
+        for (const r of visible()) {
+            const lines = [...r.bank.map(x=>'银行第'+x.line+'行'),...r.company.map(x=>'账面第'+x.line+'行')];
+            tableRow(tb,[r.id,labels[r.status],amounts(r.bank),amounts(r.company),r.note+' · '+lines.join('、')]);
+        }
+        for (const tab of tabs) byId('badge-'+tab.dataset.type).textContent = tab.dataset.type === 'ALL' ? results.length : results.filter(r => r.status === tab.dataset.type).length;
+        summary.textContent = !results.length ? '暂无对账结果' : adjustment
+            ? '银行调节后 '+fromCents(adjustment.bank+adjustment.bankAdj)+' ／ 账面调节后 '+fromCents(adjustment.book+adjustment.bookAdj)+' ／ 差额 '+fromCents(adjustment.gap)+(verified?' · 已保存核对结果':' · 待核实')
+            : '请补录双方期末余额，核对差异并保存。';
+    }
+    for (const side of sides) {
+        const input = byId('recon-file-'+side), zone = byId('recon-drop-'+side);
+        input.accept = '.xlsx,.xls,.csv'; zone.querySelector('p').textContent='支持 Excel 或 UTF-8 CSV';
+        zone.addEventListener('click',e => { if (e.target !== input) input.click(); });
+        async function loadFile(file) {
+            if (!file) return;
+            delete data[side]; btn.disabled=true; results=[]; verified=false; render();
+            let rows;
+            if (/\.csv$/i.test(file.name)) rows = readCsv(await file.text());
+            else {
+                if (!window.XLSX) throw Error('Excel 组件未加载，请联网重试或另存为 UTF-8 CSV');
+                const book = XLSX.read(await file.arrayBuffer());
+                rows = XLSX.utils.sheet_to_json(book.Sheets[book.SheetNames[0]],{header:1,raw:false,defval:''});
+            }
+            if (rows.length < 2 || (rows[0] || []).length < 2) throw Error('需要表头、单号列和金额列');
+            data[side]=rows.slice(1);
+            for (const field of ['id','amount']) {
+                const select = byId('recon-map-'+side+'-'+field);
+                select.replaceChildren(...rows[0].map((name,i) => new Option(name || '第'+(i+1)+'列',i)));
+                select.selectedIndex=field==='id' ? 0 : 1;
+            }
+            zone.querySelector('p').textContent='已载入 '+file.name;
+            area.style.display='block'; btn.disabled=!sides.every(key=>data[key]);
+        }
+        input.addEventListener('change', () => { const file=input.files[0]; input.value=''; runAction(()=>loadFile(file)); });
+        zone.addEventListener('dragover', e => e.preventDefault());
+        zone.addEventListener('drop', e => { e.preventDefault(); runAction(()=>loadFile(e.dataTransfer.files[0])); });
+    }
+    onAction('recon-btn-reconcile', () => {
+        const records = sides.map(side => {
+            const idCol=val('recon-map-'+side+'-id'), amtCol=val('recon-map-'+side+'-amount');
+            if (idCol===amtCol) throw Error('请选择不同的单号列和金额列');
+            return data[side].map((row,i) => {
+                let amount=null; try { amount=cents(String(row[amtCol] ?? '').replaceAll(',','')); } catch {}
+                return {id:String(row[idCol] ?? '').trim(),amount,line:i+2};
+            });
+        });
+        results=compareFlows(...records); resultKey=key(); verified=false; adjustment=readAdjustment(); render();
+    });
+    tabs.forEach(tab => tab.addEventListener('click', () => {
+        filter=tab.dataset.type; tabs.forEach(t => t.classList.toggle('active',t===tab)); render();
+    }));
+    onAction('recon-btn-export', () => exportRows('对账结果',['单号','状态','银行金额','账面金额','说明'],
+        visible().map(r=>[r.id,labels[r.status],amounts(r.bank),amounts(r.company),r.note])));
+    summary.after(action('导出余额调节表', () => {
+        if (!adjustment || resultKey !== key()) throw Error('请先录入双方期末余额并保存对账');
+        const a=adjustment; exportRows('余额调节表',['期间','账户','银行期末','银行调整','账面期末','账面调整','调节差额','依据'],[[val('recon-period'),val('recon-account'),a.bank/100,a.bankAdj/100,a.book/100,a.bookAdj/100,a.gap/100,a.evidence]]);
+    }));
+}
 function initARModule() {
-    let arData = [
-        { id: 1, name: '星辰科技有限公司', balance: 150000, unallocated: 50000, confStatus: '未发函', diff: 0 },
-        { id: 2, name: '皓月贸易有限公司', balance: 80000, unallocated: 0, confStatus: '回函有差异', diff: 5000 },
-        { id: 3, name: '长风电子有限公司', balance: 220000, unallocated: 0, confStatus: '回函相符', diff: 0 }
-    ];
-    window.loadARData = function() {
-        const tb = document.getElementById('ar-customer-list');
-        tb.innerHTML = arData.map(d => `
-            <tr>
-                <td>${d.name}</td>
-                <td style="text-align:right;">¥${d.balance.toFixed(2)}</td>
-                <td style="text-align:right;">¥${d.unallocated.toFixed(2)}</td>
-                <td><span class="status-pill ${d.confStatus === '回函相符' ? 'POSTED' : (d.confStatus === '回函有差异' ? 'WARNING' : 'PENDING')}">${d.confStatus}</span></td>
-                <td style="text-align:right;" class="${d.diff !== 0 ? 'cash-out' : ''}">${d.diff !== 0 ? '¥'+d.diff.toFixed(2) : '-'}</td>
-                <td><button class="btn-mini" onclick="updateARConf(${d.id})">登记回函</button></td>
-            </tr>
-        `).join('');
-        const diffTb = document.getElementById('ar-confirmation-diffs');
-        diffTb.innerHTML = arData.filter(d => d.confStatus === '回函有差异').map(d => `
-            <tr>
-                <td>${d.name}</td><td style="text-align:right;">¥${d.balance.toFixed(2)}</td>
-                <td style="text-align:right;">¥${(d.balance + d.diff).toFixed(2)}</td>
-                <td style="text-align:right;" class="cash-out">¥${d.diff.toFixed(2)}</td>
-                <td><input type="text" placeholder="填写差异原因..." style="padding:4px; font-size:12px;"></td>
-                <td>待核实</td>
-            </tr>
-        `).join('') || '<tr><td colspan="6" style="text-align:center;">无差异</td></tr>';
-    };
-    window.updateARConf = function(id) {
-        const d = arData.find(x => x.id === id);
-        const type = prompt('请输入函证结果：1. 回函相符 2. 回函有差异 3. 未回函');
-        if (type === '1') { d.confStatus = '回函相符'; d.diff = 0; }
-        else if (type === '2') { d.confStatus = '回函有差异'; d.diff = parseFloat(prompt('请输入差异金额（例如正数表示回函大于账面）', '5000')) || 0; }
-        else if (type === '3') { d.confStatus = '未回函'; }
-        loadARData();
-    };
-    window.allocatePayment = function() {
-        const val = document.getElementById('ar-unallocated').value;
-        if (!val) return showToast('请选择未分配回款');
-        const amt = parseFloat(val.split(',')[0]);
-        const target = arData.find(d => d.unallocated > 0);
-        if (target) {
-            target.balance -= amt; target.unallocated -= amt;
-            const tb = document.getElementById('ar-allocations');
-            tb.innerHTML += `<tr><td>${target.name}</td><td>¥${amt.toFixed(2)}</td><td>${new Date().toISOString().slice(0,10)}</td><td><span class="status-pill POSTED">已核实</span></td></tr>`;
-            loadARData(); showToast('✅ 冲销成功');
-        } else showToast('无可冲销客户');
-    };
-    window.generateConfirmation = function() {
-        arData.forEach(d => { if (d.confStatus === '未发函') d.confStatus = '未回函'; });
-        loadARData(); showToast('已生成询证函');
-    };
+    const periodField=byId('ar-period'), customerBody=byId('ar-customer-list');
+    periodField.value=localDay().slice(0,7);
+    periodField.addEventListener('change',()=>loadARData());
+    const fields = [['客户名称','ar-customer'],['单据编号','ar-source'],['日期','ar-date','date'],['金额','ar-amount','number']];
+    const box = document.createElement('div'); box.className='card-block';
+    for (const spec of fields) box.append(makeField(...spec));
+    box.append(makeField('记录类型','ar-type','select',[['due','已核对应收'],['receipt','待分配实收']]));
+    customerBody.closest('.module-grid').before(box);
+    async function records() { return (await getAllFromStore(STORE_WORK)).filter(r=>r.id.startsWith('ar:')); }
+    box.append(action('保存应收或回款',async () => {
+        const customer=val('ar-customer'),source=val('ar-source'),date=val('ar-date'),type=val('ar-type'),amount=cents(val('ar-amount'));
+        if (!customer || !source || !date || amount<=0) throw Error('请填写客户、日期、单据和正金额');
+        const period=date.slice(0,7); await ensureOpen(period);
+        await saveRecords(STORE_WORK,[{id:'ar:'+type+':'+source,customer,source,date,period,type,amount,allocations:[]}],true);
+        for (const id of ['ar-source','ar-amount']) byId(id).value='';
+        byId('ar-period').value=period; await loadARData(); showToast('已保存');
+    }));
+    byId('ar-date').value=localDay();
+    function summarize(rows, period) {
+        const totals=new Map();
+        for (const r of rows.filter(r=>r.period<=period && ['due','receipt'].includes(r.type))) {
+            const sum=totals.get(r.customer) || {balance:0,available:0};
+            if (r.type==='due') sum.balance+=r.amount;
+            else {
+                const used=r.allocations.filter(a=>a.period<=period).reduce((n,a)=>n+a.amount,0);
+                sum.available+=r.amount-used; sum.balance-=used;
+            }
+            totals.set(r.customer,sum);
+        }
+        return totals;
+    }
+    window.loadARData = () => runAction(async () => {
+        const [rows,period]=[await records(),val('ar-period')], totals=summarize(rows,period);
+        const diff=byId('ar-confirmation-diffs'), allocations=byId('ar-allocations'), options=byId('ar-unallocated');
+        customerBody.replaceChildren(); diff.replaceChildren(); allocations.replaceChildren(); options.replaceChildren(new Option('选择待分配回款',''));
+        for (const r of rows.filter(r=>r.type==='receipt' && r.period<=period)) {
+            const left=r.amount-r.allocations.reduce((n,a)=>n+a.amount,0);
+            if (left>0) options.add(new Option(r.customer+' · '+r.source+' · '+fromCents(left),r.id));
+            for (const a of r.allocations.filter(a=>a.period===period)) tableRow(allocations,[r.customer,fromCents(a.amount),a.date,r.source]);
+        }
+        for (const [customer,sum] of totals) {
+            const conf=rows.find(r=>r.type==='conf' && r.period===period && r.customer===customer);
+            const delta=conf?.reply == null ? null : conf.reply-conf.balance;
+            const status=!conf ? '未发函' : delta===null ? '未回函' : delta===0 ? '回函相符' : '回函有差异';
+            const row=tableRow(customerBody,[customer,fromCents(sum.balance),fromCents(sum.available),status,delta===null?'—':fromCents(delta),'']);
+            if (conf) row.lastChild.append(action('登记回函',async () => {
+                const reply=prompt('回函确认金额'); if (reply===null) return;
+                const evidence=prompt('回函编号或核实依据')?.trim(); if (!evidence) throw Error('请填写核实依据');
+                await saveToStore(STORE_WORK,{...conf,reply:cents(reply),evidence}); await loadARData();
+            }));
+            if (delta) tableRow(diff,[customer,fromCents(conf.balance),fromCents(conf.reply),fromCents(delta),conf.evidence,'待核实']);
+        }
+    });
+    window.allocatePayment = () => runAction(async () => {
+        const id=val('ar-unallocated'), period=val('ar-period'); await ensureOpen(period);
+        const rows=await records(), receipt=rows.find(r=>r.type==='receipt' && r.id===id);
+        if (!receipt || receipt.period>period) throw Error('请选择可用回款');
+        const value=prompt('本次分配金额'); if (value===null) return;
+        const amount=cents(value), left=receipt.amount-receipt.allocations.reduce((n,a)=>n+a.amount,0);
+        const balance=summarize(rows,period).get(receipt.customer).balance;
+        if (amount<=0 || amount>left || amount>balance) throw Error('冲销金额超出可用回款或该客户应收余额');
+        await saveToStore(STORE_WORK,{...receipt,allocations:[...receipt.allocations,{amount,period,date:localDay()}]});
+        await loadARData(); showToast('冲销已保存');
+    });
+    window.generateConfirmation = () => runAction(async () => {
+        const period=val('ar-period'); if (!period.endsWith('-12')) throw Error('请选择年末期间');
+        const rows=await records(), list=[...summarize(rows,period)];
+        if (!list.length) throw Error('没有应收记录');
+        exportRows(period+'应收询证函底稿',['客户','账面余额','截止期间','请填写回函金额'],list.map(([customer,sum])=>[customer,sum.balance/100,period,'']));
+        if (!confirm('如已实际发函，确认登记本批客户为未回函？')) return;
+        const newRecords=list.map(([customer,sum])=>({id:'ar:conf:'+period+':'+customer,type:'conf',customer,period,balance:sum.balance,reply:null}))
+            .filter(r=>!rows.some(old=>old.id===r.id));
+        if (newRecords.length) await saveRecords(STORE_WORK,newRecords,true);
+        await loadARData();
+    });
 }
 
-// 5.7 税务管理
 function initTaxModule() {
-    window.loadTaxData = function() {
-        document.getElementById('tax-vat-amount').textContent = '待测算';
-        document.getElementById('tax-surtax-amount').textContent = '待测算';
-        document.getElementById('tax-cit-amount').textContent = '待测算';
-        document.getElementById('tax-missing-items').style.display = 'none';
-        const tb = document.getElementById('tax-task-list');
-        tb.innerHTML = `
-            <tr><td>增值税申报</td><td><span class="status-pill PENDING">未提交</span></td><td>-</td><td><button class="btn-mini">去办理</button></td></tr>
-            <tr><td>企业所得税季报</td><td><span class="status-pill PENDING">未提交</span></td><td>-</td><td><button class="btn-mini">去办理</button></td></tr>
-        `;
+    const period=byId('tax-period'), amounts=['vat','surtax','cit'];
+    period.value=localDay().slice(0,7);
+    const fields=amounts.map((key,i)=>[['增值税确认金额','附加税费确认金额','企业所得税确认金额（季末）'][i],'tax-entry-'+key,'number']);
+    const block=document.createElement('div'); block.className='form-grid';
+    for (const spec of [...fields,['取数资料编号及计算口径版本','tax-basis']]) block.append(makeField(...spec));
+    byId('tax-vat-amount').closest('.card-block').prepend(block);
+    let draft=null;
+    const quarterly=p=>['03','06','09','12'].includes(p.slice(-2));
+    function show(record) {
+        for (const key of amounts) byId('tax-'+key+'-amount').textContent=record?.values[key] != null ? fromCents(record.values[key]) : key==='cit' && !quarterly(period.value) ? '非季末' : '待录入';
+        byId('tax-vat-detail').textContent=record ? '取数依据：'+record.basis : '录入财务已核对的测算金额及取数依据';
+    }
+    const taskBody=byId('tax-task-list'), taskBlock=taskBody.closest('.card-block');
+    const taskEditor=document.createElement('div'); taskEditor.className='form-grid';
+    const taskFields=[['税种 / 任务名称','task-name'],['截止日期','task-due','date'],['提交凭据','task-submit-ref'],
+        ['申报反馈 / 回执编号','task-response'],['扣款结果 / 凭据','task-payment'],['完税证明编号','task-proof'],['交税凭证号','task-voucher']];
+    taskFields.forEach(spec=>taskEditor.append(makeField(...spec)));
+    const statusField=makeField('申报状态','task-status','select', [['未提交','未提交'],['已提交待反馈','已提交待反馈'],['申报成功','申报成功'],['申报失败','申报失败']]);
+    taskEditor.append(statusField,makeField('回执或完税证明附件','task-file','file'));
+    taskBlock.append(taskEditor);
+    let editingTask=null;
+    taskEditor.append(action('新建申报任务', () => {
+        editingTask=null; taskFields.forEach(([,id]) => byId(id).value=''); byId('task-status').selectedIndex=0; byId('task-file').value='';
+    }));
+    taskEditor.append(action('保存申报任务',async () => {
+        const [name,due,submit,response,payment,proof,voucher]=taskFields.map(([,id])=>val(id));
+        const p=period.value,status=val('task-status');
+        if (!name || !due || !p) throw Error('请填写税期、任务名称和截止日期');
+        if (status!=='未提交' && !submit) throw Error('请录入实际提交凭据');
+        if (['申报成功','申报失败'].includes(status) && !response) throw Error('请录入实际申报反馈');
+        const old=editingTask && await work(editingTask), file=byId('task-file').files[0];
+        const attachment=file ? {name:file.name,data:await new Promise((resolve,reject)=>{
+            const reader=new FileReader(); reader.onload=()=>resolve(reader.result); reader.onerror=reject; reader.readAsDataURL(file);
+        })} : old?.attachment;
+        await saveToStore(STORE_WORK,{id:old?.period===p ? old.id : 'tax-task:'+recordId(),period:p,name,due,submit,response,payment,proof,voucher,status,attachment});
+        byId('task-file').value=''; await loadTaxData(); showToast('申报任务已保存');
+    }));
+    window.loadTaxData = () => runAction(async () => {
+        const p=period.value, rows=await getAllFromStore(STORE_WORK); if (period.value!==p) return;
+        draft=null; editingTask=null;
+        for (const [,id] of taskFields) byId(id).value='';
+        byId('task-status').selectedIndex=0; byId('task-file').value='';
+        const latest=rows.filter(r=>r.id.startsWith('tax-result:') && r.period===p).sort((a,b)=>b.saved.localeCompare(a.saved))[0];
+        for (const key of amounts) byId('tax-entry-'+key).value=latest?.values[key] != null ? latest.values[key]/100 : '';
+        byId('tax-basis').value=latest?.basis || '';
+        byId('tax-missing-items').style.display='none'; show(latest);
+        taskBody.replaceChildren();
+        for (const task of rows.filter(r=>r.id.startsWith('tax-task:') && r.period===p)) {
+            const row=tableRow(taskBody,[task.name,task.status,task.due,'']);
+            row.lastChild.append(action('编辑', () => {
+                editingTask=task.id;
+                const data=[task.name,task.due,task.submit,task.response,task.payment,task.proof,task.voucher];
+                taskFields.forEach(([,id],i)=>byId(id).value=data[i]||'');
+                byId('task-status').value=task.status;
+            }));
+            if (task.attachment) row.lastChild.append(action('附件',()=>downloadAttachment(task.attachment)));
+        }
+    });
+    function readDraft() {
+        const p=period.value, basis=val('tax-basis'), required=quarterly(p)?amounts:amounts.slice(0,2);
+        const missing=required.filter(key=>!val('tax-entry-'+key));
+        const labels={vat:'增值税',surtax:'附加税费',cit:'企业所得税'};
+        if (!p || !basis || missing.length) throw Error('请补齐'+[!p&&'税期',!basis&&'取数及口径',...missing.map(key=>labels[key])].filter(Boolean).join('、'));
+        return {period:p,basis,values:Object.fromEntries(required.map(key=>[key,cents(val('tax-entry-'+key))]))};
+    }
+    window.calculateTax = () => {
+        const warning=byId('tax-missing-items');
+        try { draft=readDraft(); show(draft); warning.style.display='none'; }
+        catch (error) { draft=null; show(null); warning.style.display='block'; byId('tax-missing-text').textContent=error.message; }
     };
-    window.calculateTax = function() {
-        document.getElementById('tax-vat-amount').textContent = '¥ 28,500.00';
-        document.getElementById('tax-vat-detail').textContent = '取数依据：本期开票 285,000，进项抵扣 0。';
-        document.getElementById('tax-surtax-amount').textContent = '¥ 3,420.00';
-        document.getElementById('tax-cit-amount').textContent = '¥ 12,000.00 (暂估)';
-        document.getElementById('tax-missing-items').style.display = 'block';
-        document.getElementById('tax-missing-text').textContent = '本期有 2 张差旅费进项发票未认证，暂无法抵扣。';
-    };
-    window.fixTaxMissing = function() { document.getElementById('tax-missing-items').style.display = 'none'; showToast('已跳转至缺项处理，将自动更新测算'); };
-    window.saveTaxResult = function() { showToast('✅ 测算底稿已保存并归档'); };
-    loadTaxData();
+    window.fixTaxMissing = () => byId('tax-entry-vat').focus();
+    window.saveTaxResult = () => runAction(async () => {
+        if (!draft || JSON.stringify(readDraft())!==JSON.stringify(draft)) throw Error('请先核对并更新预览');
+        await saveRecords(STORE_WORK,[{id:'tax-result:'+recordId(),...draft,saved:new Date().toISOString()}],true);
+        showToast('测算底稿版本已保存');
+    });
+    period.addEventListener('change',loadTaxData); loadTaxData();
 }
 
-// 5.8 期末结转
 function initCostModule() {
-    window.checkClosing = function() {
-        document.getElementById('check-vouchers').className = 'status-pill POSTED'; document.getElementById('check-vouchers').textContent = '0 张 (已通过)';
-        document.getElementById('check-recon').className = 'status-pill POSTED'; document.getElementById('check-recon').textContent = '已平衡';
-        document.getElementById('check-transfer').className = 'status-pill WARNING'; document.getElementById('check-transfer').textContent = '待生成';
-        document.getElementById('check-report').className = 'status-pill PENDING'; document.getElementById('check-report').textContent = '未生成';
-    };
-    window.calculateCost = function() {
-        document.getElementById('cost-cogs').textContent = '¥ 45,000.00';
-        document.getElementById('cost-depr').textContent = '¥ 12,000.00';
-        document.getElementById('cost-amort').textContent = '¥ 1,500.00';
-        document.getElementById('cost-payroll').textContent = '¥ 85,000.00';
-        document.getElementById('cost-missing').style.display = 'block';
-        showToast('成本数据已读取');
-    };
-    window.executeSettlement = function() {
-        if (!document.getElementById('cost-cogs').textContent.includes('¥')) return showToast('请先计算成本');
-        document.getElementById('check-transfer').className = 'status-pill POSTED'; document.getElementById('check-transfer').textContent = '已生成';
-        document.getElementById('check-report').className = 'status-pill POSTED'; document.getElementById('check-report').textContent = '已生成';
-        showToast('✅ 损益结转凭证已生成，报表已更新');
-    };
-    window.finalizeClosing = function() {
-        if (document.getElementById('check-transfer').textContent !== '已生成') return showToast('请先执行结转');
-        showToast('🎉 结账成功，已归档至财务档案库');
-    };
+    const period=byId('closing-period');
+    period.value=localDay().slice(0,7);
+    const types=[['cogs','销售成本结转'],['depr','固定资产折旧'],['amort','无形资产摊销'],['payroll','工资社保计提'],['split','费用分摊'],['estimate','暂估']];
+    const block=byId('cost-cogs').closest('.card-block');
+    for (const [key,label] of types.slice(4)) {
+        const row=document.createElement('div'); row.className='list-item';
+        const title=document.createElement('span'), value=document.createElement('span');
+        title.textContent=label; value.id='cost-'+key; value.textContent='待录入';
+        row.append(title,value); byId('cost-payroll').closest('.list-item').after(row);
+    }
+    const accountOptions=VOUCHER_ACCOUNTS.map(row=>[row.code,row.code+' '+row.name]);
+    const form=document.createElement('div'); form.className='form-grid';
+    const fields=[['作业类型','cost-type','select',types],['来源编号 / 计算与分摊依据','cost-basis'],['本次金额','cost-amount','number'],
+        ['借方科目','cost-debit','select',[['','请选择'],...accountOptions]],['贷方科目','cost-credit','select',[['','请选择'],...accountOptions]]];
+    fields.forEach(spec=>form.append(makeField(...spec)));
+    block.prepend(form);
+    const selectedPeriod=()=>period.value;
+    form.append(action('生成待审核凭证',async () => {
+        const p=selectedPeriod(), type=val('cost-type'), basis=val('cost-basis'), amt=cents(val('cost-amount')), debit=val('cost-debit'),credit=val('cost-credit');
+        await ensureOpen(p);
+        if (!basis || amt<=0 || !debit || !credit || debit===credit) throw Error('请填写依据、金额及不同的借贷科目');
+        const label=types.find(x=>x[0]===type)[1], amount=amt/100, id='cost:'+p+':'+type+':'+basis;
+        await saveRecords(STORE_VOUCHER,[{id,voucherNo:'成本-'+p+'-'+recordId().slice(0,8),period:p,date:lastDay(p),bizLabel:label,
+            source:basis,sourceType:'期末作业',status:'PENDING',costType:type,totalDebit:amount,totalCredit:amount,
+            entries:[{account:debit,summary:label,debit:amount,credit:0},{account:credit,summary:label,debit:0,credit:amount}]}],true);
+        await refreshVouchers(); await calculateCost(); await checkClosing(); showToast('作业凭证已生成，待审核');
+    }));
+    window.calculateCost = () => runAction(async () => {
+        const p=selectedPeriod(), all=await getAllFromStore(STORE_VOUCHER);
+        for (const [key] of types) {
+            const rows=all.filter(v=>v.period===p && v.costType===key);
+            byId('cost-'+key).textContent=rows.length ? fromCents(rows.reduce((n,v)=>n+Math.round(v.totalDebit*100),0)) : '待录入';
+        }
+    });
+    async function closingData(p) {
+        const all=await getAllFromStore(STORE_VOUCHER), periodRecords=all.filter(v=>v.period===p);
+        const reconciliations=(await getAllFromStore(STORE_WORK)).filter(r=>r.id.startsWith('recon:') && r.period===p);
+        const outstanding=periodRecords.filter(v=>v.status!=='POSTED').length;
+        return {all,periodRecords,reconciliations,outstanding,ready:reconciliations.length>0 && reconciliations.every(r=>r.verified)};
+    }
+    window.checkClosing = () => runAction(async () => {
+        const p=selectedPeriod(), data=await closingData(p), closed=await work('closed:'+p);
+        const transfer=data.periodRecords.find(v=>v.id==='settlement:'+p);
+        byId('check-vouchers').textContent=data.outstanding ? data.outstanding+' 张待审核或记账' : '无待审核或记账';
+        byId('check-recon').textContent=data.ready ? '已保存流水匹配' : '缺对账记录或存在差异';
+        byId('check-transfer').textContent=transfer ? transfer.status==='POSTED' ? '已记账' : '待审核或记账' : '未生成';
+        byId('check-report').textContent=closed?.archive ? '已保存期末快照' : '未归档';
+        await calculateCost();
+    });
+    window.executeSettlement = () => runAction(async () => {
+        const p=selectedPeriod(); await ensureOpen(p);
+        const data=await closingData(p);
+        if (!data.ready || data.outstanding) throw Error('请先保存无差异流水对账，并处理待审核或记账凭证');
+        if (data.periodRecords.some(v=>v.id==='settlement:'+p)) throw Error('该期已有结转凭证');
+        const rows=bookRows(data.all,p,await openingFor(data.all,p));
+        const entries=[];
+        function move(account,amount,summary) { if (amount) entries.push({account,summary,debit:Math.max(amount,0)/100,credit:Math.max(-amount,0)/100}); }
+        for (const row of rows.filter(r=>r.code.startsWith('6'))) move(row.code,-row.end,'损益结转');
+        const net=rows.filter(r=>r.code.startsWith('6')).reduce((n,r)=>n+r.end,0);
+        move('4103',net,'损益结转');
+        if (p.endsWith('-12')) {
+            const profit=rows.find(r=>r.code==='4103').end+net;
+            move('4103',-profit,'年末利润结转'); move('4104',profit,'年末利润结转');
+        }
+        if (!entries.length) throw Error('本期无待结转余额');
+        const totalDebit=entries.reduce((sum,e)=>sum+Math.round(e.debit*100),0)/100;
+        await saveRecords(STORE_VOUCHER,[{id:'settlement:'+p,voucherNo:'结转-'+p,period:p,date:lastDay(p),bizLabel:'期末结转',
+            source:'期末账簿 '+p,status:'PENDING',entries,totalDebit,totalCredit:totalDebit}],true);
+        await refreshVouchers(); await checkClosing(); showToast('结转凭证已生成，待审核');
+    });
+    window.finalizeClosing = () => runAction(async () => {
+        const p=selectedPeriod(); await ensureOpen(p);
+        const data=await closingData(p);
+        if (!data.ready || data.outstanding || !data.periodRecords.length) throw Error('请处理待审核和待记账事项，并保存无差异对账');
+        const rows=bookRows(data.all,p,await openingFor(data.all,p));
+        if (rows.some(r=>r.code.startsWith('6') && r.end) || (p.endsWith('-12') && rows.find(r=>r.code==='4103').end)) throw Error('仍有科目余额待结转');
+        if (rows.reduce((n,r)=>n+r.end,0)!==0) throw Error('期末余额试算不平');
+        if (!confirm('确认账户期末余额已人工核对，并锁定本期间？')) return;
+        const records=(await getAllFromStore(STORE_WORK)).filter(r=>r.period===p);
+        await lockPeriod(p,'正式结账',{rows,vouchers:data.periodRecords,workpapers:records}); await checkClosing();
+        showToast('本期已结账并保存账簿及资料快照');
+    });
+    block.parentNode.append(action('下载本期归档',async () => {
+        const p=selectedPeriod(), record=await work('closed:'+p);
+        if (!record?.archive) throw Error('本期间暂无结账归档');
+        downloadFile(p+'-财务归档.json', JSON.stringify(record,null,2),'application/json');
+    }));
+    period.addEventListener('change',checkClosing);
 }
+function lastDay(period) {
+    const [year,month]=period.split('-').map(Number);
+    return period+'-'+String(new Date(year,month,0).getDate()).padStart(2,'0');
+}
+
+function initBackup() {
+    const host=byId('module-home'), row=document.createElement('div'); row.className='card-block';
+    host.append(row);
+    row.append(action('导出本机账套备份',async () => {
+        const stores=[STORE_NAME,STORE_CASHIER,STORE_VOUCHER,STORE_WORK];
+        const tables=Object.fromEntries(await Promise.all(stores.map(async key=>[key,await getAllFromStore(key)])));
+        downloadFile('finance-backup-'+localDay()+'.json',JSON.stringify({version:1,tables,accounts:ACCOUNTS},null,2),'application/json');
+    }));
+}
+
 </script>
 </body>
 </html>
