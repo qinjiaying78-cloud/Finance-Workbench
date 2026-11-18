@@ -443,36 +443,6 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   #module-voucher .voucher-layout { grid-template-columns: 1fr; }
   .module-grid { grid-template-columns: 1fr; }
 }
-/* The tax component inherits the workbench theme through its module wrapper. */
-#module-tax {
-  --source-tax-bg: var(--bg);
-  --source-tax-card: var(--card);
-  --source-tax-inset: var(--input-bg);
-  --source-tax-border: var(--border);
-  --source-tax-text: var(--text-main);
-  --source-tax-muted: var(--text-muted);
-  --source-tax-primary: var(--primary);
-  --source-tax-primary-hover: var(--primary-hover);
-  --source-tax-green: var(--match);
-  --source-tax-green-bg: var(--match-bg);
-  --source-tax-serif: var(--font-serif);
-  --source-tax-sans: var(--font-sans);
-  --source-tax-radius: var(--radius);
-}
-#tax-workbench-host { display:block; }
-#module-tax .tax-legacy { margin-top:18px; }
-#module-tax .tax-legacy summary { cursor:pointer; font-weight:600; }
-#module-tax .tax-legacy h3 { margin:15px 0 8px; }
-#module-tax .tax-legacy .data-table { margin:0 0 12px; }
-#module-tax .tax-legacy-scroll { overflow:auto; }
-@media print {
-  body:not(.tax-printing) #module-tax,
-  body.tax-printing > .module:not(#module-tax),
-  body.tax-printing #module-tax > .module-header,
-  body.tax-printing #module-tax > .tax-legacy { display:none!important; }
-  body.tax-printing #module-tax { max-width:none; width:100%; margin:0; padding:0; }
-}
-
 </style>
 </head>
 <body>
@@ -502,9 +472,6 @@ button:disabled { opacity: .55; cursor: not-allowed; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>
       导出备份
     </button>
-    <button type="button" id="workbench-import" class="btn" disabled title="从 JSON 备份恢复本机账套">导入备份</button>
-    <input type="file" id="workbench-import-file" accept=".json,application/json" hidden>
-    <span id="workbench-backup-status" class="draft-status" role="status">上次备份：暂无</span>
     <span id="workbench-draft-status" class="draft-status" role="status" aria-live="polite"></span>
   </div>
 </header>
@@ -877,7 +844,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
           <option value="CASH">现金</option>
           <option value="OTHER">其他</option>
         </select>
-        <button type="button" class="btn btn-primary" style="padding:8px 16px; font-size:13px;" id="add-cash-account">添加账户</button>
+        <button type="button" class="btn btn-primary" style="padding:8px 16px; font-size:13px;" onclick="addNewAccount()">添加账户</button>
       </div>
     </div>
 
@@ -1276,18 +1243,58 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   <div class="module-header">
     <div>
       <div class="home-subtitle-top">TAX · 税务</div>
-      <h1 class="serif-title">税务管理 · 申报导航</h1>
-      <p style="max-width:800px;">测算本期税费、跟踪申报进度，并通过官方入口办理。</p>
+      <h1 class="serif-title">计税测算 · 申报归档</h1>
+      <p style="max-width:800px;">处理月末增值税及附加测算、季末企业所得税测算，跟踪申报任务与完税证明。</p>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <input type="month" id="tax-period" style="width:150px;">
+      <button type="button" class="btn btn-primary" onclick="calculateTax()">预览测算底稿</button>
     </div>
   </div>
-  <div id="tax-workbench-host">
-    <div class="card-block" role="status">正在加载税务工作台…</div>
+
+  <div class="module-grid">
+    <div class="card-block">
+      <h3>1. 计税测算底稿</h3>
+      <div style="margin-bottom:16px;">
+        <div class="flex-between" style="margin-bottom:8px;">
+          <span><span class="tax-badge vat">增值税</span> 销项-进项</span>
+          <strong id="tax-vat-amount">待测算</strong>
+        </div>
+        <div class="note-text" id="tax-vat-detail">取数依据：开票汇总、进项抵扣明细</div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div class="flex-between" style="margin-bottom:8px;">
+          <span><span class="tax-badge surtax">附加税费</span> 城建/教育/地方教育</span>
+          <strong id="tax-surtax-amount">待测算</strong>
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div class="flex-between" style="margin-bottom:8px;">
+          <span><span class="tax-badge cit">企业所得税</span> 利润总额×税率</span>
+          <strong id="tax-cit-amount">待测算</strong>
+        </div>
+      </div>
+      <div id="tax-missing-items" style="display:none; background:#FEF3C7; color:#B45309; padding:12px; border-radius:8px; font-size:12px; margin-top:12px;">
+        <strong>⚠️ 缺项提示：</strong><span id="tax-missing-text"></span>
+        <button class="btn-mini" style="margin-left:12px;" onclick="fixTaxMissing()">去处理</button>
+      </div>
+      <div style="text-align:right; margin-top:20px;">
+        <button type="button" class="btn btn-primary" onclick="saveTaxResult()">复核并保存结果</button>
+      </div>
+    </div>
+
+    <div class="card-block">
+      <h3>2. 申报任务与完税归档</h3>
+      <div class="filter-bar" style="margin-bottom:12px; padding:10px;">
+        <span style="font-size:12px; font-weight:500;">所选税期</span>
+        <span style="font-size:12px; color:var(--diff);">截止日以任务记录为准</span>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>任务</th><th>状态</th><th>回执/证明</th><th>操作</th></tr></thead>
+        <tbody id="tax-task-list"></tbody>
+      </table>
+    </div>
   </div>
-  <details class="card-block tax-legacy" id="tax-legacy" hidden>
-    <summary>原税务底稿与申报任务</summary>
-    <p class="note-text">以下是原工作台已保存的资料，按原所属期展示。</p>
-    <div id="tax-legacy-content"></div>
-  </details>
 </div>
 
 <!-- ================= 期末结转 ================= -->
@@ -1382,7 +1389,6 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 const animation = window.gsap || {
     killTweensOf() {},
     set(target, values) { target.style.opacity = values.opacity; },
-    to(target, values) { target.style.opacity = values.opacity; values.onComplete?.(); },
     fromTo(target, from, to) { if (target instanceof HTMLElement) target.style.opacity = to.opacity; }
 };
 
@@ -1393,10 +1399,6 @@ const STORE_WORK = 'Workpapers';
 const STORE_NAME = 'Invoices';
 const STORE_CASHIER = 'CashierRecords';
 const STORE_VOUCHER = 'VoucherRecords';
-const BACKUP_STORES = [STORE_NAME, STORE_CASHIER, STORE_VOUCHER, STORE_WORK];
-const CASH_ACCOUNT_SETTINGS = 'settings:cashier-accounts';
-const LEGACY_ACCOUNT_KEY = 'clean_cashier_accounts';
-let importingBackup = false;
 const LS_KEY = 'clean_finance_ledger_fallback';
 const LS_KEY_CASHIER = 'clean_finance_cashier_fallback';
 const LS_KEY_VOUCHER = 'clean_finance_voucher_fallback';
@@ -1432,62 +1434,31 @@ function tryLSFallback(resolve) {
 async function saveToStore(storeName, record) {
     return saveRecords(storeName, [record]);
 }
-function finishTransaction(tx) {
-    return new Promise((resolve, reject) => {
-        tx.oncomplete = () => resolve();
-        tx.onabort = () => reject(tx.error || Error('事务已回滚，资料未保存'));
-    });
-}
-function writeRecords(store, records, insert = false) {
-    for (const record of records) store[insert ? 'add' : 'put'](record);
-}
-async function saveRecords(storeName, records, insert = false, completedDraft = null, accountNames = []) {
-    if (importingBackup) throw Error('正在恢复备份，请稍后再保存');
-    if (storageMode === 'MEMORY') throw Error('浏览器存储不可用，资料未保存');
-    const addAccounts = accountNames.length ? accounts => {
-        const result = [...accounts];
-        for (const name of new Set(accountNames)) {
-            if (!result.some(account => account.name === name)) result.push({id: recordId(), name, kind: 'OTHER'});
-        }
-        return result;
-    } : null;
+async function saveRecords(storeName, records, insert = false, completedDraft = null) {
+    if (storageMode === 'MEMORY') throw new Error('浏览器存储不可用，资料未保存');
     if (storageMode === 'INDEXEDDB') {
-        const stores = new Set([storeName]);
-        if (completedDraft || addAccounts) stores.add(STORE_WORK);
-        const tx = db.transaction([...stores], 'readwrite');
-        const finished = finishTransaction(tx);
-        let readAccounts;
-        try {
-            writeRecords(tx.objectStore(storeName), records, insert);
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(completedDraft ? [storeName, STORE_WORK] : storeName, 'readwrite');
+            tx.oncomplete = () => resolve();
+            tx.onabort = () => reject(tx.error || new Error('保存失败'));
+            const store = tx.objectStore(storeName);
+            for (const record of records) store[insert ? 'add' : 'put'](record);
             if (completedDraft) tx.objectStore(STORE_WORK).delete('draft:' + completedDraft);
-            if (addAccounts) readAccounts = queueCashAccountUpdate(tx, addAccounts);
-        } catch (error) {
-            tx.abort();
-            await finished.catch(() => {});
-            throw error;
-        }
-        await finished;
-        if (readAccounts) ACCOUNTS = readAccounts();
-    } else {
-        const key = lsKeyFor(storeName), pk = pkFor(storeName);
-        const data = new Map(JSON.parse(localStorage.getItem(key) || '[]').map(row => [row[pk], row]));
-        for (const record of records) {
-            if (insert && data.has(record[pk])) throw Error('记录编号已存在');
-            data.set(record[pk], record);
-        }
-        localStorage.setItem(key, JSON.stringify([...data.values()]));
-        if (completedDraft) {
-            const draftKey = lsKeyFor(STORE_WORK);
-            const existing = JSON.parse(localStorage.getItem(draftKey) || '[]');
-            const remaining = existing.filter(row => row.id !== 'draft:' + completedDraft);
-            if (remaining.length !== existing.length) localStorage.setItem(draftKey, JSON.stringify(remaining));
-        }
-        if (addAccounts) {
-            try { saveLegacyAccounts(addAccounts(readLegacyCashierAccounts())); }
-            catch { showToast('出纳记录已保存，常用账户写入失败'); }
-        }
+        });
     }
-    scheduleSnapshot();
+    const key = lsKeyFor(storeName), pk = pkFor(storeName);
+    const data = new Map(JSON.parse(localStorage.getItem(key) || '[]').map(row => [row[pk], row]));
+    for (const record of records) {
+        if (insert && data.has(record[pk])) throw new Error('记录编号已存在');
+        data.set(record[pk], record);
+    }
+    localStorage.setItem(key, JSON.stringify([...data.values()]));
+    if (completedDraft) {
+        const draftKey = lsKeyFor(STORE_WORK);
+        const existing = JSON.parse(localStorage.getItem(draftKey) || '[]');
+        const remaining = existing.filter(row => row.id !== 'draft:' + completedDraft);
+        if (remaining.length !== existing.length) localStorage.setItem(draftKey, JSON.stringify(remaining));
+    }
 }
 async function getAllFromStore(storeName) {
     if (storageMode === 'INDEXEDDB') {
@@ -1499,15 +1470,14 @@ async function getAllFromStore(storeName) {
     else { return [...memoryData[storeName]]; }
 }
 async function clearStore(storeName) {
-    if (importingBackup) throw Error('正在恢复备份，请稍后再操作');
     if (storageMode === 'INDEXEDDB') {
-        const tx = db.transaction(storeName, 'readwrite');
-        const finished = finishTransaction(tx);
-        tx.objectStore(storeName).clear();
-        await finished;
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(storeName, 'readwrite');
+            tx.oncomplete = () => resolve(); tx.onabort = () => reject(tx.error);
+            tx.objectStore(storeName).clear();
+        });
     } else if (storageMode === 'LOCALSTORAGE') { localStorage.removeItem(lsKeyFor(storeName)); }
-    else { memoryData[storeName] = []; return; }
-    scheduleSnapshot();
+    else { memoryData[storeName] = []; }
 }
 async function saveRecordToDB(record) { return saveToStore(STORE_NAME, record); }
 async function getAllRecordsFromDB() { return getAllFromStore(STORE_NAME); }
@@ -1518,7 +1488,7 @@ function showToast(msg) {
     const t = document.getElementById('toast'); t.innerText = msg; t.style.visibility = 'visible';
     animation.killTweensOf(t); animation.fromTo(t, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" });
     clearTimeout(t._timer);
-    t._timer = setTimeout(() => { animation.to(t, { opacity: 0, y: 20, duration: 0.3, onComplete: () => t.style.visibility = 'hidden' }); }, 3000);
+    t._timer = setTimeout(() => { gsap.to(t, { opacity: 0, y: 20, duration: 0.3, onComplete: () => t.style.visibility = 'hidden' }); }, 3000);
 }
 function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function digitUppercase(n) {
@@ -1563,49 +1533,8 @@ const ACCOUNTS_INIT = [
   { id: 'ICBC', name: '工商银行', kind: 'BANK' },
   { id: 'CMB',  name: '招商银行', kind: 'BANK' }
 ];
-function readLegacyCashierAccounts() {
-    try {
-        const entries = JSON.parse(localStorage.getItem(LEGACY_ACCOUNT_KEY) || 'null');
-        if (Array.isArray(entries)) return entries;
-    } catch {}
-    return ACCOUNTS_INIT.map(account => ({...account}));
-}
-let ACCOUNTS = readLegacyCashierAccounts();
-async function initCashierAccounts() {
-    if (storageMode === 'INDEXEDDB') {
-        const settings = await work(CASH_ACCOUNT_SETTINGS);
-        if (settings) ACCOUNTS = settings.accounts;
-    }
-}
-function saveLegacyAccounts(accounts) {
-    localStorage.setItem(LEGACY_ACCOUNT_KEY, JSON.stringify(accounts));
-    ACCOUNTS = accounts;
-}
-function queueCashAccountUpdate(tx, update) {
-    let accounts;
-    const store = tx.objectStore(STORE_WORK);
-    const request = store.get(CASH_ACCOUNT_SETTINGS);
-    request.onsuccess = () => {
-        accounts = update(request.result?.accounts ?? readLegacyCashierAccounts());
-        store.put({id: CASH_ACCOUNT_SETTINGS, accounts});
-    };
-    return () => accounts;
-}
-async function updateCashierAccounts(update) {
-    if (importingBackup) throw Error('正在恢复备份，请稍后再操作');
-    if (storageMode === 'INDEXEDDB') {
-        const tx = db.transaction(STORE_WORK, 'readwrite');
-        const finished = finishTransaction(tx);
-        const readAccounts = queueCashAccountUpdate(tx, update);
-        await finished;
-        ACCOUNTS = readAccounts();
-    } else if (storageMode === 'LOCALSTORAGE') {
-        saveLegacyAccounts(update(readLegacyCashierAccounts()));
-    } else {
-        throw Error('浏览器存储不可用，账户未保存');
-    }
-    scheduleSnapshot();
-}
+let ACCOUNTS = (() => { try { const s = JSON.parse(localStorage.getItem('clean_cashier_accounts') || 'null'); if (Array.isArray(s) && s.length) return s; } catch (e) {} return [...ACCOUNTS_INIT]; })();
+function saveCashierAccounts() { try { localStorage.setItem('clean_cashier_accounts', JSON.stringify(ACCOUNTS)); } catch (e) {} }
 function getAccountName(val) {
     if (!val) return '-';
     const byId = ACCOUNTS.find(x => x.id === val); if (byId) return byId.name;
@@ -1618,9 +1547,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll('.module').forEach(m => { m.classList.remove('active'); m.style.display = 'none'; m.style.opacity = 0; });
   const homeEl = document.getElementById('module-home'); homeEl.classList.add('active'); homeEl.style.display = 'block'; animation.set(homeEl, { opacity: 1, y: 0 });
   document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.target === 'module-home'));
-  financeStorageReady = initStorage();
-  await financeStorageReady;
-  await runAction(initCashierAccounts);
+  await initStorage();
   animation.fromTo('.home-header-text', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out", delay: 0.1 });
   animation.fromTo('.home-card', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.08, ease: "power2.out", delay: 0.2 });
 
@@ -1631,6 +1558,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initVoucherModule();
   initAccountingModule();
   initARModule();
+  initTaxModule();
   initCostModule();
   await runAction(initBackup);
   if (storageMode === 'MEMORY') showToast('浏览器存储不可用，无法保存资料');
@@ -1811,11 +1739,7 @@ function initInvoiceModule() {
 // 5.3 出纳
 function initCashierModule() {
     let cashierRecords = [], cashierCurrentType = 'RECEIPT', cashReceiptImage = null;
-    function refreshCashAccountOptions() {
-        const names = [...new Set(ACCOUNTS.map(account => account.name))];
-        byId('cash-account-options').replaceChildren(...names.map(name => new Option(name, name)));
-        refreshJournalAccountOptions();
-    }
+    function refreshAccountDatalist() { document.getElementById('cash-account-options').innerHTML = ACCOUNTS.map(a => `<option value="${escapeHtml(a.name)}"></option>`).join(''); }
     function refreshJournalAccountOptions() {
         const jAcc = document.getElementById('cash-journal-account'); const prev = jAcc.value; const set = new Set();
         ACCOUNTS.forEach(a => set.add(a.name)); cashierRecords.forEach(r => { if (r.account) set.add(getAccountName(r.account)); });
@@ -1823,50 +1747,25 @@ function initCashierModule() {
         jAcc.innerHTML = '<option value="">全部账户</option>' + names.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
         if (prev && names.includes(prev)) jAcc.value = prev;
     }
-    refreshCashAccountOptions();
+    refreshAccountDatalist(); refreshJournalAccountOptions();
+    if (ACCOUNTS[1]) document.getElementById('cash-account').value = ACCOUNTS[1].name;
 
     window.toggleAccountManager = function() {
-        const el = byId('account-manager'), open = el.style.display === 'none';
-        el.style.display = open ? 'block' : 'none';
-        if (open) renderAccountManager();
+        const el = document.getElementById('account-manager'); const open = el.style.display === 'none';
+        el.style.display = open ? 'block' : 'none'; if (open) renderAccountManager();
     };
     function renderAccountManager() {
-        const tbody = byId('account-manage-body');
-        tbody.replaceChildren();
-        for (const account of ACCOUNTS) {
-            const row = tbody.insertRow();
-            const name = document.createElement('input');
-            name.type = 'text'; name.value = account.name;
-            name.setAttribute('aria-label', '账户名称');
-            const kind = document.createElement('select');
-            kind.setAttribute('aria-label', '账户类型');
-            kind.append(new Option('银行', 'BANK'), new Option('现金', 'CASH'), new Option('其他', 'OTHER'));
-            kind.value = account.kind;
-            const edit = changes => runAction(async () => {
-                try {
-                    await updateCashierAccounts(accounts => accounts.map(entry => entry.id === account.id ? {...entry, ...changes} : entry));
-                    refreshCashAccountOptions();
-                } finally { renderAccountManager(); }
-            });
-            name.addEventListener('change', () => edit({name: name.value.trim() || account.name}));
-            kind.addEventListener('change', () => edit({kind: kind.value}));
-            row.insertCell().append(name);
-            row.insertCell().append(kind);
-            row.insertCell().append(action('删除', async () => {
-                if (!confirm(`从常用账户移除“${account.name}”？已登记的流水会保留。`)) return;
-                await updateCashierAccounts(accounts => accounts.filter(entry => entry.id !== account.id));
-                refreshCashAccountOptions(); renderAccountManager(); showToast('已移除常用账户');
-            }, 'btn-mini btn-danger'));
-        }
+        const tbody = document.getElementById('account-manage-body');
+        tbody.innerHTML = ACCOUNTS.map(a => `<tr><td><input type="text" value="${escapeHtml(a.name)}" onchange="updateAccountName('${a.id}', this.value)"></td><td><select onchange="updateAccountKind('${a.id}', this.value)"><option value="BANK" ${a.kind === 'BANK' ? 'selected' : ''}>银行</option><option value="CASH" ${a.kind === 'CASH' ? 'selected' : ''}>现金</option></select></td><td><button type="button" class="btn-mini btn-danger" onclick="removeAccount('${a.id}')">删除</button></td></tr>`).join('');
     }
-    onAction('add-cash-account', async () => {
-        const field = byId('new-account-name'), name = field.value.trim();
-        if (!name) throw Error('请填写账户名称');
-        const account = {id: recordId(), name, kind: byId('new-account-kind').value};
-        await updateCashierAccounts(accounts => [...accounts, account]);
-        field.value = '';
-        renderAccountManager(); refreshCashAccountOptions(); showToast('已添加常用账户');
-    });
+    window.updateAccountName = function(id, name) { const a = ACCOUNTS.find(x => x.id === id); if (a) { a.name = name.trim() || a.name; saveCashierAccounts(); refreshAccountDatalist(); refreshJournalAccountOptions(); } };
+    window.updateAccountKind = function(id, kind) { const a = ACCOUNTS.find(x => x.id === id); if (a) { a.kind = kind; saveCashierAccounts(); } };
+    window.removeAccount = function(id) { ACCOUNTS = ACCOUNTS.filter(x => x.id !== id); saveCashierAccounts(); renderAccountManager(); refreshAccountDatalist(); refreshJournalAccountOptions(); };
+    window.addNewAccount = function() {
+        const name = document.getElementById('new-account-name').value.trim(); if (!name) return showToast('请填写账户名称');
+        ACCOUNTS.push({ id: 'ACC' + Date.now(), name, kind: document.getElementById('new-account-kind').value });
+        saveCashierAccounts(); document.getElementById('new-account-name').value = ''; renderAccountManager(); refreshAccountDatalist(); refreshJournalAccountOptions(); showToast('已添加');
+    };
 
     window.setCashierType = function(type) {
         cashierCurrentType = type; const isT = type === 'TRANSFER';
@@ -1956,9 +1855,7 @@ function initCashierModule() {
         const records = type === 'TRANSFER'
             ? [{...details,id:id+'O',type:'TRANSFER_OUT',account,transferId:id},{...details,id:id+'I',type:'TRANSFER_IN',account:incoming,transferId:id}]
             : [{...details,id,type,account,counterparty:val('cash-counterparty')}];
-        await saveRecords(STORE_CASHIER, records, true, 'cashier', records.map(record => record.account));
-        refreshCashAccountOptions();
-        if (byId('account-manager').style.display !== 'none') renderAccountManager();
+        await saveRecords(STORE_CASHIER, records, true, 'cashier');
         for (const field of ['amount','source-doc','receipt-no','note-info','memo','counterparty','counterparty-account','in-account']) byId('cash-' + field).value = '';
         attachment = null; byId('cash-receipt-preview').replaceChildren();
         await loadCashier(); showToast('出纳登记已保存');
@@ -2084,7 +1981,7 @@ function initAccountingModule() {
         accV.forEach(v => set.add(v.period));
         const periods = Array.from(set).sort().reverse();
         if (!accPeriod || !set.has(accPeriod)) accPeriod = periods[0];
-        byId('acc-period-select').replaceChildren(...periods.map(p => new Option(p, p)));
+        document.getElementById('acc-period-select').innerHTML = periods.map(p => `<option value="${p}">${p}</option>`).join('');
         document.getElementById('acc-period-select').value = accPeriod;
         renderPending(); updateBadge(); await renderBooks(accV, accPeriod);
     }
@@ -2565,1292 +2462,87 @@ function initARModule() {
     });
 }
 
-const TAX_WORKBENCH_KEY = 'tax-workbench:state';
-let financeStorageReady;
-let taxWorkbenchMount;
-let latestTaxWrite = Promise.resolve(true);
-const flushTaxWorkbench = () => latestTaxWrite;
-
-function loadTaxData() {
-    if (!taxWorkbenchMount) {
-        taxWorkbenchMount = mountTaxWorkbench().catch(error => {
-            taxWorkbenchMount = undefined;
-            const host = document.getElementById('tax-workbench-host');
-            if (!host.shadowRoot) host.textContent = '税务工作台加载失败，请重新打开税务管理。';
-            showToast(error.message || '税务工作台加载失败');
-        });
+function initTaxModule() {
+    const period=byId('tax-period'), amounts=['vat','surtax','cit'];
+    period.value=localDay().slice(0,7);
+    const fields=amounts.map((key,i)=>[['增值税确认金额','附加税费确认金额','企业所得税确认金额（季末）'][i],'tax-entry-'+key,'number']);
+    const block=document.createElement('div'); block.className='form-grid';
+    for (const spec of [...fields,['取数资料编号及计算口径版本','tax-basis']]) block.append(makeField(...spec));
+    byId('tax-vat-amount').closest('.card-block').prepend(block);
+    let draft=null;
+    const quarterly=p=>['03','06','09','12'].includes(p.slice(-2));
+    function show(record) {
+        for (const key of amounts) byId('tax-'+key+'-amount').textContent=record?.values[key] != null ? fromCents(record.values[key]) : key==='cit' && !quarterly(period.value) ? '非季末' : '待录入';
+        byId('tax-vat-detail').textContent=record ? '取数依据：'+record.basis : '录入财务已核对的测算金额及取数依据';
     }
-    return taxWorkbenchMount;
-}
-
-function renderLegacyTaxWorkpapers(rows) {
-    const panel = document.getElementById('tax-legacy');
-    const content = document.getElementById('tax-legacy-content');
-    const results = rows.filter(row => row.id.startsWith('tax-result:')).sort((a,b) => String(b.saved).localeCompare(String(a.saved)));
-    const tasks = rows.filter(row => row.id.startsWith('tax-task:')).sort((a,b) => String(b.period).localeCompare(String(a.period)));
-    panel.hidden = !(results.length || tasks.length);
-    content.replaceChildren();
-    function appendTable(title, headers, entries, cellsFor) {
-        if (!entries.length) return;
-        const label = document.createElement('h3');
-        label.textContent = title;
-        const scroll = document.createElement('div'), table = document.createElement('table');
-        scroll.className = 'tax-legacy-scroll'; table.className = 'data-table';
-        const headersRow = table.createTHead().insertRow();
-        for (const name of headers) {
-            const th = document.createElement('th');
-            th.scope = 'col'; th.textContent = name; headersRow.append(th);
+    const taskBody=byId('tax-task-list'), taskBlock=taskBody.closest('.card-block');
+    const taskEditor=document.createElement('div'); taskEditor.className='form-grid';
+    const taskFields=[['税种 / 任务名称','task-name'],['截止日期','task-due','date'],['提交凭据','task-submit-ref'],
+        ['申报反馈 / 回执编号','task-response'],['扣款结果 / 凭据','task-payment'],['完税证明编号','task-proof'],['交税凭证号','task-voucher']];
+    taskFields.forEach(spec=>taskEditor.append(makeField(...spec)));
+    const statusField=makeField('申报状态','task-status','select', [['未提交','未提交'],['已提交待反馈','已提交待反馈'],['申报成功','申报成功'],['申报失败','申报失败']]);
+    taskEditor.append(statusField,makeField('回执或完税证明附件','task-file','file'));
+    taskBlock.append(taskEditor);
+    const taskActions = document.createElement('div');
+    taskActions.className = 'section-actions tax-task-actions';
+    taskEditor.append(taskActions);
+    let editingTask=null;
+    taskActions.append(action('新建申报任务', () => {
+        editingTask=null; taskFields.forEach(([,id]) => byId(id).value=''); byId('task-status').selectedIndex=0; byId('task-file').value='';
+    }, 'btn'));
+    taskActions.append(action('保存申报任务',async () => {
+        const [name,due,submit,response,payment,proof,voucher]=taskFields.map(([,id])=>val(id));
+        const p=period.value,status=val('task-status');
+        if (!name || !due || !p) throw Error('请填写税期、任务名称和截止日期');
+        if (status!=='未提交' && !submit) throw Error('请录入实际提交凭据');
+        if (['申报成功','申报失败'].includes(status) && !response) throw Error('请录入实际申报反馈');
+        const old=editingTask && await work(editingTask), file=byId('task-file').files[0];
+        const attachment=file ? {name:file.name,data:await new Promise((resolve,reject)=>{
+            const reader=new FileReader(); reader.onload=()=>resolve(reader.result); reader.onerror=reject; reader.readAsDataURL(file);
+        })} : old?.attachment;
+        await saveToStore(STORE_WORK,{id:old?.period===p ? old.id : 'tax-task:'+recordId(),period:p,name,due,submit,response,payment,proof,voucher,status,attachment});
+        byId('task-file').value=''; await loadTaxData(); showToast('申报任务已保存');
+    }, 'btn btn-primary'));
+    window.loadTaxData = () => runAction(async () => {
+        const p=period.value, rows=await getAllFromStore(STORE_WORK); if (period.value!==p) return;
+        draft=null; editingTask=null;
+        for (const [,id] of taskFields) byId(id).value='';
+        byId('task-status').selectedIndex=0; byId('task-file').value='';
+        const latest=rows.filter(r=>r.id.startsWith('tax-result:') && r.period===p).sort((a,b)=>b.saved.localeCompare(a.saved))[0];
+        for (const key of amounts) byId('tax-entry-'+key).value=latest?.values[key] != null ? latest.values[key]/100 : '';
+        byId('tax-basis').value=latest?.basis || '';
+        byId('tax-missing-items').style.display='none'; show(latest);
+        taskBody.replaceChildren();
+        for (const task of rows.filter(r=>r.id.startsWith('tax-task:') && r.period===p)) {
+            const row=tableRow(taskBody,[task.name,task.status,task.due,'']);
+            row.lastChild.append(action('编辑', () => {
+                editingTask=task.id;
+                const data=[task.name,task.due,task.submit,task.response,task.payment,task.proof,task.voucher];
+                taskFields.forEach(([,id],i)=>byId(id).value=data[i]||'');
+                byId('task-status').value=task.status;
+            }));
+            if (task.attachment) row.lastChild.append(action('附件',()=>downloadAttachment(task.attachment)));
         }
-        const body = table.createTBody();
-        for (const entry of entries) cellsFor(body,entry);
-        scroll.append(table);
-        content.append(label,scroll);
-    }
-    const archivedMoney = cents => Number.isFinite(cents) ? fromCents(cents) : '—';
-    appendTable('历史税务测算',['所属期','增值税','附加税费','企业所得税','口径与依据','保存时间'],results,(body,entry) => {
-        const v = entry.values ?? {};
-        tableRow(body,[entry.period,archivedMoney(v.vat),archivedMoney(v.surtax),archivedMoney(v.cit),entry.basis,entry.saved]);
     });
-    appendTable('历史申报任务',['所属期','任务','截止日','状态','办理凭据','附件'],tasks,(body,entry) => {
-        const references = [entry.submit,entry.response,entry.payment,entry.proof,entry.voucher].filter(Boolean);
-        const row = tableRow(body,[entry.period,entry.name,entry.due,entry.status,references.join(' · ')||'—','—']);
-        if (entry.attachment) row.lastChild.replaceChildren(action('下载附件',() => downloadAttachment(entry.attachment)));
+    function readDraft() {
+        const p=period.value, basis=val('tax-basis'), required=quarterly(p)?amounts:amounts.slice(0,2);
+        const missing=required.filter(key=>!val('tax-entry-'+key));
+        const labels={vat:'增值税',surtax:'附加税费',cit:'企业所得税'};
+        if (!p || !basis || missing.length) throw Error('请补齐'+[!p&&'税期',!basis&&'取数及口径',...missing.map(key=>labels[key])].filter(Boolean).join('、'));
+        return {period:p,basis,values:Object.fromEntries(required.map(key=>[key,cents(val('tax-entry-'+key))]))};
+    }
+    window.calculateTax = () => {
+        const warning=byId('tax-missing-items');
+        try { draft=readDraft(); show(draft); warning.style.display='none'; }
+        catch (error) { draft=null; show(null); warning.style.display='block'; byId('tax-missing-text').textContent=error.message; }
+    };
+    window.fixTaxMissing = () => byId('tax-entry-vat').focus();
+    window.saveTaxResult = () => runAction(async () => {
+        if (!draft || JSON.stringify(readDraft())!==JSON.stringify(draft)) throw Error('请先核对并更新预览');
+        await saveRecords(STORE_WORK,[{id:'tax-result:'+recordId(),...draft,saved:new Date().toISOString()}],true);
+        showToast('测算底稿版本已保存');
     });
-}
-
-async function mountTaxWorkbench() {
-    await financeStorageReady;
-    const taxHost = document.getElementById('tax-workbench-host');
-    let initialTaxData = null, initialTaxError = '', migrateTaxState = false;
-    try {
-        const rows = await getAllFromStore(STORE_WORK);
-        renderLegacyTaxWorkpapers(rows);
-        const existing = rows.find(row => row.id === TAX_WORKBENCH_KEY);
-        if (existing) {
-            if (existing.data == null) throw Error('税务状态记录不完整');
-            initialTaxData = existing.data;
-        } else {
-            try {
-                const standalone = localStorage.getItem('local-tax-workbench-v1');
-                if (standalone) { initialTaxData = JSON.parse(standalone); migrateTaxState = true; }
-            } catch {}
-        }
-    } catch {
-        initialTaxError = '当前无法读取税务底稿，请重新打开工作台或导入有效的税务 JSON。';
-    }
-    const taxRoot = taxHost.shadowRoot ?? taxHost.attachShadow({mode:'open'});
-    taxRoot.innerHTML = "<style>\n:host{color-scheme:light;--bg:#f5f4ed;--card:#fff;--inset:#f8f7f2;--border:#e8e6dc;--text:#181c21;--muted:#5c6270;--navy:#0f2a44;--blue:#173956;--terra:#d97757;--terra-ink:#a4472c;--green:#147655;--softgreen:#e9f5ef;--red:#ac2529;--softred:#fff1ee;--shadow:0 9px 26px #18314a08;--radius:15px}\n:host([data-tax-theme=dark]){color-scheme:dark;--bg:#111921;--card:#192630;--inset:#202e38;--border:#34434e;--text:#eef2f5;--muted:#b5bec8;--navy:#122a40;--blue:#bdd7f3;--terra:#e78e72;--terra-ink:#ffa589;--green:#84dcba;--softgreen:#203d35;--red:#ff9fa1;--softred:#472b31;--shadow:none}\n*{box-sizing:border-box}.tax-shell{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 \"Microsoft YaHei\",\"PingFang SC\",system-ui,sans-serif;font-variant-numeric:tabular-nums}button,input,select,textarea{font:inherit;color:inherit}button,a,input,select,textarea{outline-offset:3px}button{cursor:pointer}button:disabled{opacity:.48;cursor:not-allowed}a{color:var(--blue)}[hidden]{display:none!important}h1,h2,h3,p{margin:0}h1,h2{font-family:Georgia,\"Songti SC\",SimSun,serif}h1{font-size:clamp(29px,4vw,43px);font-weight:600;line-height:1.16}h2{font-size:24px}h3{font-size:16px}.muted,.help{color:var(--muted)}.help{font-size:13px}.mono{font-variant-numeric:tabular-nums}.toolbar,.actions{display:flex;align-items:center;flex-wrap:wrap;gap:9px}.spacer{flex:1}.wrap{width:min(1260px,calc(100% - 64px));margin-inline:auto}.master{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--border)}.top{min-height:72px;display:flex;align-items:center;gap:24px}.brand{display:flex;gap:10px;align-items:center;white-space:nowrap;font-family:Georgia,\"Songti SC\",SimSun,serif;font-weight:700;font-size:20px}.mark{display:grid;place-items:center;width:36px;height:36px;background:var(--navy);color:white;border-radius:11px}.mark svg,.ico svg{width:19px;height:19px;display:block}.top .toolbar{margin-left:auto;justify-content:flex-end}.top select{max-width:230px}.navrow{display:flex;gap:5px;overflow:auto;scrollbar-width:thin}.tab{white-space:nowrap;border:0;background:none;color:var(--muted);padding:12px 15px;border-bottom:2px solid transparent}.tab.active{color:var(--terra-ink);border-color:var(--terra);font-weight:700}.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--border);background:var(--card);border-radius:9px;padding:8px 13px;text-decoration:none;color:var(--text);white-space:nowrap}.btn:hover{background:var(--inset);border-color:var(--terra)}.btn.primary{background:var(--navy);color:white;border-color:var(--navy)}.btn.primary:hover{background:#234867}.btn.danger{color:var(--red)}.btn.compact{padding:5px 9px;font-size:13px}.btn.hero-action{background:#fdf7ed;color:#142e45;border-color:transparent;font-weight:700}main{padding-block:32px 38px;min-height:72vh}.hero{background:radial-gradient(ellipse at 95% -10%,#284d67,transparent 68%),var(--navy);border-radius:19px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:32px 36px;min-height:192px;position:relative;overflow:hidden}.hero p{color:#dce6ee;margin-top:10px}.hero .total{border-left:1px solid #ffffff38;padding-left:25px;min-width:240px}.hero .amount{color:#d3f4e2;font-size:clamp(30px,4.1vw,47px)}.hero .actions{margin-top:17px}.section-head,.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}.section-head{margin-bottom:18px}.section-head p,.card-head p{margin-top:4px}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;min-width:0}.wide{grid-column:1/-1}.dash{display:grid;grid-template-columns:1.22fr 1fr;gap:16px;margin-top:16px}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-top:16px}.stat{padding:14px 17px}.stat strong{display:block;font-family:Georgia,serif;font-size:27px}.tag{display:inline-block;border-radius:20px;background:var(--softgreen);color:var(--green);padding:3px 9px;font-size:12px;font-weight:650}.ico{display:inline-grid;place-items:center;width:35px;height:35px;border-radius:10px;background:var(--softgreen);color:var(--green);flex:none}.title-row{display:flex;align-items:center;gap:10px}.notice{display:flex;align-items:flex-start;gap:10px;background:var(--inset);border:1px solid var(--border);border-left:3px solid var(--terra);padding:10px 13px;border-radius:8px;color:var(--muted);font-size:13px;margin:13px 0}.notice strong{color:var(--text)}.meter{height:8px;background:var(--inset);border:1px solid var(--border);border-radius:8px;overflow:hidden}.meter>span{display:block;height:100%;background:var(--green);border-radius:8px}.bars{display:grid;gap:11px;margin-top:15px}.bar-row{display:grid;grid-template-columns:minmax(92px,1.5fr) 2fr max-content;gap:10px;align-items:center;font-size:13px}.deadline{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}.deadline:last-child{border-bottom:0}.due{color:var(--red);background:var(--softred)}.urgent{animation:pulse 1.6s ease-in-out infinite alternate}@keyframes pulse{to{box-shadow:0 0 0 3px color-mix(in srgb,var(--red),transparent 72%)}}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:14px}.fields.three{grid-template-columns:repeat(3,minmax(0,1fr))}.field{min-width:0;display:grid;gap:4px;font-size:13px}.field>span{font-weight:650}.field small{color:var(--muted);font-weight:400}.field .error{color:var(--red)}input:not([type=checkbox]),select,textarea{border:1px solid var(--border);background:var(--inset);border-radius:8px;padding:8px 9px;min-width:0;max-width:100%}input[type=checkbox]{width:17px;height:17px;accent-color:var(--green);flex:none}input[aria-invalid=true]{border-color:var(--red)}.check-label{display:flex;align-items:center;gap:8px;margin:9px 0}.result{margin-top:14px;padding:13px 15px;border-radius:10px;background:var(--inset);border-left:3px solid var(--green)}.amount{display:block;font-family:Georgia,\"Songti SC\",serif;font-size:30px;font-weight:700;line-height:1.3;overflow-wrap:anywhere}.result .details{white-space:pre-line;font-size:13px;color:var(--muted);margin-top:5px}.result:empty{display:none}.empty{padding:22px 6px;text-align:center;color:var(--muted)}.stack{display:grid;gap:14px}.flow-grid{display:grid;grid-template-columns:238px minmax(0,1fr);gap:16px}.flow-side{display:grid;gap:5px;align-content:start}.flow-side button{width:100%;justify-content:space-between;text-align:left;white-space:normal}.flow-side .active{background:var(--softgreen);color:var(--green)}.steps{list-style:none;padding:0;margin:12px 0}.steps li label{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer}.step-number{color:var(--terra-ink);font-variant-numeric:tabular-nums;min-width:24px}.steps p{color:var(--muted);font-size:13px}.steps li.skipped{opacity:.68}.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid var(--border);border-left:1px solid var(--border);margin-top:14px}.day{min-height:74px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:5px;overflow:hidden}.day.heading{min-height:0;text-align:center;background:var(--inset);font-size:13px}.day.today{background:var(--softgreen)}.day-event{display:block;width:100%;text-overflow:ellipsis;overflow:hidden;text-align:left;border:0;border-radius:5px;margin-top:3px;background:var(--inset);color:var(--blue);font-size:11px;padding:3px 4px}.day-event.due{background:var(--softred);color:var(--red)}.table-wrap{overflow:auto;margin-top:12px}table{border-collapse:collapse;width:100%;text-align:left}th,td{border-bottom:1px solid var(--border);padding:7px 8px;vertical-align:middle}th{background:var(--inset);font-size:13px;white-space:nowrap}td input,td select{width:100%;min-width:92px!important}td output{white-space:nowrap;font-weight:650}.split-heading{margin-top:17px}.settings-section{margin-top:15px}details summary{cursor:pointer;color:var(--blue);font-weight:650}details[open] summary{margin-bottom:8px}.compare{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.footer{border-top:1px solid var(--border);padding:17px 0 23px;color:var(--muted);font-size:12px}.footer p+p{margin-top:5px}.toast{position:fixed;bottom:18px;left:50%;translate:-50% 0;background:var(--navy);color:#fff;border-radius:9px;padding:10px 15px;z-index:10;max-width:calc(100% - 24px);box-shadow:0 6px 22px #0003}.storage-alert{padding:8px;background:var(--softred);color:var(--red);text-align:center}dialog{width:min(510px,calc(100% - 26px));padding:22px;border:1px solid var(--border);border-radius:15px;background:var(--card);color:var(--text)}dialog::backdrop{background:#101e2db0}dialog p{margin:11px 0}dialog .actions{margin-top:15px}#print-report{display:none}.policy-note{margin-top:9px}.collapse-caption{color:var(--muted);font-size:12px}\n@media(max-width:850px){.wrap{width:calc(100% - 36px)}.top{gap:10px}.hero{padding:23px}.hero .total{min-width:0}.cards,.dash{grid-template-columns:1fr}.fields.three{grid-template-columns:repeat(2,minmax(0,1fr))}}\n@media(max-width:550px){.wrap{width:calc(100% - 22px)}.top{padding:9px 0;flex-wrap:wrap;min-height:0;gap:8px}.top .toolbar{margin-left:0;justify-content:flex-start;width:100%}.top select{max-width:56vw}.tab{padding:8px 9px;font-size:13px}main{padding-top:16px}.hero{display:block;padding:19px}.hero .total{border-left:0;border-top:1px solid #ffffff38;padding:11px 0 0;margin-top:15px}.stats{gap:6px}.stat{padding:9px}.stat strong{font-size:21px}.card{padding:13px}.flow-grid{grid-template-columns:1fr}.flow-side{grid-template-columns:1fr 1fr}.day{min-height:50px;padding:2px}.day-event{font-size:9px}.fields{gap:7px}.section-head .toolbar{width:100%}.bar-row{grid-template-columns:96px 1fr max-content;gap:6px}.compare{grid-template-columns:1fr}}\n@media(prefers-reduced-motion:reduce){.urgent{animation:none}}\n@page{size:A4;margin:16mm}@media print{.tax-shell{background:white!important;color:#111!important;font:11pt \"Microsoft YaHei\",sans-serif}.master,main,.footer,dialog,.toast,.storage-alert{display:none!important}#print-report{display:block;padding:0}#print-report table{color:#111}#print-report th{background:#eee!important}#print-report tr{break-inside:avoid}#print-report p{margin:8px 0}}\n@media print{#print-report table{table-layout:fixed;font-size:9pt}#print-report th,#print-report td{white-space:normal;overflow-wrap:anywhere;padding:5px 3px;font-size:inherit}#print-report th:nth-child(2){width:15%}}\n\n:host{display:block;min-width:0;--radius:var(--source-tax-radius,12px);--shadow:none}\n:host(:not([data-tax-theme=dark])){\n  --bg:var(--source-tax-bg);--card:var(--source-tax-card);--inset:var(--source-tax-inset);\n  --border:var(--source-tax-border);--text:var(--source-tax-text);--muted:var(--source-tax-muted);\n  --terra:var(--source-tax-primary);--softgreen:var(--source-tax-green-bg);--green:#397553;\n  --blue:#344c64;--terra-ink:#9c4329;\n}\n.tax-shell{font-family:var(--source-tax-sans,system-ui);width:100%;background:transparent}\n:host([data-tax-theme=dark]) .tax-shell{background:var(--bg);border-radius:var(--radius);padding:14px}\nh1,h2,.brand,.stat strong,.amount{font-family:var(--source-tax-serif,Georgia),serif}\n.wrap{width:100%;margin-inline:0}\n.master{position:static;border:1px solid var(--border);border-radius:var(--radius);padding:0 16px}\n.top{min-height:55px;gap:13px}\n.tax-subtitle{font-size:13px;font-weight:600;color:var(--muted)}\n.navrow{border-top:1px solid var(--border)}\n.tab{padding:10px 13px}\nmain{padding:18px 0 22px;min-height:0}\n.card{padding:17px}\n.hero{border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:var(--radius);min-height:170px;padding:24px}\n.hero h1{font-size:clamp(24px,3.2vw,36px)}\n.hero .total{border-color:var(--border)}\n.hero p{color:var(--muted)}\n.hero .amount{color:var(--green)}\n.btn.primary,.btn.hero-action{background:var(--source-tax-primary,#d97757);border-color:var(--source-tax-primary,#d97757);color:#1e1713;font-weight:600}\n.btn.primary:hover,.btn.hero-action:hover{background:var(--source-tax-primary-hover,#c46545);border-color:var(--source-tax-primary-hover,#c46545);color:white}\n.section-head h1{font-size:clamp(24px,3vw,33px)}\n.footer{padding:11px 0 0}\n.result{border-left-color:var(--source-tax-green,#5d9c7a)}\n[data-page=history] td:first-child{white-space:nowrap}\n[data-page=history] td:nth-child(2){min-width:112px}\n[data-page=history] td:nth-child(n+3){white-space:nowrap}\n@media(max-width:550px){\n  .tax-subtitle{display:none}.master{padding:0 7px}.top .toolbar{gap:5px}\n  .tab{padding:8px 7px}.hero,.card{padding:12px}.hero .total{margin-top:11px}\n}\n@media print{\n  .tax-shell{display:block!important;background:white!important;padding:0!important;color:#111!important}\n  #print-report{color:#111!important}\n}\n</style><div class=\"tax-shell\"><div id=\"storage-alert\" class=\"storage-alert\" role=\"alert\" hidden></div>\n<header class=\"master\">\n <div class=\"wrap top\">\n  <span class=\"tax-subtitle\">税务账套</span>\n  <div class=\"toolbar\"><select id=\"company-select\" aria-label=\"选择账套\"></select><button class=\"btn compact\" data-act=\"company\">＋ 新建账套</button><button class=\"btn compact\" id=\"theme-button\" data-act=\"theme\" aria-label=\"切换深色模式\">深色模式</button></div>\n </div>\n <nav class=\"wrap navrow\" id=\"nav\" aria-label=\"主要导航\"></nav>\n</header>\n<main class=\"wrap\" id=\"main\"></main>\n<footer class=\"footer\"><div class=\"wrap\">\n <p>本工具仅提供税额测算和办税流程指引，计算结果仅供参考，不构成税务、法律或财务建议，也不代替官方申报系统。具体税率及政策以国家税务总局及当地税务机关最新规定为准。</p>\n <p>本站不收集、不上传任何用户财务数据，所有数据仅保存在您当前使用的浏览器中。请务必通过官方网址访问，谨防钓鱼网站。</p>\n</div></footer>\n<div id=\"toast\" class=\"toast\" role=\"status\" hidden></div>\n<dialog id=\"modal\" aria-labelledby=\"dialog-title\"></dialog>\n<input hidden type=\"file\" id=\"backup-file\" accept=\".json,application/json\">\n<input hidden type=\"file\" id=\"payroll-file\" accept=\".csv,text/csv\">\n<section id=\"print-report\" aria-label=\"可打印报告\"></section></div>"
-    ;
-    const STORAGE_KEY = 'local-tax-workbench-v1';
-const NATIONAL_URL = 'https://www.chinatax.gov.cn/';
-const OFFICIAL_LINKS = {
-  tax: NATIONAL_URL, pit:'https://etax.chinatax.gov.cn/', annual:'https://www.gsxt.gov.cn/'
-};
-// 修改发布给所有用户的地区入口。未选地区时进入国家税务总局省级网站导航。
-const REGION_CODES = {
-  北京:'beijing',天津:'tianjin',河北:'hebei',山西:'shanxi',内蒙古:'neimenggu',辽宁:'liaoning',
-  吉林:'jilin',黑龙江:'heilongjiang',上海:'shanghai',江苏:'jiangsu',浙江:'zhejiang',安徽:'anhui',
-  福建:'fujian',江西:'jiangxi',山东:'shandong',河南:'henan',湖北:'hubei',湖南:'hunan',
-  广东:'guangdong',广西:'guangxi',海南:'hainan',重庆:'chongqing',四川:'sichuan',贵州:'guizhou',
-  云南:'yunnan',西藏:'xizang',陕西:'shaanxi',甘肃:'gansu',青海:'qinghai',宁夏:'ningxia',新疆:'xinjiang',
-  大连:'dalian',宁波:'ningbo',厦门:'xiamen',青岛:'qingdao',深圳:'shenzhen'
-};
-const REGION_LINKS = {
-  ...Object.fromEntries(Object.entries(REGION_CODES).map(([label, code]) => [label,'https://etax.'+code+'.chinatax.gov.cn/'])),
-  吉林:'https://etax.jilin.chinatax.gov.cn:10812/',广西:'https://etax.guangxi.chinatax.gov.cn:9723/',
-  西藏:'https://etax.xizang.chinatax.gov.cn:8443/',香港:'https://www.ird.gov.hk/',澳门:'https://www.dsf.gov.mo/',
-  台湾:'https://www.etax.nat.gov.tw/'
-};
-const SOURCES = {
-  vat:'https://shanghai.chinatax.gov.cn/zzzb/zcwj/202602/t479283.html',
-  stamp:'https://www.hengqin.gov.cn/lab/flfg/fl/content/post_3517835.html',
-  pit:'https://www.chinatax.gov.cn/n810341/n810760/c3959585/content.html',
-  cit:'https://www.chinatax.gov.cn/chinatax/n810356/n3255681/c5240479/content.html',
-  social:'https://fgk.chinatax.gov.cn/zcfgk/c102440/c5194865/content.html',
-  disability:'https://fgk.chinatax.gov.cn/zcfgk/c102416/c5241799/content.html',
-  calendar:'https://tianjin.chinatax.gov.cn/11200000000/0300/030004/03000418/20251215090009802.shtml',
-  annual:'https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/fgs/art/2023/art_78b9a2a2399e4934b288da28e67e66ba.html'
-};
-const NAV = {home:'首页',calculator:'税额计算器',flows:'申报流程',calendar:'申报日历',history:'历史记录',settings:'设置'};
-const TAXES = {vat:'增值税及附加税费',stamp:'印花税',pit:'个人所得税',cit:'企业所得税',social:'单位社保费',disability:'残疾人就业保障金',other:'其他小税种'};
-const FLOW_NAMES = {...TAXES, annual:'工商年报'};
-const FLOW_ORDER = ['vat','stamp','pit','cit','annual','social','other','disability'];
-const FLOW_STEPS = {
-  vat:[
-    ['登录电子税务局','选择主管税务机关所属地区，核对纳税人和所属期。'],
-    ['一般纳税人勾选进项税','进入发票勾选确认与抵扣类勾选，按开票时间勾选，申请统计并确认。小规模纳税人跳过。'],
-    ['打开增值税及附加税费申报','按纳税人类型进入对应申报表。'],
-    ['核对主表和适用附表','依次填报主表及适用的附列资料一至五，以当前系统表单为准。'],
-    ['核对附加税费','检查主表下方的附加税费和减免。'],
-    ['提交申报','核对销售额、抵扣额与所属期，提交后查看回执。'],
-    ['办理缴款','按可用渠道办理缴款。已签约的纳税人可选三方协议支付。']
-  ],
-  stamp:[
-    ['搜索合并申报','搜索「财产和行为税税源采集及合并申报」。'],
-    ['新增税种','打开本期申报事项并选择新增税种。'],
-    ['选择印花税','确认所属期和申报方式。'],
-    ['打开税源采集','查看已保存的印花税税源。'],
-    ['新增税源','按凭证种类逐条建立税源。'],
-    ['填写、保存并申报缴税','补齐标星必填项，核对计税依据与减免，保存后申报并缴款。']
-  ],
-  pit:[
-    ['登录自然人电子税务局扣缴端','切换到扣缴功能，确认扣缴单位和申报所属期。'],
-    ['报送新员工信息','添加或导入、勾选并报送。无新员工可跳过。'],
-    ['进入综合所得申报','选择正常工资薪金所得。'],
-    ['填写工资信息','录入本期收入和扣除项目。'],
-    ['预填扣除信息','从扣缴端获取适用的扣除信息。'],
-    ['选择预填内容','按企业实际情况勾选项目及人员。'],
-    ['计算税款','核对工资、累计基数与本期预扣结果。'],
-    ['报送申报表','发送申报，并等待受理回执。'],
-    ['办理缴税','确认可缴税事项，选择立即缴税。'],
-    ['确认缴款方式','已签约的单位可选择三方协议，核对缴款结果。']
-  ],
-  cit:[
-    ['登录电子税务局','确认企业、所属期及预缴或年度汇算事项。'],
-    ['打开财务报表报送及更正','确认本期报表报送要求。'],
-    ['在线填写或导入','使用系统认可的填报方式。'],
-    ['提交财务报表','核对资产负债表、利润表及系统要求的其他报表。'],
-    ['进入居民企业所得税申报','选择查账征收及对应申报事项。'],
-    ['核对并填报表单','依次核对基本信息、选择表单、填报报表和提交报表。'],
-    ['提交申报并缴款','查收受理结果。需要补缴时按系统可用渠道办理。']
-  ],
-  annual:[
-    ['登录国家企业信用信息公示系统','通过市场监管部门的官方网址进入。'],
-    ['打开企业信息填报','进入年度报告填报服务。'],
-    ['选择登记地','选择企业登记地所在省份。'],
-    ['核验登录信息','按系统要求填写统一社会信用代码、联络员信息。首次使用按提示注册联络员。'],
-    ['选择报告年度','进入对应年度报告，选择填写或修改。'],
-    ['预览并公示','核对基本信息、股东及出资、资产状况、党建和社保等适用项目，确认后公示。']
-  ],
-  social:[
-    ['登录电子税务局','如当地另有社保费入口，以主管部门公布的渠道为准。'],
-    ['打开社保费业务','进入单位社会保险相关功能。'],
-    ['选择单位社会保险费申报','确认费款所属期及参保险种。'],
-    ['勾选并核对申报信息','复核各险种人数、缴费基数和费率。'],
-    ['提交申报及缴费','核对缴费记录或回执。']
-  ],
-  other:[
-    ['打开我要办税','登录所属地区电子税务局。'],
-    ['打开税费申报及缴纳','查找需要办理的申报事项。'],
-    ['选择具体税种并填报','按申报表核对计税依据、适用税率和减免。'],
-    ['提交申报并缴款','核对受理状态并按需缴纳。']
-  ],
-  disability:[
-    ['搜索残疾人就业保障金','在电子税务局查找残疾人就业保障金申报事项。'],
-    ['继续办理','核对缴费人和费款所属年度。'],
-    ['填写本期所需数据','核对上年工资总额、各月人数、认定就业人数和应享减免。'],
-    ['核对并提交','核对预览与缴费金额后，在官方系统确认提交。']
-  ]
-};
-// 修改发布给所有用户的默认值。税率字段均按百分数填写。
-const DEFAULT_RATES = {
-  vatGeneral:13, vatSmall:1, vatMonthlyLimit:100000, vatQuarterLimit:300000,
-  urban:7, education:3, localEducation:2,
-  stampSale:.03, stampLoan:.005, stampRent:.1, stampBook:.025, stampOther:0,
-  pitBasic:5000, citGeneral:25, citSmall:5, citCustom:0,
-  pension:16, medical:0, unemployment:0, injury:0, maternity:0, disabilityRatio:1.5
-};
-const RATE_NAMES = {
-  vatGeneral:'一般纳税人增值税率',vatSmall:'小规模征收率（符合减按条件）',
-  vatMonthlyLimit:'小规模月起征点（元）',vatQuarterLimit:'小规模季起征点（元）',
-  urban:'城市维护建设税率',education:'教育费附加率',localEducation:'地方教育附加率',
-  stampSale:'印花税 · 买卖合同',stampLoan:'印花税 · 借款合同',stampRent:'印花税 · 租赁合同',
-  stampBook:'印花税 · 营业账簿',stampOther:'印花税 · 其他税目',pitBasic:'个人基本减除费用（元/月）',
-  citGeneral:'企业所得税一般税率',citSmall:'小微优惠实际税负率',citCustom:'企业所得税自定义率',
-  pension:'养老保险单位比例',medical:'医疗保险单位比例',unemployment:'失业保险单位比例',
-  injury:'工伤保险单位比例',maternity:'生育保险单位比例',disabilityRatio:'残保金按比例就业要求'
-};
-const RATE_MONEY = new Set(['vatMonthlyLimit','vatQuarterLimit','pitBasic']);
-const DEFAULT_PIT = [[36000,3,0],[144000,10,2520],[300000,20,16920],[420000,25,31920],[660000,30,52920],[960000,35,85920],[null,45,181920]];
-const STAMP = {stampSale:'买卖（购销）合同',stampLoan:'借款合同',stampRent:'租赁合同',stampBook:'营业账簿',stampOther:'自定义税目'};
-const INSURANCE = {pension:'养老保险',medical:'医疗保险',unemployment:'失业保险',injury:'工伤保险',maternity:'生育保险'};
-const PAYROLL_HEAD = ['员工','本月工资','个人五险一金','专项附加扣除','基本减除费用','本月其他扣除及免税收入','本年前期累计税基','本年前期已预扣税','本年前期累计减免税额','本月减免税额'];
-const PAYROLL_KEYS = ['name','salary','insurance','deduction','basic','other','priorBase','priorTax','priorRelief','relief'];
-const DEADLINE_NAMES = {vat:'增值税及附加税费',pit:'个税扣缴',social:'单位社保费',cit:'企业所得税季度预缴',settlement:'企业所得税年度汇算',annual:'工商年报',disability:'残保金',stamp:'印花税',other:'其他小税种'};
-const NATIONAL_2026 = [20,24,16,20,22,15,15,17,15,26,16,15];
-const ICONS = {
-  tax:'M4 3h16v18H4zM8 8h8M8 12h3m3 0h2m-8 4h3m3 0h2',
-  calendar:'M4 6h16v15H4zM8 3v6m8-6v6M4 11h16m-12 4h3m2 0h3',
-  flow:'M6 6h1m3 0h8M6 12h1m3 0h8M6 18h1m3 0h8',
-  chart:'M4 4v16h17M8 16v-4m5 4V7m5 9v-6'
-};
-
-const byId = id => taxRoot.getElementById(id);
-const own = (value, key) => Object.hasOwn(value, key);
-const plain = value => value !== null && typeof value === 'object' && !Array.isArray(value);
-const clone = value => JSON.parse(JSON.stringify(value));
-const uid = () => globalThis.crypto?.randomUUID?.() ?? (Date.now().toString(36)+Math.random().toString(36).slice(2));
-const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
-const get = (value, path) => path.split('.').reduce((node, key) => node?.[key], value);
-const put = (value, path, item) => {
-  const parts = path.split('.');
-  const parent = parts.slice(0,-1).reduce((node,key) => node[key], value);
-  parent[parts.at(-1)] = item;
-};
-const numberFormat = new Intl.NumberFormat('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});
-const rateFormat = new Intl.NumberFormat('zh-CN',{maximumFractionDigits:5});
-const chinaDate = new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'});
-const today = () => chinaDate.format(new Date());
-const periodNow = () => today().slice(0,7);
-const periodPattern = /^(?:19\d{2}|[2-8]\d{3}|9\d{3})-(0[1-9]|1[0-2])$/;
-const blank = value => value === '' || value == null;
-const n = value => Number(value) || 0;
-const round = value => Math.round((value + Math.sign(value)*Number.EPSILON)*100)/100;
-const add = values => round(values.reduce((sum, value) => sum+value, 0));
-const cash = value => '¥'+numberFormat.format(value);
-const percent = value => rateFormat.format(value)+'%';
-const fmt = (value, kind) => blank(value) ? '' : kind === 'rate' ? rateFormat.format(value) :
-  kind === 'integer' ? String(value) : numberFormat.format(value);
-function parseNumber(raw, kind = 'money', signed = false) {
-  const value = String(raw).trim().replaceAll('，',',');
-  if (value === '') return '';
-  const limit = kind === 'rate' ? 100 : kind === 'integer' ? 1000000 : 1000000000000;
-  const decimals = kind === 'rate' ? 5 : 2;
-  const whole = /^-?(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d*)?$|^-?\.\d+$/;
-  const number = Number(value.replaceAll(',',''));
-  if (!whole.test(value) || !Number.isFinite(number) || (!signed && number < 0) || Math.abs(number) > limit ||
-      (kind === 'integer' ? !Number.isInteger(number) : (value.split('.')[1]?.length ?? 0) > decimals)) {
-    throw Error(kind === 'rate' ? '请输入 0–100 的百分数（最多五位小数）' :
-      kind === 'integer' ? '请输入有效的非负整数' : '请输入有效数字（最多两位小数）');
-  }
-  return number;
-}
-const policyWindow = (period, from = '2026-01') => period >= from && period <= '2027-12';
-const regionValid = key => key === '' || own(REGION_LINKS,key);
-const defaultEmployee = () => Object.fromEntries(PAYROLL_KEYS.map(key => [key,'']));
-function makeDraft(rates) {
-  return {
-    vat:{type:'general', cycle:'month', sales:'', input:'', generalRate:'', smallRate:'', exemption:false,
-      taxable:'', paid:'', urban:'', education:'', localEducation:'', surchargeRelief:''},
-    stamp:[{item:'stampSale', base:'', rate:'', relief:''}],
-    pit:[defaultEmployee()],
-    cit:{mode:'quarter', type:'general', revenue:'', cost:'', expense:'', adjustment:'', previous:'', rate:'', eligible:false},
-    social:{base:'', count:'', ...Object.fromEntries(Object.keys(INSURANCE).map(key => [key,'']))},
-    disability:{wages:'', count:'', employed:'', ratio:'', cap:'', paidRate:'', policy:false, qualified:false, months:Array(12).fill('')},
-    other:[{item:'消费税',base:'',rate:'',relief:''}]
-  };
-}
-function newCompany(name = '我的账套', region = '') {
-  return {id:uid(),name,region,rates:clone(DEFAULT_RATES),pitTable:clone(DEFAULT_PIT),
-    drafts:{},progress:{},deadlines:{},history:[]};
-}
-function makeState() {
-  const first = newCompany();
-  return {version:1,companies:[first],active:first.id,period:periodNow(),theme:'light',onboarded:false,links:{}};
-}
-function safeUrl(value) {
-  try {
-    const url = new URL(value);
-    const domain = url.hostname.toLowerCase();
-    const roots = ['gov.cn','gov.hk','gov.mo','gov.tw'];
-    if (url.protocol === 'https:' && !url.username && !url.password &&
-        roots.some(root => domain === root || domain.endsWith('.'+root))) return url.href;
-  } catch {}
-  return '';
-}
-function verifyPitTable(table) {
-  if (!Array.isArray(table) || table.length !== 7) throw Error('个税税率表必须有七档');
-  for (const [i,row] of table.entries()) {
-    if (!Array.isArray(row) || row.length !== 3) throw Error('个税税率表格式有误');
-    const [limit, rate, deduction] = row;
-    if (i === 6 ? limit !== null : !(Number.isFinite(limit) && limit > (table[i-1]?.[0] || 0))) throw Error('前六档上限必须依次递增');
-    if (!(Number.isFinite(rate) && rate >= (table[i-1]?.[1] || 0) && rate <= 100 &&
-          Number.isFinite(deduction) && deduction >= 0)) throw Error('预扣率或速算扣除数无效');
-  }
-}
-function validDate(value) {
-  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const date = new Date(value+'T00:00:00Z');
-  return Number.isFinite(date.getTime()) && date.toISOString().slice(0,10) === value;
-}
-function normalizeDraft(d, rates) {
-  const defaults = makeDraft(rates);
-  if (!plain(d)) return defaults;
-  const numberKeys = new Set([
-    'sales','input','generalRate','smallRate','taxable','paid','urban','education','localEducation','surchargeRelief',
-    'base','rate','relief','salary','insurance','deduction','basic','other','priorBase','priorTax','priorRelief',
-    'revenue','cost','expense','adjustment','previous','count','pension','medical','unemployment','injury',
-    'maternity','wages','employed','ratio','cap','paidRate'
-  ]);
-  const rateKeys = new Set(['generalRate','smallRate','urban','education','localEducation','surchargeRelief','rate',
-    'pension','medical','unemployment','injury','maternity','ratio','paidRate']);
-  const choices = {cycle:['month','quarter'],vatType:['general','small'],citType:['general','small','custom'],mode:['quarter','year']};
-  const cleanObject = (data, template, group) => {
-    const result = {...template};
-    for (const [key, def] of Object.entries(template)) {
-      const value = data?.[key];
-      if (value == null) continue;
-      if (key === 'months') {
-        if (!Array.isArray(value) || value.length !== 12) throw Error('残保金月度人数格式无效');
-        result[key] = value.map(x => parseNumber(x,'integer'));
-      } else if (typeof def === 'boolean') {
-        if (typeof value !== 'boolean') throw Error('开关值无效');
-        result[key] = value;
-      } else if (key === 'type') {
-        if (!choices[group+'Type'].includes(value)) throw Error('纳税人类型无效');
-        result[key] = value;
-      } else if (own(choices,key)) {
-        if (!choices[key].includes(value)) throw Error('计算周期无效');
-        result[key] = value;
-      } else if (key === 'item' && group === 'stamp') {
-        if (!own(STAMP,value)) throw Error('印花税税目无效');
-        result[key] = value;
-      } else if (numberKeys.has(key)) {
-        const reliefRate = key === 'relief' && group === 'stamp';
-        const integer = key === 'count' && group === 'social';
-        result[key] = parseNumber(value,rateKeys.has(key) || reliefRate ? 'rate' : integer ? 'integer' : 'money', ['adjustment','priorBase'].includes(key));
-      } else if (typeof value === 'string' && value.length <= 120) {
-        result[key] = value;
-      } else {
-        throw Error('账套文本字段无效');
-      }
-    }
-    return result;
-  };
-  for (const key of Object.keys(defaults)) {
-    const template = defaults[key];
-    if (Array.isArray(template)) {
-      if (!Array.isArray(d[key]) || d[key].length > 1000 || d[key].some(row => !plain(row))) throw Error('明细表格式无效或超过 1,000 行');
-      defaults[key] = d[key].map(row => cleanObject(row,template[0],key));
-    } else if (plain(d[key])) defaults[key] = cleanObject(d[key],template,key);
-  }
-  return defaults;
-}
-function validateState(raw) {
-  if (!plain(raw) || raw.version !== 1 || !Array.isArray(raw.companies) || !raw.companies.length ||
-      raw.companies.length > 200 || !periodPattern.test(raw.period ?? '')) throw Error('文件不是受支持的税务工作台备份');
-  const state = {...makeState(),period:raw.period,theme:raw.theme === 'dark' ? 'dark':'light',onboarded:raw.onboarded === true};
-  const ids = new Set();
-  state.companies = raw.companies.map(company => {
-    if (!plain(company) || typeof company.id !== 'string' || !/^[\w-]{1,80}$/.test(company.id) || ids.has(company.id) ||
-        typeof company.name !== 'string' || !company.name.trim() || company.name.length > 80 || !regionValid(company.region)) throw Error('账套名称、编号或地区无效');
-    ids.add(company.id);
-    const result = newCompany(company.name,company.region);
-    result.id = company.id;
-    for (const key of Object.keys(DEFAULT_RATES)) {
-      if (own(company.rates ?? {},key)) {
-        const value = parseNumber(company.rates[key],RATE_MONEY.has(key)?'money':'rate');
-        if (blank(value)) throw Error('设置中的默认数值缺失');
-        result.rates[key] = value;
-      }
-    }
-    verifyPitTable(company.pitTable); result.pitTable = clone(company.pitTable);
-    for (const [key,value] of Object.entries(company.drafts ?? {})) {
-      if (!periodPattern.test(key) || !plain(value)) throw Error('测算草稿所属期无效');
-      result.drafts[key] = normalizeDraft(value,result.rates);
-    }
-    for (const [key,value] of Object.entries(company.progress ?? {})) {
-      const [month,tax] = key.split(':');
-      if (periodPattern.test(month) && own(FLOW_STEPS,tax) && key === month+':'+tax && Array.isArray(value)) {
-        result.progress[key] = Array.from({length:FLOW_STEPS[tax].length},(_,index) => value[index] === true);
-      }
-    }
-    for (const [key,value] of Object.entries(company.deadlines ?? {})) {
-      const [month,tax] = key.split(':');
-      if (periodPattern.test(month) && own(DEADLINE_NAMES,tax) && key === month+':'+tax && validDate(value)) result.deadlines[key] = value;
-      else throw Error('申报截止日期无效');
-    }
-    const periods = new Set();
-    if (!Array.isArray(company.history) || company.history.length > 12000) throw Error('历史记录格式无效');
-    result.history = company.history.map(entry => {
-      if (!plain(entry) || !periodPattern.test(entry.period ?? '') || periods.has(entry.period) || !plain(entry.amounts)) throw Error('历史所属期或金额无效');
-      periods.add(entry.period);
-      const amounts = Object.fromEntries(Object.keys(TAXES).map(key => {
-        const v = entry.amounts[key];
-        if (v !== null && !(typeof v === 'number' && Number.isFinite(v) && v >= 0)) throw Error('历史税额无效');
-        return [key,v];
-      }));
-      return {period:entry.period,amounts,savedAt:typeof entry.savedAt === 'string'?entry.savedAt:'',companyName:
-        typeof entry.companyName === 'string' ? entry.companyName.slice(0,80) : company.name};
-    });
-    return result;
-  });
-  state.active = ids.has(raw.active) ? raw.active : state.companies[0].id;
-  for (const [region,url] of Object.entries(raw.links ?? {})) {
-    if (!regionValid(region) || !safeUrl(url)) throw Error('发现不受支持的官方入口');
-    state.links[region] = safeUrl(url);
-  }
-  return state;
-}
-let storageMessage = initialTaxError;
-let loaded = null;
-try {
-  if (initialTaxData !== null) loaded = validateState(initialTaxData);
-} catch {
-  storageMessage = '税务底稿无法读取，请在税务设置中导入有效的 JSON 备份。';
-}
-let state = loaded ?? makeState();
-let protectUnreadData = Boolean(storageMessage);
-let lastTaxSerialization = null;
-const company = () => state.companies.find(item => item.id === state.active);
-const draft = () => company().drafts[state.period] ?? (company().drafts[state.period] = makeDraft(company().rates));
-function storageStatus(message) {
-  storageMessage = message;
-  const node = byId('storage-alert');
-  node.textContent = message;
-  node.hidden = !message;
-}
-function saveState(next = state, force = false) {
-  if ((protectUnreadData && !force) || importingBackup) return Promise.resolve(false);
-  const snapshot = JSON.stringify(next);
-  if (snapshot === lastTaxSerialization && !force) return latestTaxWrite;
-  lastTaxSerialization = snapshot;
-  const writing = latestTaxWrite.then(async () => {
-    try {
-      await saveRecords(STORE_WORK, [{
-        id: TAX_WORKBENCH_KEY,
-        updatedAt: new Date().toISOString(),
-        data: JSON.parse(snapshot)
-      }]);
-      protectUnreadData = false;
-      storageStatus('');
-      return true;
-    } catch {
-      if (lastTaxSerialization === snapshot) lastTaxSerialization = null;
-      storageStatus('税务数据暂未写入工作台底稿。关闭页面前可在税务设置中导出 JSON。');
-      return false;
-    }
-  });
-  latestTaxWrite = writing;
-  return writing;
-}
-
-const taxRate = (input, fallback) => blank(input) ? fallback : n(input);
-function amountSet(d,r,pitTable,period) {
-  const {vat:v,cit:c,social:s,disability:b} = d;
-  const output = {};
-  const recentVat = policyWindow(period);
-  const reducedVat = policyWindow(period,'2023-01');
-  const general = v.type === 'general';
-  const vatRate = general ? taxRate(v.generalRate,r.vatGeneral) : taxRate(v.smallRate,reducedVat ? r.vatSmall : 3);
-  const limit = v.cycle === 'quarter' ? r.vatQuarterLimit : r.vatMonthlyLimit;
-  const vatTaxable = n(v.sales);
-  const forcedTaxable = Math.min(vatTaxable,n(v.taxable));
-  const below = recentVat ? vatTaxable < limit : vatTaxable <= limit;
-  const thresholdAvailable = reducedVat;
-  const exempt = !general && thresholdAvailable && v.exemption && below;
-  const outputTax = round((exempt ? forcedTaxable : vatTaxable)*vatRate/100);
-  const netVat = round(outputTax - (general ? n(v.input) : 0));
-  const vatDue = Math.max(0,netVat);
-  const paidVat = blank(v.paid) ? vatDue : n(v.paid);
-  const levyFactor = 1-n(v.surchargeRelief)/100;
-  const levies = ['urban','education','localEducation'].map(key => round(paidVat*taxRate(v[key],r[key])*levyFactor/100));
-  output.vat = {ready:(!blank(v.sales) || (general && !blank(v.input)) || !blank(v.paid)) && n(v.taxable) <= vatTaxable,
-    total:add([vatDue,...levies]),vatDue,levies,outputTax,carry:Math.max(0,-netVat),exempt,vatRate,paidVat,limit,
-    invalid:n(v.taxable)>vatTaxable,thresholdAvailable,reducedVat};
-  const stampLines = d.stamp.map(row => round(n(row.base)*taxRate(row.rate,r[row.item])/100*(1-n(row.relief)/100)));
-  output.stamp = {ready:d.stamp.some(row => !blank(row.base)),total:add(stampLines),lines:stampLines};
-  const payroll = d.pit.map(row => {
-    const base = Math.max(0,round(n(row.priorBase)+n(row.salary)-n(row.insurance)-n(row.deduction)-
-      taxRate(row.basic,r.pitBasic)-n(row.other)));
-    const [,rate,deduction] = pitTable.find(([limit]) => limit === null || base <= limit);
-    const prevRelief = n(row.priorRelief), relief = n(row.relief);
-    const accumulated = Math.max(0,round(base*rate/100-deduction-prevRelief-relief));
-    const current = Math.max(0,round(accumulated-n(row.priorTax)));
-    return {base,rate,current,ready:!blank(row.salary)};
-  });
-  const incompletePayroll = d.pit.some(row => blank(row.salary)&&PAYROLL_KEYS.slice(2).some(key=>!blank(row[key])));
-  output.pit = {ready:payroll.some(row => row.ready)&&!incompletePayroll,incomplete:incompletePayroll,
-    total:add(payroll.map(row => row.ready?row.current:0)),lines:payroll};
-  const profit = round(n(c.revenue)-n(c.cost)-n(c.expense));
-  const taxable = round(profit+n(c.adjustment));
-  const eligible = c.type === 'small' && c.eligible && policyWindow(period,'2023-01') && taxable <= 3000000;
-  const citDefault = c.type === 'custom' ? r.citCustom : eligible ? r.citSmall : r.citGeneral;
-  const citRate = c.type === 'small' && !eligible ? r.citGeneral : taxRate(c.rate,citDefault);
-  const citAssessed = round(Math.max(0,taxable)*citRate/100), citBalance = round(citAssessed-n(c.previous));
-  output.cit = {ready:['revenue','cost','expense','adjustment','previous'].some(key => !blank(c[key])),
-    total:Math.max(0,citBalance),profit,taxable,citAssessed,citRate,eligible,refund:c.mode === 'year' ? Math.max(0,-citBalance) : 0};
-  const socialLines = Object.fromEntries(Object.keys(INSURANCE).map(key => [key,round(round(n(s.base)*taxRate(s[key],r[key])/100)*n(s.count))]));
-  const socialStarted = !blank(s.base) || !blank(s.count);
-  const socialIncomplete = socialStarted && (blank(s.base) || blank(s.count) ||
-    Object.keys(INSURANCE).some(key => r[key] === 0 && blank(s[key])));
-  output.social = {ready:socialStarted&&!socialIncomplete,incomplete:socialIncomplete,total:add(Object.values(socialLines)),lines:socialLines};
-  const count = n(b.count), employed = n(b.employed), required = count*taxRate(b.ratio,r.disabilityRatio)/100;
-  const missing = Math.max(0,required-employed), average = count ? n(b.wages)/count : 0;
-  const appliedWage = blank(b.cap) ? average : Math.min(average,n(b.cap));
-  const useDisabilityPolicy = b.policy && policyWindow(period,'2023-01');
-  const defaultPaid = useDisabilityPolicy ? (b.qualified && count <= 30 ? 0 : employed/count >= .01 ? 50 : 90) : 100;
-  const paidRate = taxRate(b.paidRate,defaultPaid);
-  output.disability = {ready:!blank(b.wages) && !blank(b.count) && (count > 0 || !n(b.wages)) && employed <= count,
-    total:round(missing*appliedWage*paidRate/100),required,missing,average,appliedWage,paidRate,
-    invalid:(!count && n(b.wages)>0) || employed>count};
-  const otherLines = d.other.map(row => Math.max(0,round(n(row.base)*n(row.rate)/100-n(row.relief))));
-  const otherIncomplete = d.other.some(row=>(!blank(row.base)||!blank(row.rate)||!blank(row.relief))&&
-    (blank(row.base)||blank(row.rate)));
-  output.other = {ready:!otherIncomplete&&d.other.some(row => !blank(row.base)&&!blank(row.rate)),
-    incomplete:otherIncomplete,total:add(otherLines),lines:otherLines};
-  return output;
-}
-const results = () => amountSet(draft(),company().rates,company().pitTable,state.period);
-const amountMap = result => Object.fromEntries(Object.entries(result).map(([key,item]) => [key,item.ready?item.total:null]));
-const totalOf = amounts => add(Object.values(amounts).filter(value => value !== null));
-function offsetMonth(period, delta) {
-  const [year,month] = period.split('-').map(Number);
-  const date = new Date(Date.UTC(year,month-1+delta,1));
-  const result = date.toISOString().slice(0,7);
-  return periodPattern.test(result)?result:period;
-}
-const daysBetween = (from,to) => Math.round((Date.parse(to)-Date.parse(from))/86400000);
-function deadlines(period) {
-  const [year,month] = period.split('-').map(Number), c = company();
-  const cutoff = String(year === 2026 ? NATIONAL_2026[month-1] : 15).padStart(2,'0');
-  const prev = offsetMonth(period,-1);
-  const vatCycle = c.drafts[prev]?.vat ?? c.drafts[state.period]?.vat ?? {type:'general',cycle:'month'};
-  const events = {vat:vatCycle.type === 'small' && vatCycle.cycle === 'quarter' && ![1,4,7,10].includes(month) ? null : period+'-'+cutoff,
-    pit:period+'-'+cutoff,social:period+'-15',cit:[1,4,7,10].includes(month)?period+'-'+cutoff:null,
-    settlement:month===5?period+'-31':null,annual:month===6?period+'-30':null,disability:null,stamp:null,other:null};
-  return Object.entries(events).map(([key,date]) => {
-    const override = c.deadlines[period+':'+key];
-    return {key,name:DEADLINE_NAMES[key],date:override || date,override:Boolean(override),days:(override || date)?daysBetween(today(),override || date):null};
-  });
-}
-function calendarDueDates(period) {
-  const ownMonth = deadlines(period).filter(row=>row.date?.startsWith(period+'-')).map(row=>({...row,period}));
-  const moved = Object.entries(company().deadlines).flatMap(([entry,date])=>{
-    const [source,key]=entry.split(':');
-    if (source===period || !date.startsWith(period+'-')) return [];
-    return [{key,date,name:DEADLINE_NAMES[key],period:source,override:true,days:daysBetween(today(),date)}];
-  });
-  return [...ownMonth,...moved].sort((a,b)=>a.date.localeCompare(b.date));
-}
-
-let page = 'home';
-let selectedFlow = 'vat', calendarMonth = periodNow(), historyPeriod = '', historyTax = '';
-let toastTimer;
-const errors = new Map();
-function toast(message) {
-  const node = byId('toast'); node.textContent = message; node.hidden = false;
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => { node.hidden = true; },4200);
-}
-const icon = name => `<span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[name]}"/></svg></span>`;
-const btn = (label,action,classes = '',value='') =>
-  `<button type="button" class="btn ${classes}" data-act="${action}" data-value="${esc(value)}">${label}</button>`;
-const go = (label,target,style='') => btn(label,'go',style,target);
-const officialButton = (key,style='compact') => btn('前往申报 ↗','official',style,key);
-const reference = key => SOURCES[key] ? `<a href="${SOURCES[key]}" target="_blank" rel="noopener noreferrer">核对政策依据 ↗</a>` : '';
-const sectionHead = (title,desc,tools='') => `<div class="section-head"><div><h1>${title}</h1><p class="muted">${desc}</p></div><div class="toolbar">${tools}</div></div>`;
-const moneyOrDash = value => value === null ? '—' : cash(value);
-const notice = message => `<div class="notice">${message}</div>`;
-const localOnly = '请务必通过官方网址访问，谨防钓鱼网站。';
-function numeric(path,label,value,opts={}) {
-  const {kind='money',signed=false,placeholder='',scope='draft',note='',aria=label} = opts;
-  const field = `<input type="text" inputmode="${kind === 'integer' ? 'numeric' : 'decimal'}" autocomplete="off"
-    class="numeric" data-scope="${scope}" data-path="${path}" data-kind="${kind}" ${signed?'data-signed="1"':''}
-    aria-label="${esc(aria)}" value="${esc(fmt(value,kind))}" placeholder="${esc(placeholder)}" maxlength="24">`;
-  return `<label class="field">${label?`<span>${esc(label)}</span>`:''}${field}${note?`<small>${esc(note)}</small>`:''}<small class="error" hidden></small></label>`;
-}
-function pick(path,label,value,choices,scope='draft') {
-  const entries = Array.isArray(choices) ? choices : Object.entries(choices);
-  return `<label class="field">${label?`<span>${esc(label)}</span>`:''}<select data-scope="${scope}" data-path="${path}" aria-label="${esc(label || '税目')}">
-   ${entries.map(([key,name]) => `<option value="${esc(key)}" ${String(key)===String(value)?'selected':''}>${esc(name)}</option>`).join('')}</select></label>`;
-}
-const check = (path,label,value,scope='draft') => `<label class="check-label"><input type="checkbox" data-scope="${scope}" data-path="${path}" ${value?'checked':''}>${esc(label)}</label>`;
-const textInput = (path,value,label,scope='draft') => `<input type="text" data-scope="${scope}" data-path="${path}" value="${esc(value)}" aria-label="${esc(label)}" maxlength="120">`;
-const monthInput = (id,label,value) => `<label class="field"><span>${label}</span><input id="${id}" type="month" value="${esc(value)}"></label>`;
-const rateInput = (path,label,value,def) => numeric(path,label,value,{kind:'rate',placeholder:rateFormat.format(def),note:'默认 '+percent(def)});
-const fieldGrid = fields => `<div class="fields">${fields.join('')}</div>`;
-const resultBox = id => `<div class="result" id="result-${id}" aria-live="polite"></div>`;
-const calcCard = (key,titleHint,body,wide=false) => `<article id="tax-${key}" class="card ${wide?'wide':''}"><header class="card-head"><div class="title-row">${icon('tax')}<div><h2>${TAXES[key]}</h2><p class="help">${titleHint}</p></div></div><div class="actions">${btn('查看流程','flow','compact',key)}${officialButton(key)}</div></header>${body}${resultBox(key)}<p class="help policy-note">请以当地税务机关最新政策为准。 ${reference(key)}</p></article>`;
-function renderShell() {
-  const c = company();
-  taxHost.dataset.taxTheme = state.theme;
-  byId('theme-button').textContent = state.theme === 'dark' ? '浅色模式' : '深色模式';
-  byId('theme-button').setAttribute('aria-pressed',String(state.theme === 'dark'));
-  byId('company-select').innerHTML = state.companies.map(item =>
-    `<option value="${esc(item.id)}" ${item.id === c.id?'selected':''}>${esc(item.name)}</option>`).join('');
-  byId('nav').innerHTML = Object.entries(NAV).map(([key,label]) =>
-    `<button type="button" class="tab ${page===key?'active':''}" ${page===key?'aria-current="page"':''} data-act="go" data-value="${key}">${label}</button>`).join('');
-}
-function bars(amounts) {
-  const active = Object.entries(amounts).filter(([,value]) => value !== null);
-  if (!active.length) return '<div class="empty">录入税额计算数据后，这里会显示税费构成。</div>';
-  const total = totalOf(amounts);
-  return `<div class="bars" aria-label="税费金额占比">${active.map(([key, value]) => {
-    const share = total ? value/total*100 : 0;
-    return `<div class="bar-row"><span>${TAXES[key]}</span><div class="meter" title="占比 ${share.toFixed(1)}%"><span style="width:${share}%"></span></div><span>${cash(value)}</span></div>`;
-  }).join('')}</div>`;
-}
-function flowProgress(key) {
-  const stored = company().progress[state.period+':'+key] ?? [];
-  const steps = FLOW_STEPS[key].map(([title,desc],index) => ({
-    title,desc,index,skipped:key==='vat' && index===1 && draft().vat.type==='small',checked:stored[index]===true
-  }));
-  return {steps, done:steps.filter(step => step.checked&&!step.skipped).length, goal:steps.filter(step => !step.skipped).length};
-}
-const dueBadge = due => {
-  if (!due.date) return '<span class="tag">待设置</span>';
-  const status = due.days < 0 ? '已过截止日' : due.days === 0 ? '今天截止' : '剩 '+due.days+' 天';
-  return `<span class="tag ${due.days<=7?'due':''} ${due.days>=0&&due.days<=3?'urgent':''}">${status}</span>`;
-};
-function homeView() {
-  const values = amountMap(results()), has = Object.values(values).some(v=>v!==null);
-  const upcoming = [periodNow(),offsetMonth(periodNow(),1)].flatMap(calendarDueDates).filter(row => row.days >= 0)
-    .sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
-  const complete = FLOW_ORDER.filter(key=>{const flow=flowProgress(key);return flow.done===flow.goal;}).length;
-  return `<section class="hero"><div><h1>智能税务管理与申报导航</h1>
-    <p>${esc(company().name)} · ${state.period} 所属期</p>
-    <div class="actions">${go('开始测算 →','calculator','hero-action')}${go('查看申报日历','calendar')}</div></div>
-    <div class="total"><p>本期应缴合计</p><strong class="amount">${has?cash(totalOf(values)):'—'}</strong><p class="help">根据当前账套的已填写项目汇总</p></div></section>
-  <div class="stats"><div class="card stat"><span class="muted">已测算项目</span><strong>${Object.values(values).filter(v=>v!==null).length} / 7</strong></div>
-   <div class="card stat"><span class="muted">已完成流程</span><strong>${complete} / 8</strong></div>
-   <div class="card stat"><span class="muted">已保存所属期</span><strong>${company().history.length}</strong></div></div>
-  <div class="dash"><section class="card"><div class="title-row">${icon('chart')}<h2>本期税费构成</h2></div>${bars(values)}</section>
-  <section class="card"><div class="card-head"><div class="title-row">${icon('calendar')}<h2>近期申报提醒</h2></div>${go('完整日历','calendar','compact')}</div>
-   ${upcoming.map(row=>`<div class="deadline"><div><strong>${row.name}</strong><div class="help">${row.date}</div></div>${dueBadge(row)}</div>`).join('')||'<p class="empty">近期没有已设置的截止日。</p>'}</section></div>
-   ${notice('<strong>官方入口</strong> '+localOnly+' '+officialButton('vat')+' '+officialButton('annual').replace('前往申报','工商年报'))}`;
-}
-function rowsTable(group,rows,rates) {
-  const stamp = group === 'stamp', headers = stamp ? ['税目','计税金额（元）','税率（%）','减免比例（%）','应纳税额','操作'] :
-    ['税种','计税依据（元）','税率（%）','减免额（元）','应纳税额','操作'];
-  return `<div class="table-wrap"><table><thead><tr>${headers.map(label=>`<th scope="col">${label}</th>`).join('')}</tr></thead><tbody>
-    ${rows.map((row,index)=>{
-      const path = group+'.'+index;
-      return `<tr><td>${stamp?pick(path+'.item','',row.item,STAMP):pick(path+'.item','',row.item,['消费税','土地增值税','车辆购置税','其他'].map(item=>[item,item]))}</td>
-       <td>${numeric(path+'.base','',row.base,{aria:headers[1]})}</td><td>${numeric(path+'.rate','',row.rate,{kind:'rate',aria:headers[2],placeholder:stamp?rateFormat.format(rates[row.item]):'填写适用税率'})}</td>
-       <td>${numeric(path+'.relief','',row.relief,{kind:stamp?'rate':'money',aria:headers[3]})}</td><td><output id="line-${path}">—</output></td>
-       <td>${btn('移除','remove-row','compact danger',path)}</td></tr>`;
-    }).join('')}</tbody></table></div><div class="actions settings-section">${btn(stamp?'＋ 新增税源':'＋ 新增税种','add-row','compact',group)}</div>`;
-}
-function payrollTable(rows,rates) {
-  return `<div class="actions settings-section"><label class="field"><span>员工人数</span><input id="employee-count" type="number" min="0" max="1000" step="1" value="${rows.length}"></label>
-   ${btn('＋ 添加员工','add-row','compact','pit')}${btn('下载 CSV 模板','payroll-template','compact')}${btn('导入 CSV','payroll-import','compact')}</div>
-   <div class="table-wrap"><table><thead><tr>${[...PAYROLL_HEAD,'本月预扣','操作'].map(label=>`<th scope="col">${label}</th>`).join('')}</tr></thead><tbody>
-   ${rows.map((row,index)=>`<tr><td>${textInput('pit.'+index+'.name',row.name,'员工 '+(index+1))}</td>
-    ${PAYROLL_KEYS.slice(1).map((key,column)=>`<td>${numeric('pit.'+index+'.'+key,'',row[key],{aria:PAYROLL_HEAD[column+1],signed:key==='priorBase',placeholder:key==='basic'?fmt(rates.pitBasic,'money'):''})}</td>`).join('')}
-    <td><output id="line-pit.${index}">—</output></td><td>${btn('移除','remove-row','compact danger','pit.'+index)}</td></tr>`).join('')}</tbody></table></div>`;
-}
-function calculatorView() {
-  const d=draft(), r=company().rates, v=d.vat, c=d.cit, s=d.social, b=d.disability, isSmall=v.type==='small';
-  const result = results();
-  const vat = fieldGrid([
-    pick('vat.type','纳税人类型',v.type,{general:'一般纳税人',small:'小规模纳税人'}),
-    isSmall?pick('vat.cycle','计税周期',v.cycle,{month:'按月',quarter:'按季'}):numeric('vat.input','本期可抵扣进项税额',v.input),
-    numeric('vat.sales',isSmall&&v.cycle==='quarter'?'本季度不含税销售额':'本期不含税销售额',v.sales),
-    isSmall?rateInput('vat.smallRate','增值税征收率（%）',v.smallRate,result.vat.reducedVat?r.vatSmall:3):rateInput('vat.generalRate','增值税税率（%）',v.generalRate,r.vatGeneral),
-    numeric('vat.paid','实缴增值税（可覆盖）',v.paid,{note:'留空以本次测算的应缴增值税为基数'}),
-    pick('vat.urban','城市维护建设税率',taxRate(v.urban,r.urban),[...new Set([7,5,1,r.urban])].map(x=>[x,percent(x)]))
-  ]) + (isSmall ? check('vat.exemption','已核对适用条件，按起征点测算免税',v.exemption)+
-    '<p class="help">'+(result.vat.thresholdAvailable?'起征点 '+cash(result.vat.limit)+'。2026–2027 年销售额低于起征点才按该项免税。默认 1% 适用于符合减按条件的交易。':'所选所属期超出已内置的小规模起征点政策范围，请按当前政策设置征收率。')+'</p>'+
-    (v.exemption ? fieldGrid([numeric('vat.taxable','其中放弃免税等应征销售额',v.taxable)]) : '') : '') +
-    fieldGrid([rateInput('vat.education','教育费附加（%）',v.education,r.education),
-      rateInput('vat.localEducation','地方教育附加（%）',v.localEducation,r.localEducation),
-      numeric('vat.surchargeRelief','附加经核定减免比例（%）',v.surchargeRelief,{kind:'rate'})]);
-  const cit = fieldGrid([
-    pick('cit.mode','测算模式',c.mode,{quarter:'季度预缴（本年累计）',year:'年度汇算'}),
-    pick('cit.type','企业税率口径',c.type,{general:'一般企业',small:'小型微利企业',custom:'自定义'}),
-    numeric('cit.revenue','营业收入',c.revenue),numeric('cit.cost','营业成本',c.cost),numeric('cit.expense','期间费用',c.expense),
-    numeric('cit.adjustment','其他纳税调整净额',c.adjustment,{signed:true,note:'调增填正数，调减填负数'}),
-    numeric('cit.previous','本年已预缴企业所得税',c.previous),
-    rateInput('cit.rate','实际税率（%）',c.rate,c.type==='small'?r.citSmall:c.type==='custom'?r.citCustom:r.citGeneral)
-  ]) + (c.type==='small'?check('cit.eligible','已确认符合小型微利企业优惠条件',c.eligible)+'<p class="help">核对行业、所得额、人数及资产条件。仅在政策有效期和测算所得额不超过 300 万元时采用优惠率。</p>':'');
-  const social = fieldGrid([numeric('social.base','每人缴费工资基数',s.base),numeric('social.count','使用同一基数的员工人数',s.count,{kind:'integer'}),
-    ...Object.entries(INSURANCE).map(([key,name])=>rateInput('social.'+key,name+'单位比例（%）',s[key],r[key]))])+
-    '<p class="help">以同基数员工为一组测算。默认 0% 的险种须填当地比例，确认不单列征收时可填 0。</p>';
-  const disability = fieldGrid([numeric('disability.wages','上年在职职工工资总额',b.wages),numeric('disability.count','上年年平均在职职工人数',b.count),
-    numeric('disability.employed','经认定已安排残疾人就业人数',b.employed),rateInput('disability.ratio','按比例就业要求（%）',b.ratio,r.disabilityRatio),
-    numeric('disability.cap','适用平均工资上限（元）',b.cap,{note:'按属地已确认的计费口径填写'}),
-    numeric('disability.paidRate','自定义实缴比例（%）',b.paidRate,{kind:'rate',note:'留空依下方政策开关测算'})])+
-    check('disability.policy','按有效期内的分档减缴政策测算',b.policy)+
-    (b.policy?check('disability.qualified','已确认符合 30 人及以下企业免征条件',b.qualified):'')+
-    `<details class="settings-section"><summary>按 1–12 月人数辅助计算</summary><div class="fields three">${b.months.map((value,i)=>numeric('disability.months.'+i,(i+1)+' 月',value,{kind:'integer'})).join('')}</div><div class="actions settings-section">${btn('应用年平均人数','apply-average','compact')}</div></details>`;
-  return sectionHead('税额计算器','按税种实时测算。各项金额使用人民币元，结果按分展示。',
-    monthInput('work-period','税费所属月',state.period)+btn('保存为本期记录','save-period','primary')+
-    btn('Excel','xlsx','compact')+btn('CSV','csv','compact')+btn('打印 / PDF','print','compact'))+
-    notice('季度、年度项目只在拟纳入本次汇总的所属月录入，避免跨月重复汇总。'+localOnly)+
-    `<div class="cards">
-    ${calcCard('vat','销售额与进项抵扣 · 含三项附加税费',vat)}
-    ${calcCard('cit','按本年累计口径输入，扣除已预缴金额',cit)}
-    ${calcCard('stamp','按合同、凭证或账簿逐条测算',rowsTable('stamp',d.stamp,r),true)}
-    ${calcCard('pit','居民个人正常工资薪金 · 企业累计预扣',payrollTable(d.pit,r)+
-       '<p class="help">本年前期累计税基填上月累计收入扣除累计免税收入和各项扣除后的余额，可为负数。前期已预扣与累计减免单独填。首次任职等特殊扣除用实际值覆盖。</p>',true)}
-    ${calcCard('social','按同一缴费工资基数及单位缴纳比例测算',social)}
-    ${calcCard('disability','以上一年年平均人数和工资为基础',disability)}
-    ${calcCard('other','适用于已知单一比例税率的项目',rowsTable('other',d.other,r)+
-      '<p class="help">从量、复合计税及土地增值税等分级速算情形，须先按官方规则核定税基及扣除额。本卡仅按通用公式测算。</p>',true)}
-    </div>`;
-}
-function updateResults() {
-  const a = results(), d=draft();
-  const display = (key,description,warning='') => {
-    const node = byId('result-'+key); if (!node) return;
-    const item = a[key];
-    const invalidInput = [...errors.keys()].some(path=>path.startsWith(key+'.'));
-    node.innerHTML = `<span class="help">${key==='vat'?'本期预估应缴含附加':'本期测算应缴'}</span>
-      <strong class="amount">${item.ready&&!invalidInput?cash(item.total):'—'}</strong>
-      <div class="details">${esc(invalidInput?'请先修正标红的输入。':warning || description)}</div>`;
-  };
-  const v=a.vat;
-  const vatDetail = '应纳增值税 '+cash(v.vatDue)+'，销项税额 '+cash(v.outputTax)+(v.carry?'，留抵税额 '+cash(v.carry):'')+
-    '\n计税基数 '+cash(v.paidVat)+' · 城建税 '+cash(v.levies[0])+' · 教育费附加 '+cash(v.levies[1])+' · 地方教育附加 '+cash(v.levies[2])+
-    '\n一般计税：不含税销售额 × 税率 − 可抵扣进项税。附加按实缴增值税测算。'+(v.exempt?'\n本次按起征点和应征销售额测算。':'');
-  display('vat',vatDetail,v.invalid?'应征销售额不能超过填报的全部销售额。':'');
-  display('stamp','逐笔计税金额 × 税率 ×（1 − 减免比例），四舍五入后汇总。');
-  display('pit','累计预扣税基 × 适用预扣率 − 速算扣除数 − 累计减免 − 前期已预扣。差额为负时，本期按零预扣。',a.pit.incomplete?'请为已填写扣除数据的员工输入当月工资，无工资可明确填 0。':'');
-  display('cit','利润总额 '+cash(a.cit.profit)+' · 应纳税所得额 '+cash(a.cit.taxable)+'\n计算税额 '+cash(a.cit.citAssessed)+
-    '（'+percent(a.cit.citRate)+'）− 已预缴金额'+(a.cit.refund?'\n预计退税 '+cash(a.cit.refund):'')+
-    (d.cit.type==='small'&&!a.cit.eligible?'\n当前按一般企业税率。':''));
-  display('social',Object.entries(a.social.lines).map(([key,value])=>INSURANCE[key]+' '+cash(value)).join(' · ')+'\n各险种为每人基数 × 单位比例 × 人数。',a.social.incomplete?'请填齐缴费基数、人数和当地费率。确认不单列征收可明确填 0。':'');
-  display('disability','应安排 '+fmt(a.disability.required,'money')+' 人 · 差额 '+fmt(a.disability.missing,'money')+' 人\n差额人数 × 计费年平均工资 '+cash(a.disability.appliedWage)+' × 实缴比例 '+percent(a.disability.paidRate),
-    a.disability.invalid?'请核对在职职工人数、工资总额和就业人数。':'');
-  display('other','计税依据 × 已核定的适用税率 − 减免额。逐笔汇总，应缴最低为零。',a.other.incomplete?'请为已填写的税源补齐计税依据和税率。':'');
-  for (const key of ['stamp','pit','other']) a[key].lines.forEach((line,index) => {
-    const node = byId('line-'+key+'.'+index); if (!node) return;
-    const row = d[key][index];
-    const ready = key==='pit'?line.ready:!blank(row.base)&&(key==='stamp'||!blank(row.rate));
-    node.textContent = ready ? cash(key==='pit'?line.current:line) : '—';
-    if (key==='pit'&&ready) node.title = '累计税基 '+cash(line.base)+'；适用 '+percent(line.rate);
-  });
-}
-function flowsView() {
-  const f=flowProgress(selectedFlow);
-  return sectionHead('申报流程','勾选进度按账套和所属月保存。菜单名称和可用选项以当地系统为准。',
-    monthInput('work-period','流程所属月',state.period))+
-    `<div class="flow-grid"><aside class="card flow-side" aria-label="选择办税事项">
-     ${FLOW_ORDER.map(key=>{const item=flowProgress(key);return btn(FLOW_NAMES[key]+' <span>'+item.done+'/'+item.goal+'</span>','flow',key===selectedFlow?'active':'',key);}).join('')}
-    </aside><section class="card"><div class="card-head"><div class="title-row">${icon('flow')}<h2>${FLOW_NAMES[selectedFlow]}</h2></div>
-      <span class="tag">${f.done} / ${f.goal} 步完成</span></div>
-      <div class="meter settings-section" role="progressbar" aria-label="流程进度" aria-valuemin="0" aria-valuemax="${f.goal}" aria-valuenow="${f.done}"><span style="width:${f.done/f.goal*100}%"></span></div>
-      <ol class="steps">${f.steps.map(step=>`<li class="${step.skipped?'skipped':''}"><label><input type="checkbox" data-progress="${step.index}" ${(step.checked||step.skipped)?'checked':''} ${step.skipped?'disabled':''}>
-        <span class="step-number">${String(step.index+1).padStart(2,'0')}</span><span><strong>${step.title}${step.skipped?' · 不适用':''}</strong><p>${step.desc}</p></span></label></li>`).join('')}</ol>
-      <div class="actions">${officialButton(selectedFlow,'primary')} <span class="help">${localOnly}</span></div>
-    </section></div>`;
-}
-function calendarView() {
-  const events=deadlines(calendarMonth), dueDates=calendarDueDates(calendarMonth), [year,month] = calendarMonth.split('-').map(Number);
-  const first = new Date(Date.UTC(year,month-1,1)).getUTCDay(), days=new Date(Date.UTC(year,month,0)).getUTCDate();
-  const grid = [...Array(first).fill(''),...Array.from({length:days},(_,i)=>calendarMonth+'-'+String(i+1).padStart(2,'0'))];
-  while(grid.length%7) grid.push('');
-  return sectionHead('申报日历','按办税月查看截止日。红色提示 7 天内到期，3 天内加强提醒。',
-    btn('导出 .ics','ics','primary'))+notice('全国 2026 年通用申报期顺延已预置。社保等属地项目建议核对并编辑；残保金、印花税等按主管部门实际期限设置。 '+reference('calendar'))+
-    `<div class="dash"><section class="card"><div class="card-head"><h2>${year} 年 ${month} 月</h2><div class="actions">
-     ${btn('上月','cal-prev','compact')}${btn('本月','cal-now','compact')}${btn('下月','cal-next','compact')}</div></div>
-     ${monthInput('calendar-month','跳转到月份',calendarMonth)}
-     <div class="cal-grid">${['日','一','二','三','四','五','六'].map(day=>`<div class="day heading">周${day}</div>`).join('')}
-       ${grid.map(date=>`<div class="day ${date===today()?'today':''}">${date?Number(date.slice(-2)):''}${date?dueDates.filter(row=>row.date===date).map(row=>
-         `<button class="day-event ${row.days<=7?'due':''}" data-act="deadline" data-value="${row.key}:${row.period}" title="${row.name}">${row.name}</button>`).join(''):''}</div>`).join('')}
-     </div></section><section class="card"><h2>申报事项</h2><p class="help">工商年报开放期为每年 1 月 1 日至 6 月 30 日。残保金按年度办理。</p>
-       ${events.map(row=>`<div class="deadline"><div><strong>${row.name}</strong><p class="help">${row.date??'当月无预置日期'}${row.override?' · 已调整':''}</p></div><div class="actions">${dueBadge(row)}${btn('编辑','deadline','compact',row.key)}</div></div>`).join('')}
-     </section></div>`;
-}
-const historyRows = () => [...company().history].filter(row=>(!historyPeriod||row.period===historyPeriod)&&
-  (!historyTax||row.amounts[historyTax]!==null)).sort((a,b)=>b.period.localeCompare(a.period));
-function comparison(rows) {
-  if (!rows.length) return '<p class="empty">保存历史记录后可查看同月和上月对比。</p>';
-  const focus=rows[0];
-  const valueOf = row => row ? historyTax ? row.amounts[historyTax] : totalOf(row.amounts) : null;
-  const current=valueOf(focus);
-  return `<div class="compare">${[[-1,'环比'],[-12,'同比']].map(([offset,label])=>{
-    const priorPeriod=offsetMonth(focus.period,offset), prior=valueOf(company().history.find(row=>row.period===priorPeriod));
-    const max=Math.max(current??0,prior??0,1);
-    const movement=prior===null?'缺少可比期间':prior===0?'上期为零，展示金额变化':
-      ((current-prior)/prior*100).toFixed(1)+'%';
-    return `<div class="card"><h3>${label} · ${esc(focus.period)}</h3><p class="help">${movement}</p>
-      ${[[focus.period,current],[priorPeriod,prior]].map(([period,value])=>`<div class="bar-row"><span>${period}</span><div class="meter"><span style="width:${(value??0)/max*100}%"></span></div><span>${moneyOrDash(value)}</span></div>`).join('')}
-      </div>`;
-  }).join('')}</div>`;
-}
-function historyView() {
-  const rows=historyRows(), keys=historyTax?[historyTax]:Object.keys(TAXES);
-  return sectionHead('历史记录','对已保存的月度税额进行筛选、比对和导出。',
-    btn('导出 Excel','xlsx')+btn('导出 CSV','csv')+btn('打印 / 保存 PDF','print','primary'))+
-    `<section class="card"><div class="toolbar">${monthInput('history-period','月份',historyPeriod)}
-     <label class="field"><span>税种</span><select id="history-tax"><option value="">全部税种</option>${Object.entries(TAXES).map(([key,label])=>
-       `<option value="${key}" ${key===historyTax?'selected':''}>${label}</option>`).join('')}</select></label>
-     ${btn('重置筛选','reset-history','compact')}</div>
-     ${rows.length?`<div class="table-wrap"><table><thead><tr><th>月份</th><th>账套</th>${keys.map(key=>`<th>${TAXES[key]}</th>`).join('')}<th>筛选项目合计</th><th>操作</th></tr></thead>
-       <tbody>${rows.map(row=>`<tr><td>${row.period}</td><td>${esc(row.companyName)}</td>${keys.map(key=>`<td>${moneyOrDash(row.amounts[key])}</td>`).join('')}
-       <td><strong>${cash(add(keys.map(key=>row.amounts[key]??0)))}</strong></td><td>${btn('查看测算','load-period','compact',row.period)}</td></tr>`).join('')}</tbody></table></div>`:
-       '<div class="empty">当前筛选无历史记录。到税额计算器保存本期后即可查看。</div>'}</section>
-     ${comparison(rows)}`;
-}
-function settingsView() {
-  const c=company(), regionEntries=[['','全国 · 税务总局导航'],...Object.keys(REGION_LINKS).map(key=>[key,key])];
-  return sectionHead('设置','账套资料、默认税率、官方入口和本地数据管理。')+
-    `<div class="cards"><section class="card"><div class="card-head"><h2>账套与地区</h2>${btn('新建账套','company','compact')}</div>
-      <div class="fields"><label class="field"><span>企业名称 / 账套</span>${textInput('name',c.name,'企业名称','company')}</label>
-      ${pick('region','所属省份 / 地区',c.region,regionEntries,'company')}</div>
-      <p class="help settings-section">选择地区可直达当地电子税务局；未选择时由税务总局官网选择省级机构。</p>
-      <div class="actions settings-section">${btn('删除当前账套','delete-company','compact danger')}</div>
-    </section><section class="card"><h2>官方申报入口</h2><p class="help">仅接受政府域名的 HTTPS 网址。入口设置在所有账套间共用。</p>
-      <form id="link-form" class="settings-section"><label class="field"><span>${esc(c.region||'全国导航')}入口网址</span>
-      <input id="region-link" type="url" required value="${esc(state.links[c.region]??REGION_LINKS[c.region]??OFFICIAL_LINKS.tax)}"></label>
-      <div class="actions settings-section"><button type="submit" class="btn primary compact">保存链接</button>${btn('恢复此地区默认链接','reset-link','compact')}</div></form>
-    </section><section class="card wide"><div class="card-head"><div><h2>默认税率与费率</h2><p class="help">适用于当前账套。测算卡中手动填写的数值优先，社保比例请按属地口径配置。</p></div>${btn('一键恢复默认税率','reset-rates','compact')}</div>
-      <div class="fields three">${Object.entries(RATE_NAMES).map(([key,label])=>numeric(key,label,c.rates[key],{scope:'rate',kind:RATE_MONEY.has(key)?'money':'rate',
-       note:RATE_MONEY.has(key)?'元':'% · 请以当地税务机关最新政策为准'})).join('')}</div></section>
-    <section class="card wide"><div class="card-head"><div><h2>个税累计预扣率表</h2><p class="help">居民个人工资、薪金所得。上限为累计应纳税所得额。${reference('pit')}</p></div>
-      ${btn('恢复七级税率表','reset-pit','compact')}</div>
-      <form id="pit-table-form"><div class="table-wrap"><table><thead><tr><th>级数</th><th>档位上限（元）</th><th>预扣率（%）</th><th>速算扣除数（元）</th></tr></thead><tbody>
-      ${c.pitTable.map(([limit,rate,deduct],i)=>`<tr><td>${i+1}</td><td>${limit===null?'无上限':numeric(i+'.0','',limit,{scope:'pit-table',aria:'档位上限'})}</td>
-        <td>${numeric(i+'.1','',rate,{scope:'pit-table',kind:'rate',aria:'预扣率'})}</td><td>${numeric(i+'.2','',deduct,{scope:'pit-table',aria:'速算扣除数'})}</td></tr>`).join('')}</tbody></table></div>
-      <div class="actions settings-section"><button type="submit" class="btn primary compact">保存个税税率表</button></div></form></section>
-    <section class="card wide"><h2>本地数据</h2><p class="help">备份包含所有账套、测算草稿、申报进度与历史记录。请保存在您可控制的设备。</p>
-      <div class="actions settings-section">${btn('导出 JSON','backup-export')}${btn('导入 JSON','backup-import')}${btn('重新查看新手引导','onboard')}
-      ${btn('清除全部数据','clear','danger')}</div></section></div>`;
-}
-const views = {home:homeView,calculator:calculatorView,flows:flowsView,calendar:calendarView,history:historyView,settings:settingsView};
-function render() {
-  renderShell();
-  byId('main').dataset.page = page;
-  byId('main').innerHTML = views[page]();
-  if (page === 'calculator') updateResults();
-}
-
-const dialog = byId('modal');
-function modal(title,body,buttons) {
-  dialog.innerHTML = `<h2 id="dialog-title">${esc(title)}</h2>${body}<div class="actions">${buttons}</div>`;
-  if (!dialog.open) dialog.showModal();
-}
-const closeModal = () => dialog.close();
-function ask(title, message) {
-  return new Promise(resolve => {
-    dialog.addEventListener('close',()=>resolve(dialog.returnValue==='confirm'),{once:true});
-    dialog.returnValue = 'cancel';
-    modal(title,`<p>${esc(message)}</p>`,
-      '<form method="dialog" class="actions"><button class="btn" value="cancel">取消</button><button class="btn primary" value="confirm">确认</button></form>');
-  });
-}
-function openCompany() {
-  modal('新建账套','<form id="company-form"><label class="field"><span>企业名称 / 账套</span><input id="new-company-name" required maxlength="80" autofocus></label></form>',
-    btn('取消','close')+'<button class="btn primary" type="submit" form="company-form">创建账套</button>');
-}
-let onboardingStep = 0;
-function onboarding() {
-  const intro = [
-    ['选择账套和所属月','用顶部账套切换管理多个主体。进入税额计算器选择所属月并录入金额。'],
-    ['测算并核对口径','核对适用税率、地区及优惠资格。已填写的税额自动汇总，也可保存为本期记录。'],
-    ['对照清单办理申报','在申报流程打勾、在日历做提醒。正式申报和缴费请通过官方系统办理。']
-  ];
-  const [title,description]=intro[onboardingStep];
-  modal(title,`<p class="tag">新手引导 ${onboardingStep+1} / 3</p><p>${description}</p>`,
-    btn('跳过','onboard-done')+(onboardingStep?btn('上一步','onboard-back'):'')+
-      (onboardingStep<2?btn('下一步','onboard-next','primary'):btn('开始使用','onboard-done','primary')));
-}
-function finishOnboarding() { state.onboarded=true; saveState(); closeModal(); }
-function officialUrl(key) {
-  if (key==='annual' || key==='pit') return OFFICIAL_LINKS[key];
-  const region=company().region;
-  return state.links[region]??REGION_LINKS[region]??OFFICIAL_LINKS.tax;
-}
-function official(key) {
-  const url=safeUrl(officialUrl(key)); if (!url) throw Error('该地区没有有效的官方入口');
-  const specialRegion=['香港','澳门','台湾'].includes(company().region);
-  modal('前往官方网站','<p>您即将前往官方网站，本工具计算结果仅供参考，请核对后在官方系统申报。</p>'+
-    `<p class="help">官方网址 · <strong>${esc(new URL(url).host)}</strong></p>`+
-    (specialRegion?'<p class="help">所选地区适用独立办税规则，请使用当地规定和所需入口。工作台计算器以中国大陆口径为基础。</p>':''),
-    btn('取消','close')+btn('复制本次计算结果','copy','',key)+
-    `<a class="btn primary" href="${esc(url)}" target="_blank" rel="noopener noreferrer" data-act="close">前往官网 ↗</a>`);
-}
-async function copyResults(key) {
-  assertValid();
-  const values=amountMap(results()), keys=own(TAXES,key)?[key]:Object.keys(TAXES).filter(k=>values[k]!==null);
-  if (!keys.length || keys.every(k=>values[k]===null)) throw Error('没有可复制的测算金额');
-  const text=[company().name+' · '+state.period,...keys.map(k=>TAXES[k]+' '+moneyOrDash(values[k])),'仅供对照，请在官方系统核对。'].join('\n');
-  try { await navigator.clipboard.writeText(text); toast('已复制计算结果'); }
-  catch {
-    const area=document.createElement('textarea'); area.value=text; area.readOnly=true;
-    area.setAttribute('aria-label','可复制的测算结果'); area.rows=5;
-    dialog.querySelector('textarea')?.remove(); dialog.querySelector('.actions').before(area); area.select();
-    try { if (document.execCommand('copy')) return toast('已复制计算结果'); } catch {}
-    toast('请复制已选中的文字');
-  }
-}
-function editDeadline(value) {
-  const [key,month=calendarMonth]=value.split(':');
-  const row=deadlines(month).find(event=>event.key===key);
-  if (!row) return;
-  modal('编辑截止日期',`<p>${row.name} · ${month} 办税月</p>
-   <form id="deadline-form" data-key="${month}:${key}"><label class="field"><span>实际截止日期</span>
-   <input type="date" id="deadline-date" value="${esc(row.date ?? '')}"></label></form>`,
-    btn('取消','close')+btn('恢复预置日期','reset-deadline','',month+':'+key)+
-    '<button class="btn primary" type="submit" form="deadline-form">保存日期</button>');
-}
-function download(name,content,mime) {
-  const href=URL.createObjectURL(new Blob([content],{type:mime}));
-  const link=document.createElement('a'); link.href=href; link.download=name;
-  document.body.append(link); link.click(); link.remove(); setTimeout(()=>URL.revokeObjectURL(href),2000);
-}
-function csvText(rows) {
-  return '\ufeff'+rows.map(row=>row.map(value=>{
-    const cleaned= typeof value==='string' && /^\s*[=+\-@\t\r]/.test(value) ? "'"+value : value??'';
-    return '"'+String(cleaned).replaceAll('"','""')+'"';
-  }).join(',')).join('\r\n');
-}
-function parseCSV(contents) {
-  const text=contents.replace(/^\uFEFF/,'');
-  const rows=[]; let row=[], value='', quoted=false, closed=false;
-  const finishField = () => { row.push(value); value=''; closed=false; };
-  const finishRow = () => { finishField(); rows.push(row); row=[]; };
-  for (let i=0;i<text.length;i++) {
-    const char=text[i];
-    if (quoted) {
-      if (char==='"' && text[i+1]==='"') { value+='"'; i++; }
-      else if (char==='"') {quoted=false;closed=true;}
-      else value+=char;
-    } else if (char===',') finishField();
-    else if (char==='\n' || char==='\r') {
-      finishRow(); if (char==='\r' && text[i+1]==='\n') i++;
-    } else if (closed) {
-      if (char!==' ' && char!=='\t') throw Error('CSV 引号后存在非法字符');
-    } else if (char==='"') {
-      if (value) throw Error('CSV 引号必须出现在字段开头');
-      quoted=true;
-    } else value+=char;
-  }
-  if (quoted) throw Error('CSV 引号未闭合');
-  if (value || row.length || closed) finishRow();
-  return rows.filter(row=>row.some(value=>value.trim()));
-}
-async function importPayroll(file) {
-  if (file.size>5*1024*1024) throw Error('CSV 超过 5 MB，请拆分后重试');
-  const bytes=await file.arrayBuffer(); let text;
-  try { text=new TextDecoder('utf-8',{fatal:true}).decode(bytes); }
-  catch { text=new TextDecoder('gb18030',{fatal:true}).decode(bytes); }
-  const [header,...records]=parseCSV(text);
-  if (!header || !records.length) throw Error('CSV 没有可导入的员工记录');
-  const columns=PAYROLL_HEAD.map(label=>header.findIndex(value=>value.trim()===label));
-  if (columns[0]<0 || columns[1]<0) throw Error('CSV 需要「员工」和「本月工资」列，可下载模板');
-  if (records.length>1000) throw Error('一次最多导入 1,000 行');
-  const next=records.map((line,index)=>{
-    try {
-      if (line.length!==header.length) throw Error('列数与表头不一致');
-      const row=defaultEmployee();
-      row.name=(line[columns[0]]??'').trim();
-      if (!row.name || row.name.length>120) throw Error('员工名称为空或超过 120 字');
-      for (let i=1;i<PAYROLL_KEYS.length;i++) {
-        const key=PAYROLL_KEYS[i];
-        row[key]=parseNumber(line[columns[i]]??'','money',key==='priorBase');
-      }
-      if (blank(row.salary)) throw Error('本月工资不能为空');
-      return row;
-    } catch(error) { throw Error('第 '+(index+2)+' 条 CSV 记录：'+error.message); }
-  });
-  if (draft().pit.some(row=>row.name||!blank(row.salary)) &&
-      !await ask('替换员工表','导入 '+next.length+' 条员工记录会替换当前所属期的工资表。继续吗？')) return;
-  errors.clear(); draft().pit=next; saveState(); render(); toast('已导入 '+next.length+' 条员工数据');
-}
-const encoder=new TextEncoder();
-const xml = value => esc(String(value).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g,''));
-const crcTable = Uint32Array.from({length:256},(_,i)=>{
-  let value=i; for(let bit=0;bit<8;bit++) value=(value>>>1)^(value&1?0xedb88320:0); return value>>>0;
-});
-function zipStore(files) {
-  const local=[], central=[]; let position=0, length=0;
-  for (const [name,contents] of Object.entries(files)) {
-    const label=encoder.encode(name), bytes=encoder.encode(contents);
-    let crc=0xffffffff;
-    for (const byte of bytes) crc=(crc>>>8)^crcTable[(crc^byte)&255];
-    crc=(crc^0xffffffff)>>>0;
-    const localHeader=new Uint8Array(30), lh=new DataView(localHeader.buffer);
-    lh.setUint32(0,0x04034b50,true); lh.setUint16(4,20,true); lh.setUint16(12,33,true);
-    lh.setUint32(14,crc,true); lh.setUint32(18,bytes.length,true); lh.setUint32(22,bytes.length,true); lh.setUint16(26,label.length,true);
-    const centralHeader=new Uint8Array(46), ch=new DataView(centralHeader.buffer);
-    ch.setUint32(0,0x02014b50,true); ch.setUint16(4,20,true); ch.setUint16(6,20,true); ch.setUint16(14,33,true);
-    ch.setUint32(16,crc,true); ch.setUint32(20,bytes.length,true); ch.setUint32(24,bytes.length,true);
-    ch.setUint16(28,label.length,true); ch.setUint32(42,position,true);
-    local.push(localHeader,label,bytes); central.push(centralHeader,label);
-    position+=30+label.length+bytes.length; length+=46+label.length;
-  }
-  const tail=new Uint8Array(22), end=new DataView(tail.buffer);
-  end.setUint32(0,0x06054b50,true); end.setUint16(8,central.length/2,true); end.setUint16(10,central.length/2,true);
-  end.setUint32(12,length,true); end.setUint32(16,position,true);
-  return new Blob([...local,...central,tail]);
-}
-function xlsxReport(rows) {
-  const ns='http://schemas.openxmlformats.org/', spreadsheet=ns+'spreadsheetml/2006/main', relationships=ns+'officeDocument/2006/relationships';
-  const sheet=rows.map((row,index)=>`<row r="${index+1}">${row.map((value,col)=>{
-    if (value==null) return '';
-    const ref=String.fromCharCode(65+col)+(index+1);
-    return typeof value==='number'?`<c r="${ref}"><v>${value}</v></c>`:
-      `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xml(value)}</t></is></c>`;
-  }).join('')}</row>`).join('');
-  return zipStore({
-    '[Content_Types].xml':`<Types xmlns="${ns}package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`,
-    '_rels/.rels':`<Relationships xmlns="${ns}package/2006/relationships"><Relationship Id="rId1" Type="${relationships}/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
-    'xl/workbook.xml':`<workbook xmlns="${spreadsheet}" xmlns:r="${relationships}"><sheets><sheet name="税务汇总" sheetId="1" r:id="rId1"/></sheets></workbook>`,
-    'xl/_rels/workbook.xml.rels':`<Relationships xmlns="${ns}package/2006/relationships"><Relationship Id="rId1" Type="${relationships}/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`,
-    'xl/worksheets/sheet1.xml':`<worksheet xmlns="${spreadsheet}"><sheetData>${sheet}</sheetData></worksheet>`
-  });
-}
-function makeReport() {
-  assertValid();
-  const keys=page==='history'&&historyTax?[historyTax]:Object.keys(TAXES);
-  const amounts=amountMap(results());
-  const raw=page==='history'?historyRows():Object.values(amounts).some(v=>v!==null)?[{period:state.period,companyName:company().name,amounts}]:[];
-  if (!raw.length) return null;
-  return [['所属月','账套',...keys.map(key=>TAXES[key]),'合计（元）'],
-    ...raw.map(row=>[row.period,row.companyName,...keys.map(key=>row.amounts[key]),add(keys.map(key=>row.amounts[key]??0))])];
-}
-function renderPrint(rows) {
-  const output=byId('print-report');
-  output.innerHTML=`<h1>税务汇总报告</h1><p>${esc(company().name)} · 生成于 ${today()} · 金额单位：元</p>${rows?
-    `<table><thead><tr>${rows[0].map(value=>`<th>${esc(value)}</th>`).join('')}</tr></thead><tbody>
-    ${rows.slice(1).map(row=>`<tr>${row.map(value=>`<td>${esc(typeof value==='number'?numberFormat.format(value):value??'—')}</td>`).join('')}</tr>`).join('')}</tbody></table>`:
-    '<p>暂无可打印的税费记录。</p>'}<p>本报告为测算汇总，仅供参考，请在官方系统核对。</p>`;
-}
-function reportAction(kind) {
-  const rows=makeReport();
-  if (!rows) throw Error('当前没有可导出的测算或历史记录');
-  const title='税务汇总-'+today();
-  if (kind==='csv') download(title+'.csv',csvText(rows),'text/csv;charset=utf-8');
-  else if (kind==='xlsx') download(title+'.xlsx',xlsxReport(rows),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  else { renderPrint(rows); window.print(); }
-}
-const icsEscape = value => String(value).replaceAll('\\','\\\\').replace(/\r?\n/g,'\\n').replaceAll(',','\\,').replaceAll(';','\\;');
-function icsText(events, c) {
-  const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');
-  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Local Tax Workbench//Filing Calendar//ZH','CALSCALE:GREGORIAN'];
-  for (const {key,date,name,period} of events) {
-    const next=new Date(Date.parse(date)+86400000).toISOString().slice(0,10).replaceAll('-','');
-    lines.push('BEGIN:VEVENT','UID:'+c.id+'-'+key+'-'+period+'@local-tax-workbench',
-      'DTSTAMP:'+stamp,'DTSTART;VALUE=DATE:'+date.replaceAll('-',''),'DTEND;VALUE=DATE:'+next,
-      'SUMMARY:'+icsEscape(name+' · '+c.name),'DESCRIPTION:'+icsEscape('截止日期以主管部门公布为准。'),
-      'BEGIN:VALARM','TRIGGER:-P7D','ACTION:DISPLAY','DESCRIPTION:'+icsEscape(name+' 7 天提醒'),'END:VALARM',
-      'BEGIN:VALARM','TRIGGER:-P3D','ACTION:DISPLAY','DESCRIPTION:'+icsEscape(name+' 3 天提醒'),'END:VALARM','END:VEVENT');
-  }
-  lines.push('END:VCALENDAR');
-  return lines.map(line=>{
-    const chunks=[]; let chunk='', length=0;
-    for (const char of line) {
-      const bytes=encoder.encode(char).length;
-      if (length+bytes>75) { chunks.push(chunk); chunk=' '; length=1; }
-      chunk+=char; length+=bytes;
-    }
-    return [...chunks,chunk].join('\r\n');
-  }).join('\r\n')+'\r\n';
-}
-function changed() { saveState(); }
-function assertValid() {
-  if (errors.size) throw Error('请先修正当前页面标红的数字输入');
-  if (page==='calculator') {
-    const value=results();
-    if (value.vat.invalid || value.disability.invalid || value.social.incomplete || value.other.incomplete || value.pit.incomplete) throw Error('请补齐或核对对应税种的测算数据');
-  }
-}
-async function savePeriod() {
-  assertValid();
-  const amounts=amountMap(results());
-  if (!Object.values(amounts).some(v=>v!==null)) throw Error('请先完成至少一项测算');
-  const c=company();
-  if (c.history.some(item=>item.period===state.period) && !await ask('覆盖本期记录','该账套已有 '+state.period+' 记录，确认使用本次测算覆盖？')) return;
-  c.history=c.history.filter(item=>item.period!==state.period);
-  c.history.push({period:state.period,amounts,savedAt:new Date().toISOString(),companyName:c.name});
-  toast(await saveState()?'本期记录已保存':'记录暂存在当前页面，请导出备份');
-}
-function route(target) {
-  if (!own(NAV,target)) return;
-  if (errors.size && page!==target) throw Error('请先修正标红字段，或清空后再切换页面');
-  page=target;
-  render(); window.scrollTo(0,0);
-}
-function onNumeric(input,format) {
-  const {scope,path,kind,signed}=input.dataset, error=input.parentElement.querySelector('.error');
-  try {
-    const raw = input.value.trim();
-    if (!format && (raw==='-'||raw==='.'||raw==='-.')) throw Error('请完成数字输入');
-    const value=parseNumber(raw,kind,signed==='1');
-    if (scope!=='draft'&&blank(value)) throw Error('请填写数值');
-    if (scope==='draft') {put(draft(),path,value); changed();}
-    else if (scope==='rate') {company().rates[path]=value; changed();}
-    errors.delete(path); error.hidden=true; input.removeAttribute('aria-invalid');
-    if (format) input.value=fmt(value,kind);
-  } catch(reason) {
-    errors.set(path,reason.message); input.setAttribute('aria-invalid','true');
-    error.textContent=reason.message; error.hidden=false;
-  }
-  if (page==='calculator') updateResults();
-}
-function handlerError(error) { toast(error.message || '操作失败，请重试'); }
-function loadPeriod(value) {
-  if (errors.size) throw Error('请先修正标红的数字');
-  if (!periodPattern.test(value)) throw Error('请选择有效的所属月');
-  state.period=value; changed();
-}
-taxRoot.addEventListener('input', event=>{
-  const el=event.target;
-  if (el.classList.contains('numeric')) onNumeric(el,false);
-  else if (el instanceof HTMLInputElement && el.type==='text' && el.dataset.scope==='draft') {
-    put(draft(),el.dataset.path,el.value); changed();
-  }
-});
-taxRoot.addEventListener('focusout',event=>{
-  if (event.target.classList.contains('numeric')) onNumeric(event.target,true);
-});
-taxRoot.addEventListener('change', event=>{
-  const el=event.target;
-  try {
-    if (el.id==='company-select') {
-      if (errors.size) { el.value=state.active; throw Error('请先修正标红字段'); }
-      if (state.companies.some(c=>c.id===el.value)) state.active=el.value;
-      historyPeriod=''; historyTax=''; changed(); render();
-    } else if (el.id==='work-period') { loadPeriod(el.value); render(); }
-    else if (el.id==='calendar-month' && periodPattern.test(el.value)) {calendarMonth=el.value;render();}
-    else if (el.id==='history-period') {historyPeriod=periodPattern.test(el.value)?el.value:'';render();}
-    else if (el.id==='history-tax') {historyTax=own(TAXES,el.value)?el.value:'';render();}
-    else if (el.id==='employee-count') {
-      const count=parseNumber(el.value,'integer');
-      if (blank(count)||count>1000) {el.value=draft().pit.length; throw Error('员工人数请输入 0–1,000');}
-      const resize=async()=>{
-        const rows=draft().pit;
-        if (count<rows.length&&rows.slice(count).some(row=>row.name||!blank(row.salary))&&
-          !await ask('缩减员工表','末尾员工数据将被移除，继续吗？')) {el.value=rows.length;return;}
-        errors.clear(); draft().pit=Array.from({length:count},(_,i)=>rows[i]??defaultEmployee()); changed(); render();
-      };
-      resize().catch(handlerError);
-    } else if (el.dataset.progress!==undefined) {
-      const key=state.period+':'+selectedFlow;
-      const values=company().progress[key]??Array(FLOW_STEPS[selectedFlow].length).fill(false);
-      values[Number(el.dataset.progress)]=el.checked; company().progress[key]=values; changed();
-      const index=el.dataset.progress;
-      render(); byId('main').querySelector('[data-progress="'+index+'"]')?.focus();
-    } else if (el.dataset.scope==='draft' && (el.type==='checkbox'||el.tagName==='SELECT')) {
-      const path=el.dataset.path, value=el.type==='checkbox'?el.checked:path==='vat.urban'?Number(el.value):el.value;
-      put(draft(),path,value);
-      if (path.startsWith('stamp.')&&path.endsWith('.item')) put(draft(),path.replace(/\.item$/,'.rate'),'');
-      if (path==='cit.type') {draft().cit.rate='';draft().cit.eligible=false;}
-      if (path==='vat.type' || path==='vat.exemption') draft().vat.taxable='';
-      changed();
-      if (path==='vat.urban'||path.startsWith('other.')) updateResults();
-      else refreshCalculator();
-    } else if (el.dataset.scope==='company') {
-      if (errors.size) throw Error('请先修正标红字段');
-      const value=el.value.trim();
-      if (el.dataset.path==='name') {if (!value || value.length>80) {el.value=company().name;throw Error('请输入 1–80 字的账套名称');}company().name=value;}
-      if (el.dataset.path==='region'&&regionValid(value)) company().region=value;
-      changed(); render();
-    }
-  } catch(error) { handlerError(error); }
-});
-function refreshCalculator(skip = '') {
-  const invalid=[...taxRoot.querySelectorAll('.numeric[aria-invalid=true]')]
-    .filter(el=>!skip||!el.dataset.path.startsWith(skip)).map(el=>[el.dataset.path,el.value]);
-  const open=[...taxRoot.querySelectorAll('details')].map(detail=>detail.open);
-  const active=taxRoot.activeElement?.dataset.path;
-  render();
-  for (const [path,value] of invalid) {
-    const field=[...taxRoot.querySelectorAll('.numeric')].find(el=>el.dataset.path===path);
-    if (!field) {errors.delete(path);continue;}
-    field.value=value; onNumeric(field,false);
-  }
-  if (active) [...taxRoot.querySelectorAll('[data-path]')].find(node=>node.dataset.path===active)?.focus({preventScroll:true});
-  taxRoot.querySelectorAll('details').forEach((detail,index)=>{detail.open=Boolean(open[index]);});
-}
-taxRoot.addEventListener('submit',event=>{
-  const form=event.target; event.preventDefault();
-  try {
-    if (form.id==='company-form') {
-      if (errors.size) throw Error('请先修正标红字段');
-      const name=byId('new-company-name').value.trim();
-      if (!name) throw Error('请输入账套名称');
-      if (state.companies.length>=200) throw Error('最多支持 200 个账套');
-      const next=newCompany(name); state.companies.push(next); state.active=next.id;
-      historyPeriod='';historyTax='';changed();closeModal();render();toast('已创建账套');
-    } else if (form.id==='deadline-form') {
-      const date=byId('deadline-date').value, key=form.dataset.key;
-      if (date&&!validDate(date)) throw Error('日期不可用');
-      if (date) company().deadlines[key]=date; else delete company().deadlines[key];
-      changed();closeModal();render();
-    } else if (form.id==='link-form') {
-      if (errors.size) throw Error('请先修正标红字段');
-      const url=safeUrl(byId('region-link').value);
-      if (!url) throw Error('请输入政府域名的 HTTPS 网址');
-      state.links[company().region]=url;changed();render();toast('官方入口已更新');
-    } else if (form.id==='pit-table-form') {
-      if (errors.size) throw Error('请先修正标红字段');
-      const table=clone(company().pitTable);
-      for (const el of form.querySelectorAll('.numeric')) put(table,el.dataset.path,parseNumber(el.value,el.dataset.kind));
-      verifyPitTable(table);company().pitTable=table;changed();toast('个税预扣率表已保存');
-    }
-  } catch(error) {handlerError(error);}
-});
-const actions = {
-  go:route, theme:()=>{state.theme=state.theme==='dark'?'light':'dark'; changed();renderShell();},
-  company:openCompany, close:closeModal,
-  'delete-company':async()=>{
-    if (state.companies.length===1) throw Error('至少保留一个账套');
-    if (!await ask('删除当前账套','删除 '+company().name+' 将移除此账套的草稿、记录和申报进度。确认删除？')) return;
-    state.companies=state.companies.filter(item=>item.id!==state.active); state.active=state.companies[0].id;
-    errors.clear(); historyPeriod='';historyTax='';changed();render();toast('账套已删除');
-  },
-  'save-period':savePeriod, official, copy:copyResults,
-  flow:key=>{if (errors.size) throw Error('请先修正标红字段');selectedFlow=key;route('flows');},
-  'add-row':group=>{if (draft()[group].length>=1000) throw Error('最多支持 1,000 行');
-    draft()[group].push(makeDraft(company().rates)[group][0]);changed();refreshCalculator();},
-  'remove-row':async value=>{
-    const [group,index]=value.split('.'); const row=draft()[group][Number(index)];
-    if (Object.entries(row).some(([key,field])=>key!=='item'&&!blank(field)) &&
-        !await ask('移除此行','该行已填写数据。确认移除？')) return;
-    for (const path of [...errors.keys()]) if (path.startsWith(group+'.')) errors.delete(path);
-    draft()[group].splice(Number(index),1);changed();refreshCalculator(group+'.');
-  },
-  'apply-average':()=>{
-    const b=draft().disability;
-    if (b.months.some(blank)||[...errors.keys()].some(key=>key.startsWith('disability.months.'))) throw Error('请填齐 12 个月人数，未用工月份填 0');
-    errors.delete('disability.count');
-    b.count=round(b.months.reduce((a,v)=>a+n(v),0)/12);changed();refreshCalculator('disability.count');toast('已应用年平均人数');
-  },
-  'payroll-template':()=>download('工资薪金批量录入模板.csv',csvText([PAYROLL_HEAD]),'text/csv;charset=utf-8'),
-  'payroll-import':()=>byId('payroll-file').click(),
-  'cal-prev':()=>{calendarMonth=offsetMonth(calendarMonth,-1);render();}, 'cal-next':()=>{calendarMonth=offsetMonth(calendarMonth,1);render();},
-  'cal-now':()=>{calendarMonth=periodNow();render();}, deadline:editDeadline,
-  'reset-deadline':key=>{delete company().deadlines[key];changed();closeModal();render();},
-  ics:()=>{const events=calendarDueDates(calendarMonth);if (!events.length) throw Error('当月没有可导出的截止日');
-    download('申报日历-'+calendarMonth+'.ics',icsText(events,company()),'text/calendar;charset=utf-8');},
-  'reset-history':()=>{historyPeriod='';historyTax='';render();},
-  'load-period':value=>{loadPeriod(value);route('calculator');},
-  csv:()=>reportAction('csv'),xlsx:()=>reportAction('xlsx'),print:()=>reportAction('print'),
-  'reset-link':()=>{if (errors.size) throw Error('请先修正标红字段');delete state.links[company().region];changed();render();toast('已恢复地区默认入口');},
-  'reset-rates':async()=>{if (await ask('恢复默认税率','将恢复当前账套的默认税率。各测算卡已填写的数值保留。')) {
-    company().rates=clone(DEFAULT_RATES);errors.clear();changed();render();toast('默认税率已恢复');}},
-  'reset-pit':async()=>{if (await ask('恢复个税税率表','确认恢复内置的七档工资薪金预扣率表？')) {
-    company().pitTable=clone(DEFAULT_PIT);errors.clear();changed();render();toast('已恢复七级预扣率表');}},
-  'backup-export':()=>download('税务工作台备份-'+today()+'.json',JSON.stringify(state,null,2),'application/json'),
-  'backup-import':()=>byId('backup-file').click(),
-  clear:async()=>{
-    if (!await ask('清除税务工作台数据','将清除新税务工作台的账套、测算草稿、流程进度及历史。原税务底稿和其他工作台资料仍可查阅。确认清除？')) return;
-    const next = makeState();
-    next.onboarded = true;
-    if (!await saveState(next,true)) throw Error('税务数据无法清除');
-    state = next; errors.clear(); historyPeriod=''; historyTax='';
-    route('home'); toast('已清除新税务工作台数据');
-  },
-
-  onboard:()=>{onboardingStep=0;onboarding();}, 'onboard-next':()=>{onboardingStep++;onboarding();},
-  'onboard-back':()=>{onboardingStep--;onboarding();},'onboard-done':finishOnboarding
-};
-taxRoot.addEventListener('click',event=>{
-  const trigger=event.target.closest('[data-act]');
-  if (trigger && own(actions,trigger.dataset.act)) {
-    Promise.resolve().then(()=>actions[trigger.dataset.act](trigger.dataset.value)).catch(handlerError);
-  }
-});
-for (const [id,handler] of [
-  ['payroll-file',importPayroll],
-  ['backup-file',async file=>{
-    if (file.size>30*1024*1024) throw Error('备份文件过大');
-    let data; try {data=JSON.parse((await file.text()).replace(/^\uFEFF/,''));} catch {throw Error('备份必须是有效的 JSON 文件');}
-    const next=validateState(data);
-    if (!await ask('导入并覆盖','备份含 '+next.companies.length+' 个账套。导入将替换当前浏览器中的本工作台数据，确认继续？')) return;
-    if (!await saveState(next,true)) throw Error('无法写入本地存储，当前账套保留');
-    state=next;errors.clear();historyPeriod='';historyTax='';render();toast('备份已恢复');
-  }]
-]) {
-  byId(id).addEventListener('change',event=>{
-    const [file]=event.target.files;event.target.value='';if(file) handler(file).catch(handlerError);
-  });
-}
-window.addEventListener('beforeprint',()=>{
-  if (!document.getElementById('module-tax').classList.contains('active')) return;
-  document.body.classList.add('tax-printing');
-  try{renderPrint(makeReport());}catch{renderPrint(null);}
-});
-window.addEventListener('afterprint',()=>document.body.classList.remove('tax-printing'));
-storageStatus(storageMessage);
-if (migrateTaxState && loaded && !protectUnreadData) void saveState(state,true);
-
-render();
-if (!state.onboarded) onboarding();
-
+    period.addEventListener('change',loadTaxData); loadTaxData();
 }
 
 function initCostModule() {
@@ -3972,168 +2664,9 @@ function registerDraft(module, ids, capture, restore) {
     });
 }
 
-const SNAPSHOT_KEY = 'clean_finance_latest_snapshot';
-const BACKUP_NOTICE_KEY = 'clean_finance_backup_just_imported';
-let snapshotTimer, lastSnapshotAt = null, snapshotFailed = false;
-
-async function readBackup() {
-    let tables;
-    if (storageMode === 'INDEXEDDB') {
-        const tx = db.transaction(BACKUP_STORES, 'readonly');
-        tables = {};
-        const finished = finishTransaction(tx);
-        for (const name of BACKUP_STORES) {
-            const request = tx.objectStore(name).getAll();
-            request.onsuccess = () => { tables[name] = request.result; };
-        }
-        await finished;
-    } else {
-        tables = Object.fromEntries(await Promise.all(BACKUP_STORES.map(async name => [name, await getAllFromStore(name)])));
-    }
-    const workpapers = tables[STORE_WORK];
-    const settings = workpapers.find(row => row.id === CASH_ACCOUNT_SETTINGS);
-    tables[STORE_WORK] = workpapers.filter(row => row.id !== CASH_ACCOUNT_SETTINGS);
-    return { version: 1, exportedAt: new Date().toISOString(), tables, accounts: settings?.accounts ?? ACCOUNTS };
-}
-
-function renderBackupStatus() {
-    const label = byId('workbench-backup-status');
-    const minutes = Math.max(0, Math.floor((Date.now() - lastSnapshotAt) / 60000));
-    const time = lastSnapshotAt ? (minutes ? `${minutes} 分钟前` : '刚刚') : '暂无';
-    label.textContent = '上次备份：' + time + (snapshotFailed ? ' · 自动快照写入失败' : '');
-    label.title = lastSnapshotAt ? new Date(lastSnapshotAt).toLocaleString('zh-CN') : '';
-}
-
-async function writeSnapshot() {
-    try {
-        const backup = await readBackup();
-        localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(backup));
-        lastSnapshotAt = Date.parse(backup.exportedAt);
-        snapshotFailed = false;
-    } catch {
-        snapshotFailed = true;
-    }
-    renderBackupStatus();
-}
-
-function scheduleSnapshot() {
-    clearTimeout(snapshotTimer);
-    snapshotTimer = setTimeout(() => { if (!importingBackup) void writeSnapshot(); }, 300);
-}
-
-function validateBackup(raw) {
-    const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
-    const nonempty = value => typeof value === 'string' && value.trim() !== '';
-    const period = value => typeof value === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
-    const validWorkpaper = row => {
-        if (row.id === CASH_ACCOUNT_SETTINGS || (row.period != null && !period(row.period))) return false;
-        if (row.id.startsWith('tax-result:')) return object(row.values) && nonempty(row.saved);
-        if (row.id.startsWith('opening:')) return object(row.balances);
-        if (row.id.startsWith('recon:')) return Array.isArray(row.results);
-        if (row.id.startsWith('ar:') && row.type === 'receipt') return Array.isArray(row.allocations);
-        if (!row.id.startsWith('draft:')) return true;
-        if (!object(row.fields) || !object(row.details)) return false;
-        const forms = { 'draft:invoice': 'items', 'draft:voucher': 'entries' };
-        const list = forms[row.id];
-        return !list || (Array.isArray(row.details[list]) && row.details[list].every(object));
-    };
-    if (!object(raw) || (raw.version != null && raw.version !== 1)) throw Error('无法识别这份账套备份的版本');
-    const tables = raw.tables ?? {
-        [STORE_NAME]: raw.invoices, [STORE_CASHIER]: raw.cashier,
-        [STORE_VOUCHER]: raw.vouchers, [STORE_WORK]: raw.workpapers ?? []
-    };
-    if (!object(tables)) throw Error('备份缺少账套表');
-    const validRow = {
-        [STORE_NAME]: row => typeof row.buyer === 'string' && Number.isFinite(row.total) &&
-            Array.isArray(row.items) && row.items.every(object) &&
-            (row.attachments == null || (Array.isArray(row.attachments) && row.attachments.every(object))) &&
-            (row.invoiceNumber == null || typeof row.invoiceNumber === 'string') &&
-            (row.source == null || typeof row.source === 'string'),
-        [STORE_CASHIER]: row => nonempty(row.date) && nonempty(row.account) && Number.isFinite(row.amount),
-        [STORE_VOUCHER]: row => period(row.period) && Array.isArray(row.entries) && row.entries.every(object),
-        [STORE_WORK]: validWorkpaper
-    };
-    for (const name of BACKUP_STORES) {
-        if (!Array.isArray(tables[name])) throw Error(`备份缺少 ${name} 数据列表`);
-        const keys = new Set();
-        for (const [index, row] of tables[name].entries()) {
-            const key = object(row) && row[pkFor(name)];
-            if (!nonempty(key) || !validRow[name](row)) throw Error(`${name} 第 ${index + 1} 条记录无效`);
-            if (keys.has(key)) throw Error(`${name} 第 ${index + 1} 条记录编号重复`);
-            keys.add(key);
-        }
-    }
-    if (!Array.isArray(raw.accounts)) throw Error('备份缺少常用账户列表');
-    const ids = new Set();
-    for (const [index, account] of raw.accounts.entries()) {
-        if (!object(account) || !nonempty(account.id) || !nonempty(account.name) ||
-            !['BANK', 'CASH', 'OTHER'].includes(account.kind) || ids.has(account.id)) {
-            throw Error(`常用账户第 ${index + 1} 条记录无效或编号重复`);
-        }
-        ids.add(account.id);
-    }
-    return {tables, accounts: raw.accounts};
-}
-
-async function replaceBackup({tables, accounts}) {
-    const tx = db.transaction(BACKUP_STORES, 'readwrite');
-    const finished = finishTransaction(tx);
-    try {
-        for (const name of BACKUP_STORES) {
-            const store = tx.objectStore(name);
-            store.clear();
-            writeRecords(store, tables[name]);
-        }
-        tx.objectStore(STORE_WORK).put({id: CASH_ACCOUNT_SETTINGS, accounts});
-    } catch (error) {
-        tx.abort();
-        await finished.catch(() => {});
-        throw error;
-    }
-    await finished;
-    ACCOUNTS = accounts;
-}
-
-async function importBackup(file) {
-    if (storageMode !== 'INDEXEDDB') throw Error('当前浏览器未启用 IndexedDB，无法事务恢复备份');
-    if (importingBackup) return;
-    let contents;
-    try { contents = await file.text(); }
-    catch { throw Error('备份文件读取失败，请重新选择文件'); }
-    let raw;
-    try { raw = JSON.parse(contents.replace(/^\uFEFF/, '')); }
-    catch { throw Error('备份文件不是有效的 JSON'); }
-    const backup = validateBackup(raw);
-    if (!confirm('导入备份将覆盖当前账套、已保存草稿和常用账户。请先确认已导出需要保留的数据。继续导入？')) return;
-    await flushTaxWorkbench();
-    importingBackup = true;
-    try {
-        await replaceBackup(backup);
-        clearTimeout(snapshotTimer);
-        await writeSnapshot();
-        try { sessionStorage.setItem(BACKUP_NOTICE_KEY, '1'); } catch {}
-        window.location.reload();
-    } finally {
-        importingBackup = false;
-    }
-}
-
 async function initBackup() {
     const save = byId('workbench-save'), exportButton = byId('workbench-export'), status = byId('workbench-draft-status');
-    const importButton = byId('workbench-import'), input = byId('workbench-import-file');
-    try {
-        const snapshot = JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || 'null');
-        lastSnapshotAt = Date.parse(snapshot?.exportedAt) || null;
-    } catch {}
-    renderBackupStatus();
-    setInterval(renderBackupStatus, 30000);
     if (storageMode === 'MEMORY') return;
-    if (storageMode !== 'INDEXEDDB') importButton.title = '启用 IndexedDB 后才能事务恢复备份';
-    importButton.addEventListener('click', () => input.click());
-    input.addEventListener('change', () => {
-        const file = input.files[0]; input.value = '';
-        if (file) runAction(() => importBackup(file), importButton);
-    });
     onAction(save.id, async () => {
         if (pendingDraftAttachments) throw Error('附件仍在读取，请稍后再保存草稿');
         if (['inv-btn-submit','cash-btn-submit','voucher-btn-submit'].some(id => byId(id).disabled)) {
@@ -4146,25 +2679,18 @@ async function initBackup() {
         showToast('开票、出纳和制证草稿已保存到本机');
     });
     onAction(exportButton.id, async () => {
-        if (!await flushTaxWorkbench()) throw Error('税务数据暂未保存，请在税务设置中导出 JSON');
-        const backup = await readBackup();
-        downloadFile('finance-backup-'+localDay()+'.json',JSON.stringify(backup,null,2),'application/json');
+        const stores = [STORE_NAME, STORE_CASHIER, STORE_VOUCHER, STORE_WORK];
+        const tables = Object.fromEntries(await Promise.all(stores.map(async key => [key, await getAllFromStore(key)])));
+        downloadFile('finance-backup-'+localDay()+'.json',JSON.stringify({version:1,tables,accounts:ACCOUNTS},null,2),'application/json');
         showToast('已生成本机账套备份');
     });
     try {
         const saved = (await getAllFromStore(STORE_WORK)).filter(record => record.id.startsWith('draft:'));
         for (const draft of saved) draftForms.get(draft.id.slice(6))?.restore(draft);
         status.textContent = saved.length ? '已恢复上次保存的草稿' : '';
-        try {
-            if (sessionStorage.getItem(BACKUP_NOTICE_KEY)) {
-                sessionStorage.removeItem(BACKUP_NOTICE_KEY);
-                showToast('账套备份已恢复');
-            }
-        } catch {}
     } finally {
         save.disabled = false;
         exportButton.disabled = false;
-        importButton.disabled = storageMode !== 'INDEXEDDB';
     }
 }
 
