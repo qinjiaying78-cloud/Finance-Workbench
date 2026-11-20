@@ -847,6 +847,9 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .suite-picker select{min-width:100px;max-width:162px}
 .suite-license{color:#377256;background:var(--match-bg);white-space:nowrap}
 .app-header{height:auto;min-height:var(--header-height);padding-top:8px;padding-bottom:8px}
+.backend-status-pill{display:inline-flex;align-items:center;white-space:nowrap;border:1px solid var(--border);border-radius:999px;padding:4px 9px;font-size:11px;line-height:1.2;color:var(--muted,#746b63);background:var(--surface,#faf8f4)}
+.backend-status-pill[data-connected="true"]{color:#267050;border-color:#b8d6c5;background:#edf6f0}
+.backend-status-pill[data-connected="false"]{color:#92540c;border-color:#e8cfaa;background:#fff7e9}
 .app-header .workbench-actions{flex-wrap:wrap;justify-content:flex-end}
 .suite-footer{position:fixed;bottom:0;left:0;right:0;background:var(--surface,#faf8f4);border-top:1px solid var(--border);z-index:30;padding:6px 18px;font-size:11px;line-height:1.45}
 body{padding-bottom:62px}
@@ -3110,7 +3113,7 @@ function suiteRead(key,def){
  try{return JSON.parse(localStorage.getItem('fw-suite:'+key))??def;}catch{return def;}
 }
 function suiteWrite(key,value){
- try{localStorage.setItem('fw-suite:'+key,JSON.stringify(value));}catch{throw Error('无法写入本地浏览器，请检查存储权限或空间');}
+ try{localStorage.setItem('fw-suite:'+key,JSON.stringify(value));if(key==='books'&&storageMode==='API')void apiSyncAccountSets(value);}catch{throw Error('无法写入本地浏览器，请检查存储权限或空间');}
 }
 const SUITE_DEFAULT={id:'default',name:'演示账套',demo:true};
 function suiteBooks(){return suiteRead('books',[SUITE_DEFAULT]);}
@@ -3119,7 +3122,7 @@ const activeSuiteBook=()=>suiteBooks().find(x=>x.id===SUITE_ACTIVE.id)||SUITE_AC
 const suitePrefix=id=>id==='default'?'':'fw-book:'+id+':';
 const scopedKey=key=>suitePrefix(SUITE_ACTIVE.id)+key;
 const suiteDB=id=>'FinanceWorkbenchCleanBooks'+(id==='default'?'':'::'+id);
-const suiteStores=()=>[STORE_WORK,STORE_NAME,STORE_CASHIER,STORE_VOUCHER];
+const suiteStores=()=>[STORE_WORK,STORE_NAME,STORE_CASHIER,STORE_VOUCHER,STORE_ORIGINALS];
 function isSuiteLocal(key){return /^(finance-standard:|clean_finance_|clean_cashier_)/.test(key);}
 function suiteLocalEntries(id){
  const prefix=suitePrefix(id), entries=[];
@@ -3142,9 +3145,18 @@ function openSuiteDB(id){
  });
 }
 async function suiteBackup(){
+ if(storageMode==='API'){await apiFlushWrites();await apiFlushBusinessWrites();}
  const stores=suiteStores(), tables=Object.fromEntries(await Promise.all(stores.map(async s=>[s,await getAllFromStore(s)])));
  const storeKeys=new Set(stores.map(lsKeyFor));
  const prefs=suiteLocalEntries(SUITE_ACTIVE.id).filter(([k])=>!storeKeys.has(k));
+ if(storageMode==='API'){
+  const business=await apiRequest('/api/business/bootstrap'+apiBookParams());
+  const values=new Map(prefs);
+  values.set('finance-standard:operations:assets',JSON.stringify(business.assets||[]));
+  for(const item of business.depreciation||[])values.set('finance-standard:operations:asset-depr:'+item.period,JSON.stringify({rows:item.rows||[]}));
+  for(const item of business.payroll_drafts||[])values.set('finance-standard:operations:payroll-draft:'+item.period,JSON.stringify(item.rows||[]));
+  prefs.splice(0,prefs.length,...values.entries());
+ }
  if(!prefs.some(([key])=>key==='clean_cashier_accounts'))prefs.push(['clean_cashier_accounts',JSON.stringify(ACCOUNTS)]);
  downloadFile('工作台完整备份-'+localDay()+'.json',JSON.stringify({format:'finance-workbench-v5',book:activeSuiteBook(),tables,prefs},null,2),'application/json');
  financeBackupDirty=false;showToast('当前账套完整备份已导出');
@@ -3155,7 +3167,9 @@ async function suiteImport(file){
  const legacy=data?.version===2;
  if(data?.format!=='finance-workbench-v5'&&!legacy)throw Error('无法识别备份版本');
  const stores=suiteStores(), tables=data.tables;
- if(!tables||stores.some(s=>!Array.isArray(tables[s])||tables[s].some(r=>!r||typeof r[pkFor(s)]!=='string')))throw Error('备份缺少有效数据表');
+ if(!tables)throw Error('备份缺少有效数据表');
+ if(!Array.isArray(tables[STORE_ORIGINALS]))tables[STORE_ORIGINALS]=[];
+ if(stores.some(s=>!Array.isArray(tables[s])||tables[s].some(r=>!r||typeof r[pkFor(s)]!=='string')))throw Error('备份缺少有效数据表');
  for(const store of stores)if(new Set(tables[store].map(x=>x[pkFor(store)])).size!==tables[store].length)throw Error('备份中有重复的数据编号');
  const prefs=legacy?(Array.isArray(data.accounts)?[['clean_cashier_accounts',JSON.stringify(data.accounts)]]:[]):data.prefs;
  if(!Array.isArray(prefs)||prefs.some(pair=>!Array.isArray(pair)||typeof pair[0]!=='string'||!isSuiteLocal(pair[0])||typeof pair[1]!=='string'||stores.map(lsKeyFor).includes(pair[0])))throw Error('备份的本地设置无效');
@@ -3172,16 +3186,21 @@ async function suiteImport(file){
  if(!snapshot[STORE_WORK].some(r=>r.id==='meta:seeded_vouchers'))snapshot[STORE_WORK].push({id:'meta:seeded_vouchers',seeded:true});
  let target=null;
  try{
-  try{target=await openSuiteDB(id);}catch{if(storageMode==='INDEXEDDB')throw Error('无法打开导入账套的数据库');}
-  if(target){
-   await new Promise((resolve,reject)=>{
-    const tx=target.transaction(stores,'readwrite');tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error||Error('导入失败'));
-    for(const store of stores)for(const r of snapshot[store])tx.objectStore(store).add(r);
-   });
+  if(storageMode==='API'){
+   const apiTables={...snapshot,[STORE_SETTINGS]:prefs.map(([key,value])=>({id:key,value}))};
+   await apiWriteBatch(apiTables,{replaceStores:[...stores,STORE_SETTINGS],accountSetId:id,accountSetName:name,isDemo:next.demo,keepWorkpapersLegacy:true});
   }else{
-   for(const k of stores)localStorage.setItem(prefix+lsKeyFor(k),JSON.stringify(snapshot[k]));
+   try{target=await openSuiteDB(id);}catch{if(storageMode==='INDEXEDDB')throw Error('无法打开导入账套的数据库');}
+   if(target){
+    await new Promise((resolve,reject)=>{
+     const tx=target.transaction(stores,'readwrite');tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error||Error('导入失败'));
+     for(const store of stores)for(const r of snapshot[store])tx.objectStore(store).add(r);
+    });
+   }else{
+    for(const k of stores)localStorage.setItem(prefix+lsKeyFor(k),JSON.stringify(snapshot[k]));
+   }
+   for(const [key,value] of prefs)localStorage.setItem(prefix+key,value);
   }
-  for(const [key,value] of prefs)localStorage.setItem(prefix+key,value);
   suiteWrite('books',[...suiteBooks(),next]);suiteWrite('active',id);
  }catch(error){
   try{for(const [key] of suiteLocalEntries(id))localStorage.removeItem(prefix+key);}catch{}
@@ -3194,7 +3213,11 @@ async function suiteReset(){
  const words=await uiPrompt('清空当前账套「'+activeSuiteBook().name+'」内的凭证、台账、税务及设置。其他账套不受影响。请输入 清空账套 确认','');
  if(words!=='清空账套')return;
   await countPurgeOriginals();
- if(storageMode==='INDEXEDDB'){
+ if(storageMode==='API'){
+  const stores=Object.fromEntries([...suiteStores(),STORE_SETTINGS].map(store=>[store,store===STORE_WORK?[{id:'meta:seeded_vouchers',seeded:true}]:[]]));
+  await apiWriteBatch(stores,{replaceStores:Object.keys(stores)});
+  await apiRequest('/api/business/reset'+apiBookParams(),{method:'POST'});
+ }else if(storageMode==='INDEXEDDB'){
   await new Promise((resolve,reject)=>{
    const stores=suiteStores(), tx=db.transaction(stores,'readwrite');
    tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error||Error('清空失败'));
@@ -3320,48 +3343,649 @@ function initTaxOnboarding(){
 }
 
 const DB_NAME = suiteDB(SUITE_ACTIVE.id);
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 const STORE_WORK = 'Workpapers';
 const STORE_NAME = 'Invoices';
 const STORE_CASHIER = 'CashierRecords';
 const STORE_VOUCHER = 'VoucherRecords';
+const STORE_SETTINGS = 'Settings';
+const STORE_ORIGINALS = 'AssetCountOriginals';
 const LS_KEY = 'clean_finance_ledger_fallback';
 const LS_KEY_CASHIER = 'clean_finance_cashier_fallback';
 const LS_KEY_VOUCHER = 'clean_finance_voucher_fallback';
+const API_STORES = [STORE_WORK, STORE_NAME, STORE_CASHIER, STORE_VOUCHER, STORE_SETTINGS, STORE_ORIGINALS];
+const FW_API_BASE = (() => {
+  try { return String(localStorage.getItem('fw-api-base') || 'http://127.0.0.1:8000').replace(/\/+$/, ''); }
+  catch { return 'http://127.0.0.1:8000'; }
+})();
 
 let storageMode = 'MEMORY';
 let db = null;
+let backendConnected = false;
+let apiStoreCache = new Map();
+let apiPendingWrites = Promise.resolve();
+let apiBusinessPendingWrites = Promise.resolve();
+let apiBusinessWriteError = null;
+let apiBusinessBootstrap = null;
+const apiUploadedFiles = new Map();
 const memoryData = { 'Invoices': [], 'CashierRecords': [], 'VoucherRecords': [], 'Workpapers': [] };
 
 function lsKeyFor(s) { return s === STORE_WORK ? 'clean_finance_workpapers' : s === STORE_CASHIER ? LS_KEY_CASHIER : (s === STORE_VOUCHER ? LS_KEY_VOUCHER : LS_KEY); }
 function pkFor(s) { return s === STORE_NAME ? 'invoiceNo' : 'id'; }
+function cloneData(value) { return typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value)); }
+
+function setBackendStatus(text, connected) {
+  let node = document.getElementById('backend-status-pill');
+  if (!node) {
+    node = document.createElement('span');
+    node.id = 'backend-status-pill';
+    node.className = 'backend-status-pill';
+    node.setAttribute('role', 'status');
+    node.setAttribute('aria-live', 'polite');
+    const actions = document.querySelector('.app-header .workbench-actions');
+    if (actions) actions.insertBefore(node, actions.querySelector('#workbench-draft-status') || null);
+  }
+  node.textContent = text;
+  node.dataset.connected = connected ? 'true' : 'false';
+  node.title = connected ? '财务数据正在保存到本机 SQLite 数据库' : '本地 FastAPI 未连接，当前使用浏览器本地存储';
+}
+
+async function apiRequest(path, options = {}) {
+  const headers = new Headers(options.headers || {});
+  if (options.body && !(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+  let response;
+  try { response = await fetch(FW_API_BASE + path, {...options, headers}); }
+  catch (error) { backendConnected = false; setBackendStatus('SQLite 连接中断', false); throw new Error('无法连接本地财务服务：' + (error?.message || '网络错误')); }
+  let payload = null;
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    try { payload = await response.json(); } catch {}
+  } else {
+    try { payload = await response.text(); } catch {}
+  }
+  if (!response.ok) {
+    const detail = payload?.detail;
+    const message = typeof detail === 'string' ? detail : detail ? JSON.stringify(detail) : (typeof payload === 'string' ? payload : response.statusText);
+    throw new Error(message || ('HTTP ' + response.status));
+  }
+  backendConnected = true;
+  if (storageMode === 'API') setBackendStatus('SQLite 已连接', true);
+  return payload;
+}
+function apiBookParams(accountSetId = SUITE_ACTIVE.id) {
+  return '?account_set_id=' + encodeURIComponent(accountSetId);
+}
+const isNormalizedBusinessRecord = row => {
+  const id=String(row?.id||'');
+  return id==='inventory-opening'||id.startsWith('inventory-doc:')||id.startsWith('biz-settlement:')||id.startsWith('production-order:')||id.startsWith('payroll-batch:');
+};
+async function apiListBusinessRecords(accountSetId=SUITE_ACTIVE.id) {
+  const result=await apiRequest('/api/business/records'+apiBookParams(accountSetId));
+  return Array.isArray(result.items)?result.items:[];
+}
+async function apiSaveBusinessRecords(records, options={}) {
+  const accountSetId=options.accountSetId||SUITE_ACTIVE.id;
+  const result=await apiRequest('/api/business/records'+apiBookParams(accountSetId),{method:'POST',body:JSON.stringify({account_set_id:accountSetId,records:records||[],insert_only_ids:options.insertOnlyIds||[],replace_normalized:Boolean(options.replaceNormalized),skip_stock_validation:Boolean(options.skipStockValidation)})});
+  if(accountSetId===SUITE_ACTIVE.id){const generic=(apiStoreCache.get(STORE_WORK)||[]).filter(row=>!isNormalizedBusinessRecord(row));apiStoreCache.set(STORE_WORK,[...generic,...(result.items||[])]);}
+  return result;
+}
+async function apiDeleteBusinessRecords(ids, accountSetId=SUITE_ACTIVE.id, clearAll=false) {
+  const result=await apiRequest('/api/business/records'+apiBookParams(accountSetId),{method:'DELETE',body:JSON.stringify({ids:ids||[],clear_all:Boolean(clearAll)})});
+  if(accountSetId===SUITE_ACTIVE.id){const remove=new Set((ids||[]).map(String));apiStoreCache.set(STORE_WORK,(apiStoreCache.get(STORE_WORK)||[]).filter(r=>!remove.has(String(r.id))));}
+  return result;
+}
+function apiQueueBusinessPhase(key,value) {
+  const operation=async()=>{
+    if(key==='assets') return apiRequest('/api/business/assets'+apiBookParams(),{method:'PUT',body:JSON.stringify({account_set_id:SUITE_ACTIVE.id,items:value||[]})});
+    if(key.startsWith('asset-depr:')) {const period=key.slice('asset-depr:'.length);if(value===null)return apiRequest('/api/business/depreciation/'+encodeURIComponent(period)+apiBookParams(),{method:'DELETE'});return apiRequest('/api/business/depreciation/'+encodeURIComponent(period)+apiBookParams(),{method:'PUT',body:JSON.stringify({account_set_id:SUITE_ACTIVE.id,period,rows:value?.rows||[]})});}
+    if(key.startsWith('payroll-draft:')) {const period=key.slice('payroll-draft:'.length);if(value===null)return apiRequest('/api/business/payroll-drafts/'+encodeURIComponent(period)+apiBookParams(),{method:'DELETE'});return apiRequest('/api/business/payroll-drafts/'+encodeURIComponent(period)+apiBookParams(),{method:'PUT',body:JSON.stringify({account_set_id:SUITE_ACTIVE.id,period,rows:value||[]})});}
+  };
+  apiBusinessPendingWrites=apiBusinessPendingWrites.then(operation).catch(error=>{apiBusinessWriteError=error;setBackendStatus('SQLite 同步异常',false);});
+}
+async function apiFlushBusinessWrites(){await apiBusinessPendingWrites;if(apiBusinessWriteError){const error=apiBusinessWriteError;apiBusinessWriteError=null;throw error;}}
+
+// V8: normalized voucher repository. VoucherRecords in app_records is now a
+// legacy snapshot only; all live voucher reads/writes use vouchers + entries.
+function apiVoucherFromDb(row) {
+  const entries = (row.entries || []).map(e => ({
+    id: e.id,
+    account: e.account_code,
+    aux: e.contact_name || e.aux_name || '',
+    contactId: e.contact_id ?? null,
+    summary: e.summary || '',
+    debit: Number(e.debit_amount) || 0,
+    credit: Number(e.credit_amount) || 0
+  }));
+  const rawStatus = row.status;
+  const status = rawStatus === 'REVERSED' ? 'POSTED' :
+    (rawStatus === 'PENDING' && row.reviewed_at ? 'APPROVED' : rawStatus);
+  const attachments = Array.isArray(row.attachment_urls) ? row.attachment_urls : [];
+  const totalDebit = entries.reduce((sum, e) => sum + Math.round(e.debit * 100), 0) / 100;
+  const totalCredit = entries.reduce((sum, e) => sum + Math.round(e.credit * 100), 0) / 100;
+  return {
+    id: String(row.legacy_id || ('db-voucher-' + row.id)), dbId: Number(row.id),
+    voucherNo: row.voucher_no, date: row.voucher_date, period: String(row.voucher_date || '').slice(0, 7),
+    bizLabel: row.biz_label || row.summary || '会计凭证', summary: row.summary || '',
+    entries, totalDebit, totalCredit, status, normalizedStatus: rawStatus,
+    source: row.source || '', sourceType: row.source_type || '',
+    counterparty: row.counterparty || '', memo: row.memo || '',
+    attachment: attachments[0] ? {name: row.attachment_name || '凭证附件', url: attachments[0]} : null,
+    attachmentUrls: attachments, reviewedAt: row.reviewed_at || null,
+    postedAt: row.posted_at || null, reversedById: row.reversed_by_id || null,
+    reverseOfId: row.reverse_of_id || null, createdAt: row.created_at
+  };
+}
+async function apiListNormalizedVouchers() {
+  const all = []; let offset = 0, page = [];
+  do {
+    const result = await apiRequest('/api/vouchers' + apiBookParams() + '&limit=1000&offset=' + offset);
+    page = result.items || []; all.push(...page); offset += page.length;
+  } while (page.length === 1000);
+  return all.map(apiVoucherFromDb);
+}
+// V9: normalized repositories for cashier and invoice ledgers.
+// Remove large inline data URLs after their upload URL has been persisted. The
+// original UI continues to preview the same images through /uploads paths.
+function apiStripInlineAttachmentData(value) {
+  if(Array.isArray(value)) return value.map(apiStripInlineAttachmentData);
+  if(!value||typeof value!=='object') return value;
+  const out={...value};
+  if(typeof out.stamp==='string'&&out.stamp.startsWith('data:')&&out.stampUrl) out.stamp=out.stampUrl;
+  for(const key of Object.keys(out)) {
+    const child=out[key];
+    if(child&&typeof child==='object') out[key]=apiStripInlineAttachmentData(child);
+    else if((key==='data'||key==='dataUrl')&&typeof child==='string'&&child.startsWith('data:')&&out.url) delete out[key];
+  }
+  return out;
+}
+function apiCashierFromDb(row) {
+  const extra = row.extra && typeof row.extra === 'object' ? row.extra : {};
+  const directionType = row.biz_type === 'TRANSFER' && row.direction ? 'TRANSFER_' + row.direction : row.biz_type;
+  const attachment = extra.attachment || (row.receipt_img_url ? {url: row.receipt_img_url, name: '银行回单'} : null);
+  return {...extra, id: String(row.legacy_id || ('db-cashier-' + row.id)), dbId:Number(row.id),
+    date:row.record_date, type:directionType, amount:Number(row.amount)||0, account:extra.account || row.account_name,
+    counterparty:row.contact_name || extra.counterparty || '', sourceDoc:row.source_doc || extra.sourceDoc || '',
+    transferId:row.transfer_id || extra.transferId || '', status:row.status, attachment};
+}
+async function apiListNormalizedCashier() {
+  const all=[]; let offset=0,page=[];
+  do { const result=await apiRequest('/api/cashier'+apiBookParams()+'&limit=1000&offset='+offset); page=result.items||[]; all.push(...page); offset+=page.length; } while(page.length===1000);
+  return all.map(apiCashierFromDb);
+}
+function apiInvoiceFromDb(row) {
+  const extra = row.extra && typeof row.extra === 'object' ? row.extra : {};
+  return {...extra, invoiceNo:String(row.legacy_id || ('db-invoice-' + row.id)), dbId:Number(row.id),
+    invoiceNumber:row.invoice_no, invoiceCode:row.invoice_code || '', date:row.invoice_date,
+    seller:row.seller_name || '', buyer:row.buyer_name || '', sellerTax:extra.sellerTax || '', buyerTax:row.buyer_tax_id || '',
+    total:Number(row.amount)||0, taxAmount:Number(row.tax_amount)||0, items:row.items || [],
+    status:row.status, source:row.source || extra.source || '', payment:row.payment_method || '',
+    evidence:extra.evidence || '', attachments:Array.isArray(extra.attachments)?extra.attachments:(row.pdf_or_img_url?[{url:row.pdf_or_img_url,name:'发票附件'}]:[]),
+    stamp:extra.stamp || null};
+}
+async function apiListNormalizedInvoices() {
+  const all=[]; let offset=0, page=[];
+  do { const result=await apiRequest('/api/invoices'+apiBookParams()+'&limit=1000&offset='+offset); page=result.items||[]; all.push(...page); offset+=page.length; } while(page.length===1000);
+  return all.map(apiInvoiceFromDb);
+}
+async function apiSaveNormalizedCashierRecords(records, insertOnlyIds=[]) {
+  const insertOnly=new Set((insertOnlyIds||[]).map(String));
+  const current=await apiListNormalizedCashier();
+  const currentByLegacy=new Map(current.map(row=>[row.id,row]));
+  const allNew=records.length>1&&records.every(record=>!record.dbId&&!currentByLegacy.has(String(record.id)));
+  const allExisting=records.length>1&&records.every(record=>(record.dbId||currentByLegacy.get(String(record.id))?.dbId));
+  if(allExisting) {
+    const items=[];
+    for(const record of records) {
+      const existing=record.dbId?record:currentByLegacy.get(String(record.id));
+      const [prepared]=await apiPrepareRecords([record],STORE_CASHIER);
+      const attachment=prepared.attachment;
+      const receiptUrl=typeof attachment==='string'&&attachment.startsWith('/uploads/')?attachment:(attachment?.url||null);
+      if(attachment&&(attachment.data||attachment.dataUrl)&&!receiptUrl) throw Error('出纳回单未能上传到本地硬盘，记录未保存');
+      const rawType=String(prepared.type||'RECEIPT'), isTransfer=rawType==='TRANSFER_OUT'||rawType==='TRANSFER_IN'||rawType==='TRANSFER';
+      items.push({id:Number(existing.dbId),changes:{transfer_id:prepared.transferId||null,direction:rawType==='TRANSFER_OUT'?'OUT':rawType==='TRANSFER_IN'?'IN':null,
+        record_date:prepared.date,biz_type:isTransfer?'TRANSFER':rawType,amount:Number(prepared.amount||0).toFixed(2),
+        account_name:(typeof getAccountName==='function'?getAccountName(prepared.account):String(prepared.account||''))||'未指定账户',
+        contact_name:prepared.counterparty||null,source_doc:prepared.sourceDoc||null,receipt_img_url:receiptUrl,
+        status:prepared.status==='DONE'?'DONE':'PENDING',extra:apiStripInlineAttachmentData(prepared)}});
+    }
+    await apiRequest('/api/cashier/batch/update'+apiBookParams(),{method:'PUT',body:JSON.stringify({items})});
+    return;
+  }
+  if(allNew) {
+    const payloadRows=[];
+    for(const record of records) {
+      if(!insertOnly.has(String(record.id))) throw Error('批量出纳新增标记不一致');
+      const [prepared]=await apiPrepareRecords([record],STORE_CASHIER);
+      const rawType=String(prepared.type||'RECEIPT'), isTransfer=rawType==='TRANSFER_OUT'||rawType==='TRANSFER_IN'||rawType==='TRANSFER';
+      const attachment=prepared.attachment, receiptUrl=typeof attachment==='string'&&attachment.startsWith('/uploads/')?attachment:(attachment?.url||null);
+      if(attachment&&(attachment.data||attachment.dataUrl)&&!receiptUrl) throw Error('出纳回单未能上传到本地硬盘，记录未保存');
+      payloadRows.push({legacy_id:String(record.id),transfer_id:prepared.transferId||null,direction:rawType==='TRANSFER_OUT'?'OUT':rawType==='TRANSFER_IN'?'IN':null,
+        record_date:prepared.date,biz_type:isTransfer?'TRANSFER':rawType,amount:Number(prepared.amount||0).toFixed(2),
+        account_name:(typeof getAccountName==='function'?getAccountName(prepared.account):String(prepared.account||''))||'未指定账户',
+        contact_name:prepared.counterparty||null,source_doc:prepared.sourceDoc||null,receipt_img_url:receiptUrl,
+        status:prepared.status==='DONE'?'DONE':'PENDING',extra:apiStripInlineAttachmentData(prepared)});
+    }
+    const result=await apiRequest('/api/cashier/batch'+apiBookParams(),{method:'POST',body:JSON.stringify({records:payloadRows})});
+    const map=new Map((result.items||[]).map(row=>[row.legacy_id,Number(row.id)]));
+    records.forEach(record=>record.dbId=map.get(String(record.id)));
+    return;
+  }
+  for (const record of records) {
+    const id=String(record.id), existing=record.dbId?record:(await apiListNormalizedCashier()).find(r=>r.id===id);
+    if(existing?.dbId && insertOnly.has(id)) throw Error('出纳流水编号已存在：'+id);
+    const [prepared]=await apiPrepareRecords([record],STORE_CASHIER);
+    const rawType=String(prepared.type||'RECEIPT');
+    const isTransfer=rawType==='TRANSFER_OUT'||rawType==='TRANSFER_IN'||rawType==='TRANSFER';
+    const direction=rawType==='TRANSFER_OUT'?'OUT':rawType==='TRANSFER_IN'?'IN':null;
+    const attachment=prepared.attachment;
+    const receiptUrl=typeof attachment==='string'&&attachment.startsWith('/uploads/')?attachment:(attachment?.url||null);
+    if(attachment&&(attachment.data||attachment.dataUrl)&&!receiptUrl) throw Error('出纳回单未能上传到本地硬盘，记录未保存');
+    const payload={legacy_id:id,transfer_id:prepared.transferId||null,direction,
+      record_date:prepared.date,biz_type:isTransfer?'TRANSFER':rawType,
+      amount:Number(prepared.amount||0).toFixed(2),
+      account_name:(typeof getAccountName==='function'?getAccountName(prepared.account):String(prepared.account||''))||'未指定账户',
+      contact_name:prepared.counterparty||null,source_doc:prepared.sourceDoc||null,
+      receipt_img_url:receiptUrl,status:prepared.status==='DONE'?'DONE':'PENDING',extra:apiStripInlineAttachmentData(prepared)};
+    if(existing?.dbId){
+      delete payload.legacy_id;
+      await apiRequest('/api/cashier/'+existing.dbId+apiBookParams(),{method:'PUT',body:JSON.stringify(payload)});
+      record.dbId=existing.dbId;
+    } else {
+      const created=await apiRequest('/api/cashier'+apiBookParams(),{method:'POST',body:JSON.stringify(payload)});
+      record.dbId=Number(created.id);
+    }
+  }
+}
+async function apiSaveNormalizedInvoiceRecords(records, insertOnlyIds=[]) {
+  const insertOnly=new Set((insertOnlyIds||[]).map(String));
+  for (const record of records) {
+    const id=String(record.invoiceNo), existing=record.dbId?record:(await apiListNormalizedInvoices()).find(r=>r.invoiceNo===id);
+    if(existing?.dbId&&insertOnly.has(id)) throw Error('发票台账记录编号已存在：'+id);
+    const [prepared]=await apiPrepareRecords([record],STORE_NAME);
+    const attachments=Array.isArray(prepared.attachments)?prepared.attachments:[];
+    if(attachments.some(x=>x&&(x.data||x.dataUrl)&&!x.url)) throw Error('发票附件未能上传到本地硬盘，记录未保存');
+    const first=attachments.find(x=>x?.url)?.url || (typeof prepared.evidence==='string'&&prepared.evidence.startsWith('/uploads/')?prepared.evidence:null);
+    const payload={legacy_id:id,invoice_code:prepared.invoiceCode||null,
+      invoice_no:String(prepared.invoiceNumber||('DRAFT-'+id)),invoice_date:prepared.date,
+      buyer_name:prepared.buyer||'未填写',buyer_tax_id:prepared.buyerTax||null,
+      seller_name:prepared.seller||null,amount:Number(prepared.total||0).toFixed(2),
+      tax_amount:Number(prepared.taxAmount||0).toFixed(2),payment_method:prepared.payment||null,
+      status:prepared.status||'DRAFT',pdf_or_img_url:first,source:prepared.source||null,
+      items:prepared.items||[],extra:apiStripInlineAttachmentData(prepared)};
+    if(existing?.dbId){
+      delete payload.legacy_id;
+      await apiRequest('/api/invoices/'+existing.dbId+apiBookParams(),{method:'PUT',body:JSON.stringify(payload)});
+      record.dbId=existing.dbId;
+    } else {
+      const created=await apiRequest('/api/invoices'+apiBookParams(),{method:'POST',body:JSON.stringify(payload)});
+      record.dbId=Number(created.id);
+    }
+  }
+}
+async function apiLoadNormalizedReferenceData() {
+  const [accountResult, contactResult, openingResult]=await Promise.all([
+    apiRequest('/api/accounts'+apiBookParams()+'&active_only=false'),
+    apiRequest('/api/contacts'+apiBookParams()),
+    apiRequest('/api/contact-opening-balances'+apiBookParams())
+  ]);
+  const oldByCode=new Map(VOUCHER_ACCOUNTS.map(a=>[a.code,a]));
+  const loaded=(accountResult.items||[]).map(a=>({...oldByCode.get(a.code),code:a.code,name:a.name,dir:a.direction,
+    opening:Number(a.initial_debit||0)-Number(a.initial_credit||0),
+    category:a.category,parentCode:a.parent_code||null,isActive:Boolean(a.is_active)}));
+  if(loaded.length){VOUCHER_ACCOUNTS.splice(0,VOUCHER_ACCOUNTS.length,...loaded);}
+  for(const key of Object.keys(SUBJ_MAP)) delete SUBJ_MAP[key];
+  VOUCHER_ACCOUNTS.forEach(a=>SUBJ_MAP[a.code]=a);
+  const contacts=contactResult.items||[];
+  AR_UNITS.splice(0,AR_UNITS.length,...contacts.filter(c=>c.type==='CUSTOMER').map(c=>c.name));
+  AP_UNITS.splice(0,AP_UNITS.length,...contacts.filter(c=>c.type==='SUPPLIER').map(c=>c.name));
+  for(const key of Object.keys(AR_OPENING)) delete AR_OPENING[key];
+  for(const key of Object.keys(AP_OPENING)) delete AP_OPENING[key];
+  for(const item of openingResult.items||[]) {
+    const amount=Number(item.initial_debit||0)-Number(item.initial_credit||0);
+    if(item.account_code==='1122') AR_OPENING[item.contact_name]=amount;
+    if(item.account_code==='2202') AP_OPENING[item.contact_name]=Math.abs(amount);
+  }
+}
+async function apiMigrateLegacyOpeningSnapshot(remoteWorkRows=[],localWorkRows=[]) {
+  const markerId='meta:v9-opening-snapshot-applied';
+  const all=[...(remoteWorkRows||[]),...(localWorkRows||[])];
+  const snapshots=all.filter(row=>String(row.id||'').startsWith('opening:')&&row.period&&row.balances&&typeof row.balances==='object')
+    .sort((a,b)=>String(b.period).localeCompare(String(a.period)));
+  if(!snapshots.length) return false;
+  if(all.some(row=>row.id===markerId)) return true;
+  const snapshot=snapshots[0];
+  const items=Object.entries(snapshot.balances).map(([code,signed])=>({code,
+    initial_debit:(Math.max(Number(signed)||0,0)/100).toFixed(2),
+    initial_credit:(Math.max(-(Number(signed)||0),0)/100).toFixed(2)}));
+  await apiRequest('/api/accounts/opening-balances'+apiBookParams(),{method:'PUT',body:JSON.stringify({items})});
+  await apiWriteBatch({[STORE_WORK]:[{id:markerId,period:snapshot.period,sourceId:snapshot.id,appliedAt:new Date().toISOString()}]});
+  return true;
+}
+
+async function apiRepairLegacyDemoOpeningScale() {
+  // V8 initially divided the demo chart's yuan opening amounts by 100 during
+  // first import. Correct only when every existing balance exactly matches
+  // that known legacy conversion; never overwrite user-adjusted balances.
+  if(!SUITE_ACTIVE.demo) return false;
+  const rows=(await apiRequest('/api/accounts'+apiBookParams()+'&active_only=false')).items||[];
+  const byCode=new Map(rows.map(a=>[a.code,a]));
+  const seeds=VOUCHER_ACCOUNTS;
+  const matches=seeds.every(seed=>{
+    const row=byCode.get(seed.code); if(!row) return false;
+    const dbNet=Number(row.initial_debit||0)-Number(row.initial_credit||0);
+    const oldNet=(seed.dir==='借'?1:-1)*(Number(seed.opening||0)/100);
+    return Math.abs(dbNet-oldNet)<0.005;
+  });
+  const needsFix=seeds.some(seed=>Math.abs(Number(byCode.get(seed.code)?.initial_debit||0)-Number(byCode.get(seed.code)?.initial_credit||0) - (seed.dir==='借'?1:-1)*Number(seed.opening||0))>0.005);
+  if(!matches||!needsFix) return false;
+  const items=seeds.map(seed=>({code:seed.code,initial_debit:seed.dir==='借'?Number(seed.opening||0).toFixed(2):'0.00',initial_credit:seed.dir==='贷'?Number(seed.opening||0).toFixed(2):'0.00'}));
+  await apiRequest('/api/accounts/opening-balances'+apiBookParams(),{method:'PUT',body:JSON.stringify({items})});
+  return true;
+}
+
+async function apiSeedContactOpeningBalances() {
+  const existing=(await apiRequest('/api/contact-opening-balances'+apiBookParams())).items||[];
+  const existingKeys=new Set(existing.map(x=>x.account_code+':'+x.contact_id));
+  const existingCodes=new Set(existing.map(x=>x.account_code));
+  const contacts=(await apiRequest('/api/contacts'+apiBookParams())).items||[];
+  const byName=new Map(contacts.map(c=>[c.name,c]));
+  for(const [code,openingMap] of [['1122',AR_OPENING],['2202',AP_OPENING]]) {
+    if(existingCodes.has(code)) continue;
+    for(const [name,centsValue] of Object.entries(openingMap)) {
+      const contact=byName.get(name); if(!contact||!centsValue||existingKeys.has(code+':'+contact.id)) continue;
+      const amount=Math.abs(Number(centsValue)).toFixed(2);
+      await apiRequest('/api/contact-opening-balances'+apiBookParams(),{method:'PUT',body:JSON.stringify({account_code:code,contact_id:contact.id,as_of_date:'2025-12-31',initial_debit:code==='1122'?amount:'0.00',initial_credit:code==='2202'?amount:'0.00'})});
+    }
+  }
+}
+
+async function apiContactIdForVoucherEntry(accountCode, aux) {
+  const name = String(aux || '').trim();
+  if (!name || !['1122','2202','2203','2205'].includes(String(accountCode))) return null;
+  const type = ['2202','2203','2205'].includes(String(accountCode)) ? 'SUPPLIER' : 'CUSTOMER';
+  const query = '/api/contacts' + apiBookParams() + '&type=' + type + '&keyword=' + encodeURIComponent(name);
+  let rows = (await apiRequest(query)).items || [];
+  let match = rows.find(item => item.name === name && item.type === type);
+  if (!match) {
+    match = await apiRequest('/api/contacts' + apiBookParams(), {
+      method: 'POST', body: JSON.stringify({name, type})
+    });
+    const target=type==='SUPPLIER'?AP_UNITS:AR_UNITS;
+    if(!target.includes(name)) target.push(name);
+  }
+  return Number(match.id);
+}
+async function apiVoucherPayload(record) {
+  const [prepared] = await apiPrepareRecords([record], STORE_VOUCHER);
+  let attachment = prepared.attachment || null;
+  if (typeof attachment === 'string' && attachment.startsWith('data:')) {
+    const uploaded = await apiUploadDataUrl(attachment, record.attachmentName || 'voucher-attachment');
+    attachment = uploaded ? {url:uploaded,name:record.attachmentName || '凭证附件'} : {data:attachment};
+  }
+  if (attachment && typeof attachment === 'object' && (attachment.data || attachment.dataUrl) && !attachment.url) {
+    throw Error('凭证附件未能上传到本地 uploads，凭证未保存');
+  }
+  const attachmentUrls = typeof attachment === 'string' && attachment.startsWith('/uploads/') ? [attachment] :
+    (attachment?.url ? [attachment.url] : (Array.isArray(prepared.attachmentUrls) ? prepared.attachmentUrls : []));
+  const entries = [];
+  for (const entry of (record.entries || [])) {
+    const code = String(entry.account || entry.account_code || '').trim();
+    entries.push({
+      account_code: code,
+      contact_id: entry.contactId ?? await apiContactIdForVoucherEntry(code, entry.aux),
+      aux_name: entry.aux || null,
+      summary: entry.summary || '',
+      debit_amount: Number(entry.debit || 0).toFixed(2),
+      credit_amount: Number(entry.credit || 0).toFixed(2)
+    });
+  }
+  return {
+    legacy_id: String(record.id), voucher_no: record.voucherNo,
+    voucher_date: record.date, summary: record.memo || record.summary || record.bizLabel || '',
+    biz_label: record.bizLabel || '', source: record.source || null,
+    source_type: record.sourceType || null, counterparty: record.counterparty || null,
+    memo: record.memo || null, attachment_name: attachment?.name || null,
+    attachment_urls: attachmentUrls,
+    status: record.status === 'DRAFT' ? 'DRAFT' : 'PENDING', entries
+  };
+}
+async function apiCommitBusinessAndVouchers(workRecords,vouchers,workFlags,voucherFlags) {
+  const preparedWork=await apiPrepareRecords(workRecords||[],STORE_WORK);
+  const preparedVouchers=await Promise.all((vouchers||[]).map(apiVoucherPayload));
+  const result=await apiRequest('/api/business/commit'+apiBookParams(),{method:'POST',body:JSON.stringify({
+    account_set_id:SUITE_ACTIVE.id,records:preparedWork,vouchers:preparedVouchers,
+    insert_only_record_ids:preparedWork.filter((r,i)=>workFlags?.[i]!==false).map(r=>String(r.id)),
+    update_only_record_ids:preparedWork.filter((r,i)=>workFlags?.[i]===false).map(r=>String(r.id)),
+    insert_only_voucher_ids:preparedVouchers.filter((r,i)=>voucherFlags?.[i]!==false).map(r=>String(r.legacy_id)),
+    update_only_voucher_ids:preparedVouchers.filter((r,i)=>voucherFlags?.[i]===false).map(r=>String(r.legacy_id))
+  })});
+  const generic=(apiStoreCache.get(STORE_WORK)||[]).filter(row=>!isNormalizedBusinessRecord(row));
+  apiStoreCache.set(STORE_WORK,[...generic,...(result.records||[])]);
+  apiStoreCache.set(STORE_VOUCHER,await apiListNormalizedVouchers());
+  return result;
+}
+
+async function apiSaveNormalizedVoucherRecords(records, insertOnlyIds = []) {
+  const insertOnly = new Set((insertOnlyIds || []).map(String));
+  for (const record of records) {
+    const id = String(record.id);
+    const existing = record.dbId ? record : (await apiListNormalizedVouchers()).find(v => v.id === id);
+    if (existing?.dbId && insertOnly.has(id)) throw Error('凭证编号已存在：' + (record.voucherNo || id));
+    const payload = await apiVoucherPayload(record);
+    if (existing?.dbId) {
+      const updatePayload = {...payload};
+      delete updatePayload.legacy_id;
+      delete updatePayload.status;
+      await apiRequest('/api/vouchers/' + existing.dbId + apiBookParams(), {
+        method: 'PUT', body: JSON.stringify(updatePayload)
+      });
+    } else {
+      const created = await apiRequest('/api/vouchers' + apiBookParams(), {
+        method: 'POST', body: JSON.stringify(payload)
+      });
+      record.dbId = Number(created.id);
+    }
+    if (Array.isArray(record.cashierIds) && record.cashierIds.length && record.dbId) {
+      const cashRows = await apiListNormalizedCashier();
+      const numericIds = record.cashierIds.map(id => cashRows.find(r => r.id === String(id))?.dbId).filter(Boolean);
+      if (numericIds.length) await apiRequest('/api/cashier/link-voucher/' + record.dbId + apiBookParams(), {method:'POST', body:JSON.stringify(numericIds)});
+    }
+    if (record.status === 'APPROVED') {
+      const rows = await apiListNormalizedVouchers();
+      const saved = rows.find(v => v.id === id);
+      if (saved?.dbId && saved.status !== 'APPROVED') {
+        await apiRequest('/api/vouchers/' + saved.dbId + '/approve' + apiBookParams(), {method:'POST'});
+      }
+    } else if (record.status === 'POSTED') {
+      const rows = await apiListNormalizedVouchers();
+      const saved = rows.find(v => v.id === id);
+      if (saved?.dbId && saved.status !== 'POSTED') {
+        if (saved.status !== 'APPROVED') await apiRequest('/api/vouchers/' + saved.dbId + '/approve' + apiBookParams(), {method:'POST'});
+        await apiRequest('/api/vouchers/' + saved.dbId + '/post' + apiBookParams(), {method:'POST'});
+      }
+    }
+    await apiRequest('/api/business/link-voucher'+apiBookParams(),{method:'POST',body:JSON.stringify({voucher_legacy_id:id})});
+  }
+}
+function apiBookMeta(accountSetId = SUITE_ACTIVE.id, accountSetName = activeSuiteBook().name, isDemo = SUITE_ACTIVE.demo) {
+  return {account_set_id: accountSetId, account_set_name: accountSetName || accountSetId, is_demo: Boolean(isDemo)};
+}
+async function apiSyncAccountSets(books = suiteBooks()) {
+  for (const book of books) {
+    await apiRequest('/api/storage/account-sets/' + encodeURIComponent(book.id), {
+      method: 'PUT', body: JSON.stringify({name: book.name || book.id, is_demo: Boolean(book.demo)})
+    });
+  }
+}
+
+async function apiUploadDataUrl(dataUrl, fileName) {
+  if (typeof dataUrl !== 'string' || !/^data:(image\/(?:jpeg|png)|application\/pdf);base64,/i.test(dataUrl)) return null;
+  if (apiUploadedFiles.has(dataUrl)) return apiUploadedFiles.get(dataUrl);
+  const blob = await (await fetch(dataUrl)).blob();
+  if (blob.size > 15 * 1024 * 1024) return null;
+  const extension = blob.type === 'image/jpeg' ? 'jpg' : blob.type === 'image/png' ? 'png' : 'pdf';
+  const safeName = String(fileName || ('attachment.' + extension)).replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').slice(0, 120);
+  const form = new FormData();
+  form.append('file', blob, safeName || ('attachment.' + extension));
+  const result = await apiRequest('/api/upload', {method: 'POST', body: form});
+  apiUploadedFiles.set(dataUrl, result.url);
+  return result.url;
+}
+async function apiPrepareAttachments(value, parentKey = '') {
+  if (Array.isArray(value)) return Promise.all(value.map(item => apiPrepareAttachments(item, parentKey)));
+  if (!value || typeof value !== 'object') return value;
+  const out = {...value};
+  const dataKey = typeof out.data === 'string' && out.data.startsWith('data:') ? 'data' :
+    typeof out.dataUrl === 'string' && out.dataUrl.startsWith('data:') ? 'dataUrl' : null;
+  if (dataKey && !out.url) {
+    let uploadedUrl = null;
+    try { uploadedUrl = await apiUploadDataUrl(out[dataKey], out.name || parentKey || 'attachment'); } catch {}
+    if (uploadedUrl) out.url = uploadedUrl;
+  }
+  for (const [key, child] of Object.entries(out)) {
+    if (key === 'data' || key === 'dataUrl') continue;
+    if (typeof child === 'string' && child.startsWith('data:') && /(stamp|seal|photo|image)/i.test(key)) {
+      try { const uploadedUrl = await apiUploadDataUrl(child, key + '.png'); if (uploadedUrl) out[key + 'Url'] = uploadedUrl; } catch {}
+    } else if (child && typeof child === 'object') out[key] = await apiPrepareAttachments(child, key);
+  }
+  return out;
+}
+async function apiPrepareRecords(records, storeName = '') {
+  return Promise.all(records.map(async row => {
+    const prepared = await apiPrepareAttachments(row);
+    // Settings are stored as JSON strings by the legacy synchronous settings API.
+    // Parse them at the persistence boundary so embedded expense/tax/count photos
+    // are copied to uploads too, then serialize without changing the UI contract.
+    if (storeName === STORE_SETTINGS && typeof row?.value === 'string') {
+      try { prepared.value = JSON.stringify(await apiPrepareAttachments(JSON.parse(row.value))); } catch {}
+    }
+    if(storeName===STORE_CASHIER&&typeof prepared.attachment==='string'&&prepared.attachment.startsWith('data:')) {
+      const url=await apiUploadDataUrl(prepared.attachment,prepared.attachmentName||'cashier-receipt');
+      if(url) prepared.attachment={url,name:prepared.attachmentName||'银行回单'};
+    }
+    if(storeName===STORE_NAME&&Array.isArray(prepared.attachments)) {
+      prepared.attachments=await Promise.all(prepared.attachments.map(async(item,index)=>{
+        if(typeof item==='string'&&item.startsWith('data:')) { const url=await apiUploadDataUrl(item,'invoice-attachment-'+(index+1)); return url?{url,name:'发票附件'}:item; }
+        return item;
+      }));
+    }
+    return prepared;
+  }));
+}
+async function apiReadLegacyCountOriginals() {
+  try {
+    const localDb = await countOrigDB();
+    const rows = await new Promise((resolve, reject) => {
+      const tx = localDb.transaction('originals', 'readonly'), store = tx.objectStore('originals');
+      const keysReq = store.getAllKeys(), valuesReq = store.getAll();
+      tx.onabort = () => reject(tx.error || Error('读取盘点原图失败'));
+      tx.oncomplete = () => resolve(keysReq.result.map((id, index) => ({id: String(id), file: valuesReq.result[index]})));
+    });
+    const result = [];
+    for (const item of rows) {
+      if (!item.file) continue;
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(reader.error || Error('读取盘点原图失败'));
+        reader.readAsDataURL(item.file);
+      });
+      let url = null; try { url = await apiUploadDataUrl(dataUrl, item.file.name || 'asset-count-original.jpg'); } catch {}
+      result.push({id: item.id, name: item.file.name || '盘点原图', type: item.file.type || '', size: item.file.size || 0, ...(url ? {url} : {data_url: dataUrl})});
+    }
+    return result;
+  } catch { return []; }
+}
+function apiCacheApply(stores, {replaceStores = [], deleteIds = {}} = {}) {
+  for (const [store, rows] of Object.entries(stores || {})) {
+    const pk = pkFor(store);
+    const next = replaceStores.includes(store) ? [] : [...(apiStoreCache.get(store) || [])];
+    const deletes = new Set((deleteIds[store] || []).map(String));
+    const filtered = next.filter(row => !deletes.has(String(row[pk])));
+    const index = new Map(filtered.map((row, i) => [String(row[pk]), i]));
+    for (const row of rows) {
+      const key = String(row[pk]);
+      if (index.has(key)) filtered[index.get(key)] = row;
+      else { index.set(key, filtered.length); filtered.push(row); }
+    }
+    apiStoreCache.set(store, filtered);
+  }
+  for (const [store, ids] of Object.entries(deleteIds || {})) {
+    if (Object.prototype.hasOwnProperty.call(stores || {}, store)) continue;
+    const pk = pkFor(store), deletes = new Set(ids.map(String));
+    apiStoreCache.set(store, (apiStoreCache.get(store) || []).filter(row => !deletes.has(String(row[pk]))));
+  }
+}
+async function apiWriteBatch(stores, options = {}) {
+  const accountSetId = options.accountSetId || SUITE_ACTIVE.id;
+  const accountSetName = options.accountSetName || (accountSetId === SUITE_ACTIVE.id ? activeSuiteBook().name : accountSetId);
+  const isDemo = options.isDemo ?? (accountSetId === SUITE_ACTIVE.id ? SUITE_ACTIVE.demo : false);
+  await apiRequest('/api/storage/account-sets/'+encodeURIComponent(accountSetId),{method:'PUT',body:JSON.stringify({name:accountSetName,is_demo:Boolean(isDemo)})});
+  const input={...(stores||{})}, replaceStores=[...(options.replaceStores||[])], insertOnly={...(options.insertOnly||{})}, deleteIds={...(options.deleteIds||{})};
+  // Workpapers is a compatibility collection. V10 operating records are stored in normalized relational tables.
+  if(Object.prototype.hasOwnProperty.call(input,STORE_WORK)&&!options.keepWorkpapersLegacy) {
+    const all=input[STORE_WORK]||[], normalized=all.filter(isNormalizedBusinessRecord), generic=all.filter(row=>!isNormalizedBusinessRecord(row));
+    const normalizedInsert=(insertOnly[STORE_WORK]||[]).filter(id=>normalized.some(row=>String(row.id)===String(id)));
+    if(options.replaceNormalized===true) await apiSaveBusinessRecords(normalized,{accountSetId,insertOnlyIds:normalizedInsert,replaceNormalized:true});
+    else if(normalized.length&&!replaceStores.includes(STORE_WORK)) await apiSaveBusinessRecords(normalized,{accountSetId,insertOnlyIds:normalizedInsert});
+    input[STORE_WORK]=generic;
+    insertOnly[STORE_WORK]=(insertOnly[STORE_WORK]||[]).filter(id=>generic.some(row=>String(row.id)===String(id)));
+  }
+  const businessDeletes=(deleteIds[STORE_WORK]||[]).filter(id=>isNormalizedBusinessRecord({id}));
+  if(businessDeletes.length) await apiDeleteBusinessRecords(businessDeletes,accountSetId);
+  const prepared = {};
+  for (const [store, rows] of Object.entries(input)) prepared[store] = await apiPrepareRecords(rows, store);
+  const payload = {
+    ...apiBookMeta(accountSetId, accountSetName, isDemo),
+    stores: prepared,
+    replace_stores: replaceStores,
+    insert_only: insertOnly,
+    delete_ids: deleteIds
+  };
+  const result = await apiRequest('/api/storage/batch', {method: 'PUT', body: JSON.stringify(payload)});
+  if (accountSetId === SUITE_ACTIVE.id) {
+    apiCacheApply(prepared, {replaceStores: payload.replace_stores, deleteIds: payload.delete_ids});
+    if(Object.prototype.hasOwnProperty.call(input,STORE_WORK)) {
+      const normalized=await apiListBusinessRecords(accountSetId), generic=(apiStoreCache.get(STORE_WORK)||[]).filter(row=>!isNormalizedBusinessRecord(row));
+      apiStoreCache.set(STORE_WORK,[...generic,...normalized]);
+    }
+  }
+  return result;
+}
+async function apiPersistSetting(key, rawValue, remove = false) {
+  const operation = () => apiWriteBatch(remove ? {} : { [STORE_SETTINGS]: [{id: key, value: rawValue}] }, {
+    deleteIds: remove ? {[STORE_SETTINGS]: [key]} : {}
+  });
+  apiPendingWrites = apiPendingWrites.then(operation);
+  apiPendingWrites = apiPendingWrites.catch(error => {
+    setBackendStatus('SQLite 同步异常', false);
+    showToast('本地数据库同步失败：' + (error.message || '请检查服务状态'));
+  });
+  return apiPendingWrites;
+}
+async function apiFlushWrites() { await apiPendingWrites; }
+window.addEventListener('pagehide', () => { if (storageMode === 'API') { void apiFlushWrites(); void apiFlushBusinessWrites(); } });
 
 function safeLSGet(key, fallback = '[]') {
   try {
     const val = localStorage.getItem(scopedKey(key));
     return val === null ? fallback : val;
-  } catch (e) {
-    return fallback;
-  }
+  } catch (e) { return fallback; }
 }
 function safeLSSet(key, value) {
   try {
     localStorage.setItem(scopedKey(key), value);
+    if (storageMode === 'API' && isSuiteLocal(key)) void apiPersistSetting(key, value, false);
     return true;
-  } catch (e) {
-    return false;
-  }
+  } catch (e) { return false; }
 }
 function safeLSRemove(key) {
   try {
     localStorage.removeItem(scopedKey(key));
+    if (storageMode === 'API' && isSuiteLocal(key)) void apiPersistSetting(key, null, true);
     return true;
-  } catch (e) {
-    return false;
-  }
+  } catch (e) { return false; }
 }
 
-async function initStorage() {
+async function initBrowserStorage() {
   return new Promise((resolve) => {
     try {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -3374,45 +3998,216 @@ async function initStorage() {
         if (!dbInstance.objectStoreNames.contains(STORE_NAME)) dbInstance.createObjectStore(STORE_NAME, { keyPath: 'invoiceNo' });
         if (!dbInstance.objectStoreNames.contains(STORE_CASHIER)) dbInstance.createObjectStore(STORE_CASHIER, { keyPath: 'id' });
         if (!dbInstance.objectStoreNames.contains(STORE_VOUCHER)) dbInstance.createObjectStore(STORE_VOUCHER, { keyPath: 'id' });
+        if (!dbInstance.objectStoreNames.contains(STORE_ORIGINALS)) dbInstance.createObjectStore(STORE_ORIGINALS, { keyPath: 'id' });
       };
     } catch (err) { tryLSFallback(resolve); }
   });
 }
 function tryLSFallback(resolve) {
   try {
-    localStorage.setItem('__t', '1');
-    localStorage.removeItem('__t');
-    storageMode = 'LOCALSTORAGE';
-  } catch (e) {
-    storageMode = 'MEMORY';
-  }
+    localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); storageMode = 'LOCALSTORAGE';
+  } catch (e) { storageMode = 'MEMORY'; }
   resolve(storageMode);
 }
+async function initStorage() {
+  const localMode = await initBrowserStorage();
+  let health;
+  try {
+    health = await apiRequest('/api/health');
+    if (health?.status !== 'ok' || health?.db !== 'connected') throw Error('本地数据库健康检查未通过');
+  } catch (error) {
+    backendConnected = false;
+    setBackendStatus('浏览器本地存储', false);
+    showToast('本地 FastAPI 未连接，暂时使用浏览器本地存储；启动后端后刷新即可同步到 SQLite');
+    return localMode;
+  }
+
+  try {
+    const localSnapshot = {};
+    for (const store of [STORE_WORK, STORE_NAME, STORE_CASHIER, STORE_VOUCHER]) localSnapshot[store] = await getAllFromStore(store);
+    localSnapshot[STORE_ORIGINALS] = await apiReadLegacyCountOriginals();
+    const localSettings = suiteLocalEntries(SUITE_ACTIVE.id).map(([id, value]) => ({id, value}));
+    const remoteSnapshot = {};
+    for (const store of API_STORES) {
+      const result = await apiRequest('/api/storage/' + encodeURIComponent(store) + apiBookParams());
+      remoteSnapshot[store] = Array.isArray(result.items) ? result.items : [];
+    }
+
+    const migrateStores = {}, migrateSettings = [], replaceStores = [];
+    // V9: cashier, invoice and voucher business records are migrated directly into
+    // normalized tables; do not create/refresh app_records JSON snapshots for them.
+    for (const store of [STORE_WORK, STORE_ORIGINALS]) {
+      const pk = pkFor(store), remote = remoteSnapshot[store], remoteIds = new Set(remote.map(row => String(row?.[pk])));
+      const missing = localSnapshot[store].filter(row => row && row[pk] != null && !remoteIds.has(String(row[pk])) && !(store===STORE_WORK&&isNormalizedBusinessRecord(row)));
+      if (missing.length) migrateStores[store] = missing;
+    }
+    const normalizedSnapshots = {};
+    for (const store of [STORE_VOUCHER, STORE_CASHIER, STORE_NAME]) {
+      const pk=pkFor(store), merged=new Map();
+      for(const row of [...(remoteSnapshot[store]||[]),...(localSnapshot[store]||[])]) if(row&&row[pk]!=null) merged.set(String(row[pk]),row);
+      normalizedSnapshots[store]=[...merged.values()];
+    }
+    const remoteSettings = remoteSnapshot[STORE_SETTINGS], remoteSettingIds = new Set(remoteSettings.map(row => String(row.id)));
+    for (const item of localSettings) if (!remoteSettingIds.has(String(item.id))) migrateSettings.push(item);
+    if (migrateSettings.length) migrateStores[STORE_SETTINGS] = migrateSettings;
+    if (Object.keys(migrateStores).length) {
+      // Prepare attachment data URLs before the one-time legacy snapshot is
+      // copied; the same prepared rows are then decomposed into normalized tables.
+      for (const [store, rows] of Object.entries(migrateStores)) migrateStores[store] = await apiPrepareRecords(rows, store);
+      for (const voucher of migrateStores[STORE_VOUCHER] || []) {
+        const file = voucher.attachment;
+        if (file && (file.data || file.dataUrl) && !file.url) throw Error('历史凭证附件未能上传，已中止迁移以避免丢失附件');
+      }
+      await apiWriteBatch(migrateStores, {replaceStores, accountSetId: SUITE_ACTIVE.id, accountSetName: activeSuiteBook().name, isDemo: SUITE_ACTIVE.demo});
+      for (const [store, rows] of Object.entries(migrateStores)) {
+        const pk = pkFor(store), merged = new Map((remoteSnapshot[store] || []).map(row => [String(row[pk]), row]));
+        rows.forEach(row => merged.set(String(row[pk]), row));
+        remoteSnapshot[store] = [...merged.values()];
+      }
+    }
+    // One-time, idempotent decomposition of legacy JSON records into normalized finance tables.
+    // Only records without a migration marker are prepared/uploaded; this avoids
+    // re-uploading old Base64 attachments on every subsequent page load.
+    const normalizedSyncStatus=await apiRequest('/api/migrate-from-local/status'+apiBookParams());
+    const voucherSynced=new Set(normalizedSyncStatus.voucher_synced_ids||[]);
+    const cashierSynced=new Set(normalizedSyncStatus.cashier_synced_ids||[]), invoiceSynced=new Set(normalizedSyncStatus.invoice_synced_ids||[]);
+    const pendingLegacyVouchers=(normalizedSnapshots[STORE_VOUCHER]||[]).filter(row=>!voucherSynced.has(String(row.id)));
+    const pendingLegacyCashier=(normalizedSnapshots[STORE_CASHIER]||[]).filter(row=>!cashierSynced.has(String(row.id)));
+    const pendingLegacyInvoices=(normalizedSnapshots[STORE_NAME]||[]).filter(row=>!invoiceSynced.has(String(row.invoiceNo)));
+    remoteSnapshot[STORE_VOUCHER] = await apiPrepareRecords(pendingLegacyVouchers, STORE_VOUCHER);
+    remoteSnapshot[STORE_CASHIER] = (await apiPrepareRecords(pendingLegacyCashier, STORE_CASHIER)).map(apiStripInlineAttachmentData);
+    remoteSnapshot[STORE_NAME] = (await apiPrepareRecords(pendingLegacyInvoices, STORE_NAME)).map(apiStripInlineAttachmentData);
+    for (const voucher of remoteSnapshot[STORE_VOUCHER]) {
+      const file = voucher.attachment;
+      if (file && (file.data || file.dataUrl) && !file.url) throw Error('历史凭证附件未能上传，已中止迁移以避免丢失附件');
+    }
+    for (const row of remoteSnapshot[STORE_CASHIER]) {
+      const file=row.attachment;
+      if(file&&(file.data||file.dataUrl)&&!file.url) throw Error('历史出纳回单未能上传，已中止迁移以避免丢失附件');
+    }
+    for (const row of remoteSnapshot[STORE_NAME]) {
+      if((row.attachments||[]).some(file=>file&&(file.data||file.dataUrl)&&!file.url)) throw Error('历史发票附件未能上传，已中止迁移以避免丢失附件');
+    }
+    // The legacy stores remain intact as a rollback source until reconciliation is signed off.
+    const migrationContacts = new Map();
+    for (const name of (typeof AR_UNITS !== 'undefined' ? AR_UNITS : [])) migrationContacts.set('CUSTOMER:'+name,{name,type:'CUSTOMER'});
+    for (const name of (typeof AP_UNITS !== 'undefined' ? AP_UNITS : [])) migrationContacts.set('SUPPLIER:'+name,{name,type:'SUPPLIER'});
+    for (const v of normalizedSnapshots[STORE_VOUCHER]) for (const e of (v.entries || [])) {
+      const name=String(e.aux || '').trim(); if(name && !/^\d+$/.test(name)) migrationContacts.set('CUSTOMER:'+name,{name,type:['2202','2203'].includes(String(e.account))?'SUPPLIER':'CUSTOMER'});
+    }
+    for (const r of normalizedSnapshots[STORE_CASHIER]) { const name=String(r.counterparty || '').trim(); if(name && !migrationContacts.has('CUSTOMER:'+name) && !migrationContacts.has('SUPPLIER:'+name)) { const type=AP_UNITS.includes(name)?'SUPPLIER':'CUSTOMER'; migrationContacts.set(type+':'+name,{name,type}); } }
+    for (const r of normalizedSnapshots[STORE_NAME]) { const name=String(r.buyer || r.buyer_name || '').trim(); if(name && !migrationContacts.has('CUSTOMER:'+name)) migrationContacts.set('CUSTOMER:'+name,{name,type:'CUSTOMER'}); }
+    const migrationAccounts = (typeof VOUCHER_ACCOUNTS !== 'undefined' ? VOUCHER_ACCOUNTS : []).map(a => ({
+      code:a.code,name:a.name,direction:a.dir,category:/^(1)/.test(a.code)?'资产':/^(2)/.test(a.code)?'负债':/^(4)/.test(a.code)?'权益':/^5/.test(a.code)?'成本':'损益',
+      initial_debit:a.dir==='借'?Number(a.opening||0):0,initial_credit:a.dir==='贷'?Number(a.opening||0):0,is_active:true
+    }));
+    const migrationPayload = {
+      account_set_id: SUITE_ACTIVE.id,
+      accounts:migrationAccounts,
+      contacts:[...migrationContacts.values()],
+      // Use the API-prepared snapshot so attachment data URLs have already been
+      // uploaded to /uploads before normalized voucher import.
+      vouchers: remoteSnapshot[STORE_VOUCHER],
+      cashier_records: remoteSnapshot[STORE_CASHIER],
+      invoices: remoteSnapshot[STORE_NAME]
+    };
+    if (migrationPayload.vouchers.length || migrationPayload.cashier_records.length || migrationPayload.invoices.length) {
+      const migrated = await apiRequest('/api/migrate-from-local', {method:'POST', body:JSON.stringify(migrationPayload)});
+      console.info('[Finance Workbench] normalized import:', migrated.counts);
+    }
+    // Ensure customer/vendor opening balances are normalized too, then hydrate
+    // the subject/contact pickers from SQLite rather than static demo arrays.
+    const hasLegacyOpeningSnapshot=await apiMigrateLegacyOpeningSnapshot(remoteSnapshot[STORE_WORK]||[],localSnapshot[STORE_WORK]||[]);
+    if(!hasLegacyOpeningSnapshot) await apiRepairLegacyDemoOpeningScale();
+    await apiSeedContactOpeningBalances();
+    await apiLoadNormalizedReferenceData();
+
+    // V10: migrate legacy Workpapers/Settings records into normalized operating subledgers.
+    await apiRequest('/api/business/migrate-from-local'+apiBookParams(),{method:'POST'});
+    const normalizedExisting=await apiListBusinessRecords(SUITE_ACTIVE.id), normalizedIds=new Set(normalizedExisting.map(row=>String(row.id)));
+    const localBusinessRows=(localSnapshot[STORE_WORK]||[]).filter(row=>isNormalizedBusinessRecord(row)&&!normalizedIds.has(String(row.id)));
+    if(localBusinessRows.length) await apiSaveBusinessRecords(localBusinessRows,{accountSetId:SUITE_ACTIVE.id,skipStockValidation:true});
+    apiBusinessBootstrap=await apiRequest('/api/business/bootstrap'+apiBookParams());
+    remoteSnapshot[STORE_WORK]=[...(remoteSnapshot[STORE_WORK]||[]).filter(row=>!isNormalizedBusinessRecord(row)),...(apiBusinessBootstrap.records||[])];
+
+    apiStoreCache = new Map(API_STORES.map(store => [store, remoteSnapshot[store] || []]));
+    // SQLite is authoritative once connected. Hydrate synchronous legacy settings
+    // into localStorage so the existing UI's synchronous readers remain compatible.
+    for (const item of apiStoreCache.get(STORE_SETTINGS) || []) {
+      if (typeof item.id === 'string' && typeof item.value === 'string' && isSuiteLocal(item.id)) {
+        try { localStorage.setItem(scopedKey(item.id), item.value); } catch {}
+      }
+    }
+    storageMode = 'API'; backendConnected = true;
+    const serverBooks = (await apiRequest('/api/storage/account-sets')).items || [];
+    const localBooks = suiteBooks(), mergedBooks = [...localBooks];
+    for (const remoteBook of serverBooks) {
+      const existing = mergedBooks.find(book => book.id === remoteBook.id);
+      if (!existing) mergedBooks.push({id: remoteBook.id, name: remoteBook.name, demo: Boolean(remoteBook.is_demo)});
+    }
+    try { localStorage.setItem('fw-suite:books', JSON.stringify(mergedBooks)); } catch {}
+    await apiSyncAccountSets(mergedBooks);
+    setBackendStatus('SQLite 已连接', true);
+    if (Object.keys(migrateStores).length) showToast('已将浏览器旧账套数据复制到本机 SQLite；原浏览器数据保留为备份');
+    return storageMode;
+  } catch (error) {
+    backendConnected = false;
+    storageMode = localMode;
+    setBackendStatus('SQLite 同步失败', false);
+    showToast('已连接后端但账套数据初始化失败，暂用浏览器存储：' + (error.message || '未知错误'));
+    return localMode;
+  }
+}
+
 async function saveToStore(storeName, record) { return saveRecords(storeName, [record]); }
 async function saveRecords(storeName, records, insert = false, completedDraft = null) {
+  if (storageMode === 'API' && storeName === STORE_CASHIER) {
+    await apiSaveNormalizedCashierRecords(records, insert ? records.map(r => String(r.id)) : []);
+    apiStoreCache.set(STORE_CASHIER, await apiListNormalizedCashier());
+    return;
+  }
+  if (storageMode === 'API' && storeName === STORE_NAME) {
+    await apiSaveNormalizedInvoiceRecords(records, insert ? records.map(r => String(r.invoiceNo)) : []);
+    apiStoreCache.set(STORE_NAME, await apiListNormalizedInvoices());
+    if (completedDraft) { const papers=await getAllFromStore(STORE_WORK); await apiWriteBatch({[STORE_WORK]:papers.filter(r=>r.id!=='draft:'+completedDraft)},{replaceStores:[STORE_WORK]}); }
+    return;
+  }
+  if (storageMode === 'API' && storeName === STORE_VOUCHER) {
+    await apiSaveNormalizedVoucherRecords(records, insert ? records.map(r => String(r.id)) : []);
+    if (completedDraft) {
+      const papers = await getAllFromStore(STORE_WORK);
+      const remaining = papers.filter(row => row.id !== 'draft:' + completedDraft);
+      if (remaining.length !== papers.length) await apiWriteBatch({[STORE_WORK]: remaining}, {replaceStores:[STORE_WORK]});
+    }
+    return;
+  }
+  if (storageMode === 'API') {
+    const prepared = await apiPrepareRecords(records, storeName);
+    const stores = {[storeName]: prepared};
+    const deleteIds = completedDraft ? {[STORE_WORK]: ['draft:' + completedDraft]} : {};
+    await apiWriteBatch(stores, {insertOnly: insert ? {[storeName]: prepared.map(row => String(row[pkFor(storeName)]))} : {}, deleteIds});
+    return;
+  }
   if (storageMode === 'MEMORY') {
     const pk = pkFor(storeName);
     for (const r of records) {
       const idx = memoryData[storeName].findIndex(x => x[pk] === r[pk]);
       if (insert && idx !== -1) throw new Error('记录编号已存在');
-      if (idx !== -1) memoryData[storeName][idx] = r;
-      else memoryData[storeName].push(r);
+      if (idx !== -1) memoryData[storeName][idx] = r; else memoryData[storeName].push(r);
     }
     return;
   }
   if (storageMode === 'INDEXEDDB') {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(completedDraft ? [storeName, STORE_WORK] : storeName, 'readwrite');
-      tx.oncomplete = () => resolve();
-      tx.onabort = () => reject(tx.error || new Error('保存失败'));
+      tx.oncomplete = () => resolve(); tx.onabort = () => reject(tx.error || new Error('保存失败'));
       const store = tx.objectStore(storeName);
       for (const record of records) store[insert ? 'add' : 'put'](record);
       if (completedDraft) tx.objectStore(STORE_WORK).delete('draft:' + completedDraft);
     });
   }
   const key = lsKeyFor(storeName), pk = pkFor(storeName);
-  let parsed = [];
-  try { parsed = JSON.parse(safeLSGet(key, '[]')); } catch (e) { parsed = []; }
+  let parsed = []; try { parsed = JSON.parse(safeLSGet(key, '[]')); } catch (e) { parsed = []; }
   const data = new Map(parsed.map(row => [row[pk], row]));
   for (const record of records) {
     if (insert && data.has(record[pk])) throw new Error('记录编号已存在');
@@ -3420,89 +4215,90 @@ async function saveRecords(storeName, records, insert = false, completedDraft = 
   }
   if (!safeLSSet(key, JSON.stringify([...data.values()]))) throw new Error('本地存储空间不足');
   if (completedDraft) {
-    const draftKey = lsKeyFor(STORE_WORK);
-    let existing = [];
+    const draftKey = lsKeyFor(STORE_WORK); let existing = [];
     try { existing = JSON.parse(safeLSGet(draftKey, '[]')); } catch (e) { existing = []; }
     const remaining = existing.filter(row => row.id !== 'draft:' + completedDraft);
     if (remaining.length !== existing.length) safeLSSet(draftKey, JSON.stringify(remaining));
   }
 }
-async function saveWorkVoucherPair(workRecord,voucher,insertWork=true,insertVoucher=true) {
+async function saveWorkVoucherPair(workRecord, voucher, insertWork = true, insertVoucher = true) {
   validateVoucherRecord(voucher);
-  if(storageMode==='INDEXEDDB') return new Promise((resolve,reject)=>{
-    const tx=db.transaction([STORE_WORK,STORE_VOUCHER],'readwrite');
-    tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error||Error('业务单据与凭证未能同时保存'));
-    tx.objectStore(STORE_WORK)[insertWork?'add':'put'](workRecord);
-    tx.objectStore(STORE_VOUCHER)[insertVoucher?'add':'put'](voucher);
-  });
-  if(storageMode==='MEMORY') {
-    const w=memoryData[STORE_WORK],v=memoryData[STORE_VOUCHER],wi=w.findIndex(x=>x.id===workRecord.id),vi=v.findIndex(x=>x.id===voucher.id);
-    if((insertWork&&wi>=0)||(insertVoucher&&vi>=0)||(!insertWork&&wi<0)||(!insertVoucher&&vi<0))throw Error('业务单据或凭证编号已变化，请刷新');
-    if(wi>=0)w[wi]=workRecord;else w.push(workRecord);if(vi>=0)v[vi]=voucher;else v.push(voucher);return;
+  if (storageMode === 'API') {
+    await apiCommitBusinessAndVouchers([workRecord],[voucher],[insertWork],[insertVoucher]);
+    return;
   }
-  const wk=lsKeyFor(STORE_WORK),vk=lsKeyFor(STORE_VOUCHER),oldW=safeLSGet(wk,'[]'),oldV=safeLSGet(vk,'[]');
-  let wa=[],va=[];try{wa=JSON.parse(oldW);}catch{}try{va=JSON.parse(oldV);}catch{}
-  const wi=wa.findIndex(x=>x.id===workRecord.id),vi=va.findIndex(x=>x.id===voucher.id);
-  if((insertWork&&wi>=0)||(insertVoucher&&vi>=0)||(!insertWork&&wi<0)||(!insertVoucher&&vi<0))throw Error('业务单据或凭证编号已变化，请刷新');
-  if(wi>=0)wa[wi]=workRecord;else wa.push(workRecord);if(vi>=0)va[vi]=voucher;else va.push(voucher);
-  if(!safeLSSet(wk,JSON.stringify(wa)))throw Error('工作底稿存储空间不足，未保存业务单据');
-  if(!safeLSSet(vk,JSON.stringify(va))){safeLSSet(wk,oldW);throw Error('凭证存储空间不足，已回滚业务单据');}
-}
-
-async function saveWorkVoucherBatch(workRecords,vouchers,workInsertFlags=null,voucherInsertFlags=null) {
-  const workFlags=workInsertFlags||workRecords.map(()=>true),voucherFlags=voucherInsertFlags||vouchers.map(()=>true);
-  if(workRecords.length!==workFlags.length||vouchers.length!==voucherFlags.length)throw Error('批量保存参数不一致');
-  vouchers.forEach(validateVoucherRecord);
-  if(storageMode==='INDEXEDDB')return new Promise((resolve,reject)=>{
-    const tx=db.transaction([STORE_WORK,STORE_VOUCHER],'readwrite');
-    tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error||Error('生产业务及凭证未能同时保存'));
-    const ws=tx.objectStore(STORE_WORK),vs=tx.objectStore(STORE_VOUCHER);
-    workRecords.forEach((r,i)=>ws[workFlags[i]?'add':'put'](r));
-    vouchers.forEach((r,i)=>vs[voucherFlags[i]?'add':'put'](r));
+  if (storageMode === 'INDEXEDDB') return new Promise((resolve, reject) => {
+    const tx = db.transaction([STORE_WORK, STORE_VOUCHER], 'readwrite');
+    tx.oncomplete = resolve; tx.onabort = () => reject(tx.error || Error('业务单据与凭证未能同时保存'));
+    tx.objectStore(STORE_WORK)[insertWork ? 'add' : 'put'](workRecord);
+    tx.objectStore(STORE_VOUCHER)[insertVoucher ? 'add' : 'put'](voucher);
   });
-  const read=(store)=>storageMode==='MEMORY'?[...memoryData[store]]:(()=>{try{return JSON.parse(safeLSGet(lsKeyFor(store),'[]'));}catch{return [];}})();
-  const oldW=read(STORE_WORK),oldV=read(STORE_VOUCHER),wpk=pkFor(STORE_WORK),vpk=pkFor(STORE_VOUCHER);
-  const nextW=[...oldW],nextV=[...oldV];
-  const apply=(target,records,flags,pk,label)=>{
-    const seen=new Set();
-    records.forEach((r,i)=>{
-      const key=r?.[pk];if(key==null||seen.has(key))throw Error(label+'编号为空或重复');seen.add(key);
-      const index=target.findIndex(x=>x[pk]===key);
-      if(flags[i]&&index>=0)throw Error(label+'编号已存在：'+key);
-      if(!flags[i]&&index<0)throw Error(label+'记录已不存在：'+key);
-      if(index>=0)target[index]=r;else target.push(r);
+  if (storageMode === 'MEMORY') {
+    const w = memoryData[STORE_WORK], v = memoryData[STORE_VOUCHER], wi = w.findIndex(x => x.id === workRecord.id), vi = v.findIndex(x => x.id === voucher.id);
+    if ((insertWork && wi >= 0) || (insertVoucher && vi >= 0) || (!insertWork && wi < 0) || (!insertVoucher && vi < 0)) throw Error('业务单据或凭证编号已变化，请刷新');
+    if (wi >= 0) w[wi] = workRecord; else w.push(workRecord); if (vi >= 0) v[vi] = voucher; else v.push(voucher); return;
+  }
+  const wk = lsKeyFor(STORE_WORK), vk = lsKeyFor(STORE_VOUCHER), oldW = safeLSGet(wk, '[]'), oldV = safeLSGet(vk, '[]');
+  let wa = [], va = []; try { wa = JSON.parse(oldW); } catch {} try { va = JSON.parse(oldV); } catch {}
+  const wi = wa.findIndex(x => x.id === workRecord.id), vi = va.findIndex(x => x.id === voucher.id);
+  if ((insertWork && wi >= 0) || (insertVoucher && vi >= 0) || (!insertWork && wi < 0) || (!insertVoucher && vi < 0)) throw Error('业务单据或凭证编号已变化，请刷新');
+  if (wi >= 0) wa[wi] = workRecord; else wa.push(workRecord); if (vi >= 0) va[vi] = voucher; else va.push(voucher);
+  if (!safeLSSet(wk, JSON.stringify(wa))) throw Error('工作底稿存储空间不足，未保存业务单据');
+  if (!safeLSSet(vk, JSON.stringify(va))) { safeLSSet(wk, oldW); throw Error('凭证存储空间不足，已回滚业务单据'); }
+}
+async function saveWorkVoucherBatch(workRecords, vouchers, workInsertFlags = null, voucherInsertFlags = null) {
+  const workFlags = workInsertFlags || workRecords.map(() => true), voucherFlags = voucherInsertFlags || vouchers.map(() => true);
+  if (workRecords.length !== workFlags.length || vouchers.length !== voucherFlags.length) throw Error('批量保存参数不一致');
+  vouchers.forEach(validateVoucherRecord);
+  if (storageMode === 'API') {
+    await apiCommitBusinessAndVouchers(workRecords,vouchers,workFlags,voucherFlags);
+    return;
+  }
+  if (storageMode === 'INDEXEDDB') return new Promise((resolve, reject) => {
+    const tx = db.transaction([STORE_WORK, STORE_VOUCHER], 'readwrite');
+    tx.oncomplete = resolve; tx.onabort = () => reject(tx.error || Error('生产业务及凭证未能同时保存'));
+    const ws = tx.objectStore(STORE_WORK), vs = tx.objectStore(STORE_VOUCHER);
+    workRecords.forEach((r, i) => ws[workFlags[i] ? 'add' : 'put'](r));
+    vouchers.forEach((r, i) => vs[voucherFlags[i] ? 'add' : 'put'](r));
+  });
+  const read = store => storageMode === 'MEMORY' ? [...memoryData[store]] : (() => { try { return JSON.parse(safeLSGet(lsKeyFor(store), '[]')); } catch { return []; } })();
+  const oldW = read(STORE_WORK), oldV = read(STORE_VOUCHER), nextW = [...oldW], nextV = [...oldV];
+  const apply = (target, records, flags, pk, label) => {
+    const seen = new Set();
+    records.forEach((r, i) => {
+      const key = r?.[pk]; if (key == null || seen.has(key)) throw Error(label + '编号为空或重复'); seen.add(key);
+      const index = target.findIndex(x => x[pk] === key);
+      if (flags[i] && index >= 0) throw Error(label + '编号已存在：' + key);
+      if (!flags[i] && index < 0) throw Error(label + '记录已不存在：' + key);
+      if (index >= 0) target[index] = r; else target.push(r);
     });
   };
-  apply(nextW,workRecords,workFlags,wpk,'业务单据');apply(nextV,vouchers,voucherFlags,vpk,'凭证');
-  const write=(store,rows)=>{if(storageMode==='MEMORY')memoryData[store]=rows;else if(!safeLSSet(lsKeyFor(store),JSON.stringify(rows)))throw Error('本机存储空间不足，批量业务未能保存');};
-  write(STORE_WORK,nextW);
-  try{write(STORE_VOUCHER,nextV);}catch(error){write(STORE_WORK,oldW);throw error;}
+  apply(nextW, workRecords, workFlags, 'id', '业务单据'); apply(nextV, vouchers, voucherFlags, 'id', '凭证');
+  const write = (store, rows) => { if (storageMode === 'MEMORY') memoryData[store] = rows; else if (!safeLSSet(lsKeyFor(store), JSON.stringify(rows))) throw Error('本机存储空间不足，批量业务未能保存'); };
+  write(STORE_WORK, nextW); try { write(STORE_VOUCHER, nextV); } catch (error) { write(STORE_WORK, oldW); throw error; }
 }
-
 async function getAllFromStore(storeName) {
-  if (storageMode === 'INDEXEDDB') {
-    return new Promise((resolve, reject) => {
-      const req = db.transaction([storeName], 'readonly').objectStore(storeName).getAll();
-      req.onsuccess = () => resolve(req.result); req.onerror = (e) => reject(e.target.error);
-    });
-  } else if (storageMode === 'LOCALSTORAGE') {
-    try { return JSON.parse(safeLSGet(lsKeyFor(storeName), '[]')); } catch (e) { return []; }
-  } else {
-    return [...memoryData[storeName]];
-  }
+  if (storageMode === 'API' && storeName === STORE_VOUCHER) return apiListNormalizedVouchers();
+  if (storageMode === 'API' && storeName === STORE_CASHIER) return apiListNormalizedCashier();
+  if (storageMode === 'API' && storeName === STORE_NAME) return apiListNormalizedInvoices();
+  if (storageMode === 'API') return cloneData(apiStoreCache.get(storeName) || []);
+  if (storageMode === 'INDEXEDDB') return new Promise((resolve, reject) => {
+    const req = db.transaction([storeName], 'readonly').objectStore(storeName).getAll();
+    req.onsuccess = () => resolve(req.result); req.onerror = e => reject(e.target.error);
+  });
+  if (storageMode === 'LOCALSTORAGE') { try { return JSON.parse(safeLSGet(lsKeyFor(storeName), '[]')); } catch (e) { return []; } }
+  return [...memoryData[storeName]];
 }
 async function clearStore(storeName) {
-  if (storageMode === 'INDEXEDDB') {
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(storeName, 'readwrite');
-      tx.oncomplete = () => resolve(); tx.onabort = () => reject(tx.error);
-      tx.objectStore(storeName).clear();
-    });
-  } else if (storageMode === 'LOCALSTORAGE') {
-    safeLSRemove(lsKeyFor(storeName));
-  } else {
-    memoryData[storeName] = [];
+  if (storageMode === 'API' && [STORE_VOUCHER,STORE_CASHIER,STORE_NAME].includes(storeName)) throw Error('规范化财务数据不可整体清空；请逐笔处理并保留审计记录');
+  if (storageMode === 'API') {
+    await apiRequest('/api/storage/' + encodeURIComponent(storeName) + apiBookParams(), {method: 'DELETE'});
+    apiStoreCache.set(storeName, []); return;
   }
+  if (storageMode === 'INDEXEDDB') return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite'); tx.oncomplete = resolve; tx.onabort = () => reject(tx.error); tx.objectStore(storeName).clear();
+  });
+  if (storageMode === 'LOCALSTORAGE') safeLSRemove(lsKeyFor(storeName)); else memoryData[storeName] = [];
 }
 async function saveRecordToDB(record) { return saveToStore(STORE_NAME, record); }
 async function getAllRecordsFromDB() { return getAllFromStore(STORE_NAME); }
@@ -3828,7 +4624,7 @@ function initInvoiceModule() {
   fileInput.addEventListener('change', (e) => {
     if (e.target.files.length > 0) {
       Array.from(e.target.files).forEach(file => {
-        if (storageMode !== 'INDEXEDDB' && file.size > 800 * 1024) return showToast('当前存储模式不支持超大文件');
+        if (!['INDEXEDDB','API'].includes(storageMode) && file.size > 800 * 1024) return showToast('当前存储模式不支持超大文件');
         const reader = new FileReader();
         reader.onload = (ev) => { currentAttachments.push({ name: file.name, data: ev.target.result }); renderAttachments(); };
         readDraftAttachment(reader, file);
@@ -4363,14 +5159,14 @@ function initVoucherModule() {
       const auxHint = (v.entries || []).map(e => e.aux).filter(Boolean).join(' / ');
       const summaryText = (v.entries[0]?.summary || '') + (auxHint ? ` [${auxHint}]` : '');
       const row = tableRow(tb,[v.voucherNo,v.date,v.bizLabel,summaryText,money(v.totalDebit),money(v.totalCredit),
-        v.source, {PENDING:'待审核',APPROVED:'已审核',POSTED:'已记账'}[v.status],'']);
+        v.source, (v.normalizedStatus==='REVERSED'?'已冲销':{DRAFT:'草稿',PENDING:'待审核',APPROVED:'已审核',POSTED:'已记账',VOIDED:'已作废'}[v.status] || v.status),'']);
       if (v.attachment) row.cells[6].append(action('附件', () => downloadAttachment(v.attachment)));
-      row.lastChild.append(action('删除',async()=>{
+      if (v.normalizedStatus !== 'REVERSED') row.lastChild.append(action(v.status === 'POSTED' ? '红字冲销' : '删除',async()=>{
         if(!await deleteWorkbenchVoucher(v)) return;
         await loadVList();
         if(window.refreshAccounting) await refreshAccounting();
         if(window.renderLiveBalance) await renderLiveBalance();
-        showToast('凭证已删除，已保留删除记录');
+        showToast(v.status === 'POSTED' ? '已生成红字冲销凭证' : '凭证已删除，已保留删除记录');
       },'btn-mini phase-delete'));
       if (v.status === 'PENDING') row.lastChild.append(action('审核通过', async () => {
         await changeVoucherStatus([v.id], 'PENDING', 'APPROVED'); await loadVList(); showToast('已审核，可前往「会计记账」入账');
@@ -4461,9 +5257,12 @@ function cents(value) {
 }
 async function runAction(handler, button) {
   if (button) { if (button.disabled) return; button.disabled = true; }
-  try { await handler(); }
+  try { await handler(); if(storageMode==='API') await apiFlushBusinessWrites(); }
   catch (error) { showToast(error.name === 'QuotaExceededError' ? '存储空间不足，资料未保存' : (error.message || '操作失败')); }
-  finally { if (button) button.disabled = false; }
+  finally {
+    if(storageMode==='API') { try { await apiFlushBusinessWrites(); } catch(error) { showToast('本地业务数据同步失败：'+(error.message||'请检查后端')); } }
+    if (button) button.disabled = false;
+  }
 }
 function onAction(id, handler) { const button = byId(id); button.addEventListener('click', () => runAction(handler, button)); }
 function action(label, handler, buttonClass = 'btn-mini') {
@@ -4508,24 +5307,33 @@ function filePicker(zoneId, inputId, listId, update) {
   return showFile;
 }
 function downloadAttachment(file) {
-  const data = file.data || file.dataUrl;
-  if (!/^data:[^,]*;base64,/i.test(data)) throw Error('附件格式无效');
-  const link = document.createElement('a'); link.href = data; link.download = file.name; link.click();
+  const data = file?.data || file?.dataUrl;
+  const link = document.createElement('a');
+  if (/^data:[^,]*;base64,/i.test(data || '')) link.href = data;
+  else if (file?.url && file.url.startsWith('/uploads/')) link.href = FW_API_BASE + file.url;
+  else throw Error('附件格式无效');
+  link.download = file.name || '财务附件'; link.rel = 'noopener'; link.click();
 }
 function downloadFile(name, content, mime) {
   const url = URL.createObjectURL(new Blob([content], {type:mime}));
   const link = document.createElement('a'); link.href = url; link.download = name; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-function exportRows(name, headers, rows) {
+async function exportRows(name, headers, rows) {
   if (window.XLSX) {
     const book = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(book,XLSX.utils.aoa_to_sheet([headers,...rows]),'数据');
-    XLSX.writeFile(book,name+'.xlsx'); return;
+    const sheet=XLSX.utils.aoa_to_sheet([headers,...rows]);
+    sheet['!cols']=headers.map((_,i)=>({wch:Math.min(36,Math.max(12,...[headers[i],...rows.map(r=>String(r[i]??''))].map(v=>String(v).length+2)))}));
+    sheet['!autofilter']={ref:sheet['!ref']};
+    XLSX.utils.book_append_sheet(book,sheet,'数据');
+    XLSX.writeFile(book,name+'.xlsx',{compression:true}); return;
   }
-  const cell = value => '"' + String(typeof value === 'string' && /^[=+\-@\t\r]/.test(value) ? "'"+value : value ?? '').replaceAll('"','""') + '"';
-  downloadFile(name+'.csv', '\ufeff' + [headers,...rows].map(row => row.map(cell).join(',')).join('\r\n'), 'text/csv;charset=utf-8');
-  showToast('本地 XLSX 导出不可用，已改为 CSV 格式');
+  if(backendConnected) {
+    const response=await fetch(FW_API_BASE+'/api/v11/exports/financial-statements'+apiBookParams(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({headers,rows})});
+    if(!response.ok)throw Error('标准 XLSX 导出失败：HTTP '+response.status);
+    const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=name+'.xlsx';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;
+  }
+  throw Error('标准 XLSX 导出组件不可用，请连接本地后端或刷新页面后重试');
 }
 function tabs(selector, prefix, panels) {
   const items = [...document.querySelectorAll(selector)];
@@ -4563,7 +5371,23 @@ async function changeVoucherStatus(ids, from, to) {
   const all = await getAllFromStore(STORE_VOUCHER), records = ids.map(id => all.find(v => v.id === id));
   if (records.some(v => !v || v.status !== from)) throw Error('凭证状态已变化，请刷新');
   for (const period of new Set(records.map(v => v.period))) await ensureOpen(period);
-  if(to==='POSTED')records.forEach(validateVoucherRecord);
+  if (to === 'POSTED') records.forEach(validateVoucherRecord);
+  if (storageMode === 'API') {
+    if (records.some(record => !record.dbId)) throw Error('规范化凭证编号缺失，请刷新凭证列表');
+    if (to === 'APPROVED' || to === 'POSTED') {
+      const endpoint = to === 'APPROVED' ? 'batch-approve' : 'batch-post';
+      if (records.length > 1) {
+        await apiRequest('/api/vouchers/' + endpoint + apiBookParams(), {
+          method:'POST', body:JSON.stringify({ids:records.map(record => record.dbId)})
+        });
+      } else {
+        const action = to === 'APPROVED' ? 'approve' : 'post';
+        await apiRequest('/api/vouchers/' + records[0].dbId + '/' + action + apiBookParams(), {method:'POST'});
+      }
+      return;
+    }
+    throw Error('不支持的凭证状态变更');
+  }
   await saveRecords(STORE_VOUCHER, records.map(v => ({...v,status:to})));
 }
 
@@ -4682,7 +5506,13 @@ function wireBookEditors(period, refresh) {
       balances[row.cells[0].textContent] = d-c;
     }
     if (Object.values(balances).reduce((a,b)=>a+b,0) !== 0) throw Error('期初借贷不平');
-    await saveToStore(STORE_WORK,{id:'opening:'+p,period:p,balances});
+    if(storageMode==='API') {
+      const items=Object.entries(balances).map(([code,signed])=>({code,initial_debit:(Math.max(signed,0)/100).toFixed(2),initial_credit:(Math.max(-signed,0)/100).toFixed(2)}));
+      await apiRequest('/api/accounts/opening-balances'+apiBookParams(),{method:'PUT',body:JSON.stringify({items})});
+      await apiLoadNormalizedReferenceData();
+    } else {
+      await saveToStore(STORE_WORK,{id:'opening:'+p,period:p,balances});
+    }
     await refresh(); byId('acc-opening-editor').style.display='none'; showToast('期初余额已保存');
   });
   window.saveReportNote = () => runAction(async () => {
@@ -4722,6 +5552,10 @@ async function computeLiveBalances(period = reportPeriod()) {
 async function buildThreeColumnData(subjectCode, aux = '', period = '', unitMode = Boolean(aux)) {
   const subj = SUBJ_MAP[subjectCode];
   if(!subj) throw Error('请选择有效科目');
+  if(storageMode==='API'&&unitMode&&['1122','2202'].includes(subjectCode)) {
+    const p=period||reportPeriod(), unit=(await ledgerUnits(subjectCode,p)).find(r=>r.unit===aux);
+    return ledgerDetailData(subj,unit?.opening||0,unit?.entries||[]);
+  }
   if(period){
     const book=await financialBook(period);
     if(unitMode&&['1122','2202'].includes(subjectCode)){
@@ -4809,16 +5643,22 @@ async function openBankSpecialDrawer() {
 async function openUnitBalanceDrawer(code) {
   const subj = SUBJ_MAP[code];
   const units = code === '1122' ? AR_UNITS : AP_UNITS;
-  const openingMap = code === '1122' ? AR_OPENING : AP_OPENING;
-  const allEntries = await getPostedEntries({ subject: code });
-  const list = units.map(u => {
-    const opening = openingMap[u] || 0;
-    const rows = allEntries.filter(r => r.aux === u);
-    const dr = rows.reduce((s, r) => s + r.debit, 0);
-    const cr = rows.reduce((s, r) => s + r.credit, 0);
-    const closing = subj.dir === '借' ? (opening + dr - cr) : (opening + cr - dr);
-    return { unit: u, opening, dr, cr, closing, dir: subj.dir };
-  });
+  let list;
+  if(storageMode==='API'&&['1122','2202'].includes(code)) {
+    const normalized=await ledgerUnits(code,reportPeriod());
+    list=normalized.map(r=>({unit:r.unit,contactId:r.contactId,opening:Math.abs(r.opening)/100,dr:r.debit/100,cr:r.credit/100,closing:Math.abs(r.end)/100,dir:subj.dir}));
+  } else {
+    const openingMap = code === '1122' ? AR_OPENING : AP_OPENING;
+    const allEntries = await getPostedEntries({ subject: code });
+    list = units.map(u => {
+      const opening = openingMap[u] || 0;
+      const rows = allEntries.filter(r => r.aux === u);
+      const dr = rows.reduce((s, r) => s + r.debit, 0);
+      const cr = rows.reduce((s, r) => s + r.credit, 0);
+      const closing = subj.dir === '借' ? (opening + dr - cr) : (opening + cr - dr);
+      return { unit: u, opening, dr, cr, closing, dir: subj.dir };
+    });
+  }
 
   let html = `<div class="sum-bar">
     <div><span>期初合计</span><strong>${fmtNum(list.reduce((s, u) => s + u.opening, 0))}</strong></div>
@@ -4835,7 +5675,7 @@ async function openUnitBalanceDrawer(code) {
       <td><span class="dir-badge ${u.dir === '借' ? 'dr' : 'cr'}">${u.dir}</span></td>
       <td class="num">${fmtNum(u.opening)}</td><td class="num">${fmtNum(u.dr)}</td><td class="num">${fmtNum(u.cr)}</td>
       <td class="num strong">${fmtNum(u.closing)}</td>
-      <td><button type="button" class="btn-mini" data-jump-unit="${escapeHtml(u.unit)}">三栏明细</button></td></tr>`;
+      <td>${u.contactId?`<button type="button" class="btn-mini" data-jump-unit="${escapeHtml(u.unit)}">三栏明细</button>`:'—'}</td></tr>`;
   });
   html += '</tbody></table></div>';
   openLiveDrawer(`${code} ${subj.name} · 单位往来余额表`, '按往来单位汇总期初余额、本期发生额与期末余额', html);
@@ -5166,6 +6006,20 @@ function initReconModule() {
       select.append(...options.map(([v,t])=>new Option(t,v)));select.value=r.resolution||'';
       select.addEventListener('change',()=>{r.resolution=select.value;verified=false;renderSummaryOnly();});
       actionCell.append(select);
+      if(r.status==='BANK_ONLY') {
+        const makeDraft=document.createElement('button');makeDraft.type='button';makeDraft.className='btn btn-small';makeDraft.textContent='一键生成补记凭证';
+        makeDraft.addEventListener('click',()=>runAction(async()=>{
+          if(!backendConnected)throw Error('请先连接本地 SQLite 后端再生成规范化补记凭证');
+          const credit=window.prompt('请输入该笔企业漏记对应的贷方科目编码（例如 1122、6001）');
+          if(!credit)return;
+          const amount=r.bank?.[0]?.amount;if(!Number.isInteger(amount)||amount<=0)throw Error('银行流水金额无效');
+          await apiRequest('/api/v11/bank-matches'+apiBookParams(),{method:'PUT',body:JSON.stringify([{legacy_id:String(r.id),period:val('recon-period'),bank_account:val('recon-account'),bank_amount:(amount/100).toFixed(2),book_amount:'0.00',bank_date:r.bank?.[0]?.date||null,bank_ref:String(r.id),status:'BANK_ONLY',difference_type:'ENTERPRISE_OMISSION',resolution:'补记凭证草稿',evidence:'由银行对账差异一键生成',raw:{debit_account:'1002',credit_account:credit}}])});
+          const rows=await apiRequest('/api/v11/bank-matches?period='+encodeURIComponent(val('recon-period'))+'&bank_account='+encodeURIComponent(val('recon-account'))+apiBookParams().replace('?','&'));
+          const match=rows.items.find(x=>x.legacy_id===String(r.id));if(!match)throw Error('对账规范记录保存失败');
+          const created=await apiRequest('/api/v11/bank-matches/'+match.id+'/voucher'+apiBookParams(),{method:'POST'});
+          location.hash='module-voucher';showToast('补记凭证草稿已生成：'+created.voucher_no+'，请在制证页复核');
+        })); actionCell.append(makeDraft);
+      }
       const evidence=document.createElement('input');evidence.type='text';
       evidence.placeholder=r.resolution==='BANK_ERROR'?'银行更正单号及逐笔依据':'逐笔处理依据';
       evidence.value=r.evidence||'';evidence.maxLength=200;
@@ -5275,6 +6129,10 @@ function initReconModule() {
     adjustment={...checked.a,ledgerBookEnd:checked.ledgerEnd,expectedBankAdj:checked.expected.bankAdj,expectedBookAdj:checked.expected.bookAdj};
     verified=true;
     await saveToStore(STORE_WORK,{id:'recon:'+period+':'+account,period,account,results,verified,validationVersion:2,adjustment,createdAt:new Date().toISOString()});
+    if(backendConnected) {
+      const normalized=results.filter(r=>r.status!=='ERROR').map(r=>({legacy_id:String(r.id),period,bank_account:account,bank_amount:((r.bank||[]).reduce((n,x)=>n+(x.amount||0),0)/100).toFixed(2),book_amount:((r.company||[]).reduce((n,x)=>n+(x.amount||0),0)/100).toFixed(2),status:r.status,difference_type:r.status==='BANK_ONLY'?'ENTERPRISE_OMISSION':r.status,resolution:r.resolution||null,evidence:r.evidence||null,voucher_no:r.voucherNo||null,raw:{bank:r.bank||[],company:r.company||[]}}));
+      if(normalized.length)await apiRequest('/api/v11/bank-matches'+apiBookParams(),{method:'PUT',body:JSON.stringify(normalized)});
+    }
     loadedSaved=true;render();showToast('对账已通过逐笔、总账及余额连续性校验并保存');
   }, 'btn');
   controls.append(save, action('读取已保存对账',async () => {
@@ -6118,6 +6976,10 @@ function initCostModule() {
       throw Error('不能结账：'+issues.join('；'));
     }
     if(data.rows.some(r=>isProfitAccount(r.code)&&r.end!==0)||(p.endsWith('-12')&&(data.rows.find(r=>r.code==='4103')?.end||0)!==0))throw Error('仍有损益或本年利润余额待结转');
+    if(backendConnected) {
+      const serverCheck=await apiRequest('/api/v11/closing/check?period='+encodeURIComponent(p)+apiBookParams().replace('?','&'));
+      if(!serverCheck.passed)throw Error('SQLite 期末检查未通过：未过账凭证 '+serverCheck.details.unposted_vouchers+' 张；银行未处理流水 '+serverCheck.details.unprocessed_bank_items+' 条；请先处理后再结账');
+    }
     if (!(await uiConfirm('全部结账检查已通过。确认锁定 '+p+' 期间并保存账簿、银行对账及业务凭证快照？'))) return;
     const records=(await getAllFromStore(STORE_WORK)).filter(r=>r.period===p);
     await lockPeriod(p,'正式结账',{rows:data.rows,vouchers:data.periodRecords,reconciliations:data.reconciliations,workpapers:records,
@@ -6420,6 +7282,23 @@ const isProfitAccount = code => /^6/.test(code)&&code!=='6901';
 const reportEntryNet = e => Math.round(e.debit * 100) - Math.round(e.credit * 100);
 
 async function financialBook(period) {
+  if(storageMode==='API') {
+    const [report,yearReport,allVouchers]=await Promise.all([
+      apiRequest('/api/reports/trial-balance'+apiBookParams()+'&period='+encodeURIComponent(period)+'&include_zero=true'),
+      apiRequest('/api/reports/trial-balance'+apiBookParams()+'&period='+encodeURIComponent(period.slice(0,4)+'-01')+'&include_zero=true'),
+      getAllFromStore(STORE_VOUCHER)
+    ]);
+    const toRows=(payload)=> (payload.items||[]).map(item=>{
+      const code=item.account_code, meta=SUBJ_MAP[code]||{};
+      const initial=(Math.round(Number(item.initial_debit||0)*100)-Math.round(Number(item.initial_credit||0)*100));
+      const debit=Math.round(Number(item.period_debit||0)*100), credit=Math.round(Number(item.period_credit||0)*100);
+      const end=Math.round(Number(item.ending_debit||0)*100)-Math.round(Number(item.ending_credit||0)*100);
+      const entries=allVouchers.filter(v=>v.status==='POSTED'&&v.period===payload.period).sort((a,b)=>a.date.localeCompare(b.date)||a.voucherNo.localeCompare(b.voucherNo)).flatMap(v=>(v.entries||[]).filter(e=>e.account===code).map(e=>({...e,date:v.date,no:v.voucherNo,source:v.source,biz:v.bizLabel})));
+      return {...meta,code,name:item.account_name,dir:item.direction||meta.dir||'借',initial,debit,credit,end,entries};
+    });
+    const rows=toRows(report), yearRows=toRows(yearReport);
+    return {opening:Object.fromEntries(rows.map(r=>[r.code,r.initial])),yearOpening:Object.fromEntries(yearRows.map(r=>[r.code,r.initial])),rows,vouchers:allVouchers.filter(v=>v.status==='POSTED'),yearStart:period.slice(0,4)+'-01',importedBaseline:null,sqlReport:report};
+  }
   const active=importedBooks();
   const imports=Object.values(active).filter(r=>r.period<=period).sort((a,b)=>b.period.localeCompare(a.period));
   const vouchers=(await getAllFromStore(STORE_VOUCHER)).filter(v=>v.status==='POSTED'&&!active[v.period]);
@@ -6584,8 +7463,7 @@ function financialRead(key,fallback) {
   catch { return fallback; }
 }
 function financialWrite(key,value) {
-  try { localStorage.setItem(scopedKey('finance-standard:'+key),JSON.stringify(value)); return true; }
-  catch { return false; }
+  return safeLSSet('finance-standard:'+key,JSON.stringify(value));
 }
 const financialSession = new Map();
 function reportCheck(node,ok,text) {
@@ -6717,11 +7595,19 @@ function initStandardReports() {
 /* 资金、固定资产、坏账与指标分析 */
 const phaseCache = new Map();
 function phaseGet(key, defaults) {
-  if (!phaseCache.has(key)) phaseCache.set(key,financialRead('operations:'+key,!SUITE_ACTIVE.demo&&['internal','loans','assets'].includes(key)?[]:defaults));
+  if (!phaseCache.has(key)) {
+    let hydrated;
+    if(apiBusinessBootstrap&&key==='assets'&&((apiBusinessBootstrap.assets||[]).length||!SUITE_ACTIVE.demo)) hydrated=apiBusinessBootstrap.assets;
+    else if(apiBusinessBootstrap&&key.startsWith('asset-depr:')) hydrated=(apiBusinessBootstrap.depreciation||[]).find(x=>x.period===key.slice(11));
+    else if(apiBusinessBootstrap&&key.startsWith('payroll-draft:')) hydrated=(apiBusinessBootstrap.payroll_drafts||[]).find(x=>x.period===key.slice(14))?.rows;
+    if(hydrated!==undefined) phaseCache.set(key,hydrated);
+    else phaseCache.set(key,financialRead('operations:'+key,!SUITE_ACTIVE.demo&&['internal','loans','assets'].includes(key)?[]:defaults));
+  }
   return phaseCache.get(key);
 }
 function phaseSet(key,value) {
   phaseCache.set(key,value);
+  if(storageMode==='API'&&(key==='assets'||key.startsWith('asset-depr:')||key.startsWith('payroll-draft:'))){apiQueueBusinessPhase(key,value);return;}
   if (!financialWrite('operations:'+key,value)) showToast('本机存储不可用，本次变更仅保留在当前页面');
 }
 const demoInternal=[{id:'INT-001',name:'研发项目资金户',dept:'技术部',date:'2026-01-01',limit:10000000,state:'启用'}];
@@ -7062,11 +7948,16 @@ function initAssets() {
     const amount=sum((data?.rows||[]).map(a=>a.amount))/100;
     if(!amount) throw Error('请先计提有效折旧');
     const label='固定资产折旧';
-    await saveRecords(STORE_VOUCHER,[{
+    const voucher={
       id:'cost:'+month+':depr:固定资产台账',voucherNo:'折旧-'+month,date:lastDay(month),period:month,
       bizLabel:label,source:'固定资产台账',sourceType:'期末作业',status:'PENDING',costType:'depr',totalDebit:amount,totalCredit:amount,
       entries:[{account:'6602',summary:label,debit:amount,credit:0},{account:'1602',summary:label,debit:0,credit:amount}]
-    }],true);
+    };
+    if(storageMode==='API'){
+      const preparedVoucher=await apiVoucherPayload(voucher);
+      await apiRequest('/api/business/depreciation/'+encodeURIComponent(month)+'/commit'+apiBookParams(),{method:'POST',body:JSON.stringify({account_set_id:SUITE_ACTIVE.id,period:month,rows:data.rows,voucher:preparedVoucher})});
+      apiStoreCache.set(STORE_VOUCHER,await apiListNormalizedVouchers());
+    }else await saveRecords(STORE_VOUCHER,[voucher],true);
     await refreshVouchers(); showToast('折旧凭证已进入制证列表，待审核与记账');
   },byId('depr-voucher')).then(()=>runAction(render));
 }
@@ -7432,8 +8323,17 @@ function initMetrics() {
 
 async function deleteWorkbenchVoucher(voucher) {
   const posted=voucher.status==='POSTED';
+  if (posted && storageMode === 'API') {
+    if (voucher.normalizedStatus === 'REVERSED') throw Error('该凭证已经冲销，不能再次冲销');
+    if (!(await uiConfirm('凭证 '+voucher.voucherNo+' 已正式记账，不能删除。是否在当前开放期间生成一张红字冲销凭证？','红字冲销确认'))) return false;
+    if (!voucher.dbId) throw Error('未找到后端凭证 ID，请刷新凭证列表');
+    await apiRequest('/api/vouchers/' + voucher.dbId + '/reverse' + apiBookParams(), {
+      method:'POST', body:JSON.stringify({voucher_date:localDay(),summary:'红字冲销：'+voucher.voucherNo})
+    });
+    return true;
+  }
   await ensureOpen(voucher.period);
-  if(!(await uiConfirm('删除凭证 '+voucher.voucherNo+'？'+(posted?'该凭证已记账，删除会重算余额和报表。':''),'删除凭证')))return false;
+  if(!(await uiConfirm('删除凭证 '+voucher.voucherNo+'？','删除凭证')))return false;
   await ensureOpen(voucher.period);
   const all=await getAllFromStore(STORE_VOUCHER);
   const live=all.find(v=>v.id===voucher.id);
@@ -7481,7 +8381,41 @@ async function removeStored(storeName,expected,category,label,replacements=[],or
   if(!keys.size) return;
   const same=(actual,original)=>JSON.stringify(actual)===JSON.stringify(original);
   const journal=deletionRecord(category,label,originals||expected);
-  if(storageMode==='INDEXEDDB') {
+  if(storageMode==='API') {
+    if (storeName === STORE_CASHIER || storeName === STORE_NAME) {
+      const existing=await getAllFromStore(storeName), indexed=new Map(existing.map(row=>[row[pk],row]));
+      if(expected.some(row=>!same(indexed.get(row[pk]),row))) throw Error('记录已变化，请刷新后重试');
+      for(const row of expected) if(!row.dbId) throw Error('规范化记录 ID 缺失，请刷新后重试');
+      if(storeName===STORE_CASHIER&&expected.length>1) {
+        await apiRequest('/api/cashier/batch/delete'+apiBookParams(),{method:'POST',body:JSON.stringify({ids:expected.map(row=>Number(row.dbId))})});
+      } else {
+        for(const row of expected) {
+          const path=storeName===STORE_CASHIER?'/api/cashier/':'/api/invoices/';
+          await apiRequest(path+row.dbId+apiBookParams(),{method:'DELETE'});
+        }
+      }
+      const papers=await getAllFromStore(STORE_WORK); await apiWriteBatch({[STORE_WORK]:[...papers,journal]});
+      return;
+    }
+    if (storeName === STORE_VOUCHER) {
+      const existing = await getAllFromStore(storeName), indexed = new Map(existing.map(row => [row[pk], row]));
+      if (expected.some(row => !same(indexed.get(row[pk]), row))) throw Error('凭证已变化，请刷新后重试');
+      for (const row of expected) {
+        if (!row.dbId) throw Error('规范化凭证 ID 缺失，请刷新后重试');
+        await apiRequest('/api/vouchers/' + row.dbId + apiBookParams(), {method:'DELETE'});
+      }
+      const papers = await getAllFromStore(STORE_WORK);
+      await apiWriteBatch({[STORE_WORK]: [...papers, journal]});
+      return;
+    }
+    const existing=await getAllFromStore(storeName), indexed=new Map(existing.map(row=>[row[pk],row]));
+    if(expected.some(row=>!same(indexed.get(row[pk]),row)))throw Error('记录已变化，请刷新后重试');
+    const next=existing.filter(row=>!keys.has(row[pk])).concat(replacements);
+    const work=storeName===STORE_WORK?next.concat(journal):[...(await getAllFromStore(STORE_WORK)),journal];
+    const stores=storeName===STORE_WORK?{[STORE_WORK]:work}:{[storeName]:next,[STORE_WORK]:work};
+    const normalizedDeletes=storeName===STORE_WORK?expected.filter(isNormalizedBusinessRecord).map(row=>String(row.id)):[];
+    await apiWriteBatch(stores,{replaceStores:Object.keys(stores),deleteIds:normalizedDeletes.length?{[STORE_WORK]:normalizedDeletes}:{}});
+  } else if(storageMode==='INDEXEDDB') {
     await new Promise((resolve,reject)=>{
       const tx=db.transaction([...new Set([storeName,STORE_WORK])],'readwrite');
       tx.oncomplete=resolve;
@@ -7893,7 +8827,8 @@ function initTaxSuite(){
     if(existing&&!await uiConfirm('替换 '+month+' 已保存的'+name(key)+'记录？'))return;
     if(period!==month)throw Error('税期已切换，请重试');
     taxWrite('records',[...getRecords().filter(x=>x.key!==key||x.period!==month),{key,period:month,input:structuredClone(d),...res,saved:new Date().toISOString()}]);
-    saveDraft(key);showToast('已保存本期税额');
+    if(backendConnected)await apiRequest('/api/v11/tax/workpapers'+apiBookParams(),{method:'POST',body:JSON.stringify({period:month,tax_type:key,basis_amount:String(d.base??d.sales??d.revenue??0),tax_amount:String(res.total),rate:d.rate==null?null:String(d.rate),status:'CALCULATED',payload:{input:structuredClone(d),lines:res.lines}})});
+    saveDraft(key);showToast('已保存本期税额及 SQLite 月末计税底稿');
    }),btn('前往官方申报',()=>{const res=update();if(!res)throw Error('请先修正表单');taxOfficial(key,summary(key,res));},true));
    card.append(total,msg,lines,foot);root.append(card);update();
   }
@@ -7967,7 +8902,14 @@ function initTaxSuite(){
   const data=histSelected(), body=byId('tax-history-rows');body.replaceChildren();
   for(const row of data){
    const tr=tableRow(body,[row.period,name(row.key),taxMoney(row.total),new Date(row.saved).toLocaleString('zh-CN'),'']);
-   tr.lastChild.append(action('查看',()=>uiConfirm(summary(row.key,row,row.period),'已保存税额')),deleteButton(async()=>{
+   tr.lastChild.append(action('查看',()=>uiConfirm(summary(row.key,row,row.period),'已保存税额')),action('归档完税凭证',()=>runAction(async()=>{
+    if(!backendConnected)throw Error('请连接本地 SQLite 后端后归档完税凭证');
+    const certificate=window.prompt('完税凭证号码');if(!certificate)return;
+    const paidDate=window.prompt('缴款日期（YYYY-MM-DD）','');if(!paidDate)return;
+    const attachment=window.prompt('本地回单/完税凭证附件路径（/uploads/...，可留空）','');
+    await apiRequest('/api/v11/tax/archives'+apiBookParams(),{method:'POST',body:JSON.stringify({period:row.period,tax_type:row.key,paid_date:paidDate,amount:String(row.total),certificate_no:certificate,attachment_url:attachment||null,note:'由税务历史记录归档'})});
+    showToast('完税凭证已归档至 SQLite');
+   })),deleteButton(async()=>{
     if(!await uiConfirm('删除 '+row.period+' '+name(row.key)+'的本地记录？'))return;
     const history=taxRead('deletions',[]);
     taxWrite('deletions',[...history,deletionRecord('税额测算',row.period+' '+name(row.key),[row])]);
@@ -8071,8 +9013,7 @@ function countSave(expected,next){
  const current=localStorageSnapshot();
  if(current!==expected)throw Error('其他窗口更新了盘点单，请刷新后再试');
  const packed=JSON.stringify(next);
- try{localStorage.setItem(scopedKey(COUNT_KEY),packed);}
- catch{throw Error('本地存储空间不足，修改未保存。请先导出 JSON 备份，再清理旧盘点单照片。');}
+ if(!safeLSSet(COUNT_KEY,packed))throw Error('本地存储空间不足，修改未保存。请先导出 JSON 备份，再清理旧盘点单照片。');
  markFinanceDirty();
  if(new Blob([packed]).size>2800000)showToast('盘点照片占用较多空间，请导出 JSON 备份并清理旧照片');
  return packed;
@@ -8127,6 +9068,23 @@ async function countOriginal(mode,id,file){
  if(mode==='put')countOrigSession.set(id,file);
  if(mode==='get'&&countOrigSession.has(id))return countOrigSession.get(id);
  if(mode==='delete')countOrigSession.delete(id);
+ if(storageMode==='API'){
+  if(mode==='put'){
+   const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error||Error('原图读取失败'));reader.readAsDataURL(file);});
+   let url=null;try{url=await apiUploadDataUrl(dataUrl,file.name||'盘点原图.jpg');}catch{}
+   await apiWriteBatch({[STORE_ORIGINALS]:[{id:String(id),name:file.name||'盘点原图',type:file.type||'',size:file.size||0,...(url?{url}:{data_url:dataUrl})}]});
+   return;
+  }
+  if(mode==='delete'){
+   await apiWriteBatch({}, {deleteIds:{[STORE_ORIGINALS]:[String(id)]}});return;
+  }
+  const row=(await getAllFromStore(STORE_ORIGINALS)).find(item=>String(item.id)===String(id));
+  if(!row)return null;
+  const response=await fetch(row.url?FW_API_BASE+row.url:row.data_url);
+  if(!response.ok)throw Error('无法读取本地盘点原图');
+  const blob=await response.blob();
+  return new File([blob],row.name||'盘点原图',{type:row.type||blob.type||'application/octet-stream'});
+ }
  const db=await countOrigDB();
  return new Promise((resolve,reject)=>{
   const tx=db.transaction('originals',mode==='get'?'readonly':'readwrite'),store=tx.objectStore('originals');
@@ -8136,6 +9094,7 @@ async function countOriginal(mode,id,file){
 }
 async function countPurgeOriginals(){
  countOrigSession.clear();
+ if(storageMode==='API')await clearStore(STORE_ORIGINALS).catch(()=>{});
  if(countOrigs)(await countOrigs.catch(()=>null))?.close();
  countOrigs=null;
  try{indexedDB.deleteDatabase(suiteDB(SUITE_ACTIVE.id)+'::count-originals');}catch{}
@@ -8792,6 +9751,31 @@ const LEDGER_UNIT_HEADERS=['往来科目','往来单位','期初方向','期初�
 function ledgerDirection(signed){return signed>0?'借':signed<0?'贷':'平';}
 function ledgerEntryOrder(a,b){return a.date.localeCompare(b.date)||a.no.localeCompare(b.no)||a.idx-b.idx;}
 async function ledgerUnits(code,period,book=undefined) {
+ if(storageMode==='API'&&['1122','2202'].includes(code)) {
+  const type=code==='1122'?'CUSTOMER':'SUPPLIER';
+  const contacts=(await apiRequest('/api/contacts'+apiBookParams()+'&type='+type)).items||[];
+  const items=await Promise.all(contacts.map(async contact=>{
+   const data=await apiRequest('/api/reports/sub-ledger'+apiBookParams()+'&account_code='+encodeURIComponent(code)+'&contact_id='+contact.id+'&period='+encodeURIComponent(period));
+   const signed=(Number(data.opening_balance)||0)*100*(data.opening_balance_side==='贷'?-1:1);
+   const entries=(data.items||[]).map((r,idx)=>({date:r.date,no:r.voucher_no,memo:r.summary||'',aux:contact.name,debit:Number(r.debit_amount)||0,credit:Number(r.credit_amount)||0,idx}));
+   const debit=entries.reduce((n,r)=>n+Math.round(r.debit*100),0), credit=entries.reduce((n,r)=>n+Math.round(r.credit*100),0);
+   const endSigned=(Number(data.ending_balance)||0)*100*(data.ending_balance_side==='贷'?-1:1);
+   return {unit:contact.name,contactId:contact.id,opening:signed,debit,credit,end:endSigned,entries};
+  }));
+  // Reconcile the sum of party sub-ledgers to the SQL trial balance. Any
+  // unassigned auxiliary entries/opening differences are shown explicitly.
+  const trial=await apiRequest('/api/reports/trial-balance'+apiBookParams()+'&period='+encodeURIComponent(period)+'&include_zero=true');
+  const gl=(trial.items||[]).find(x=>x.account_code===code);
+  if(gl) {
+   const glOpening=Math.round((Number(gl.initial_debit||0)-Number(gl.initial_credit||0))*100);
+   const glDebit=Math.round(Number(gl.period_debit||0)*100), glCredit=Math.round(Number(gl.period_credit||0)*100);
+   const diffOpening=glOpening-items.reduce((n,r)=>n+r.opening,0);
+   const diffDebit=glDebit-items.reduce((n,r)=>n+r.debit,0), diffCredit=glCredit-items.reduce((n,r)=>n+r.credit,0);
+   const diffEnd=diffOpening+diffDebit-diffCredit;
+   if(diffOpening||diffDebit||diffCredit||diffEnd) items.push({unit:'未分配/未指定往来',contactId:null,unallocated:true,opening:diffOpening,debit:diffDebit,credit:diffCredit,end:diffEnd,entries:[]});
+  }
+  return items.sort((a,b)=>Number(!!a.unallocated)-Number(!!b.unallocated)||a.unit.localeCompare(b.unit,'zh-CN'));
+ }
  book=book||await financialBook(period);
  const account=book.rows.find(r=>r.code===code), map=new Map();
  const get=unit=>{
