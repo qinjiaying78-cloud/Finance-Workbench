@@ -377,3 +377,26 @@ POST /api/business/depreciation/2026-11/commit
 ```
 该接口在同一事务中复核折旧行、期间锁定、凭证借贷平衡和科目有效性，并写入 `vouchers`、`voucher_entries`、`depreciation_runs.voucher_id` 与 `business_voucher_links`。已记账/冲销的折旧凭证不能删除，相关折旧记录也不能直接撤销。
 生产领料及完工入库同样由后端校验：领料数量不能超过可用库存，成本必须匹配移动加权平均；完工入库必须关联已记账的生产领料凭证，完工成本必须等于材料成本加人工/制造费用。已记账的工资计提和生产领料核心明细受到修改保护。
+V11 财务闭环（2026-11）
+V11 在 V10 基础上增量增加 SQLite 规范表及接口，保留原暖米白前端与原业务表：
+`v11_bank_matches`：银行/账面逐笔对账规范数据，按账套、期间、银行账户和来源流水号唯一；支持查询、幂等更新。企业漏记流水可生成 `DRAFT` 补记凭证，要求明确提供贷方科目编码，默认借记银行存款 `1002`，并校验会计期间未锁定。
+`v11_tax_workpapers`、`v11_tax_archives`：月末税务测算底稿和完税凭证/附件归档持久化。
+`/api/v11/closing/check`：校验期间未过账凭证、已过账凭证借贷平衡、银行差异处理依据；`/api/v11/closing/lock` 仅在检查通过时锁定期间。凭证写入既有 `assert_period_unlocked`，锁定后禁止修改/过账。
+出纳原有 `POST /api/cashier/{id}/voucher` 已生成凭证并携带 `receipt_img_url` 回单附件；V11 保留该接口。
+`/api/v11/exports/{report_name}` 可输出标准 `.xlsx`（`trial-balance`、`sub-ledger`、`bank-adjustment`、`financial-statements`），请求体 `{ "headers": [...], "rows": [[...]] }`。
+V11 API 示例
+```bash
+# 保存对账行（金额以元传入；raw 可带 debit_account / credit_account）
+curl -X PUT 'http://127.0.0.1:8000/api/v11/bank-matches?account_set_id=default' \
+  -H 'Content-Type: application/json' -d '[{"legacy_id":"BANK-001","period":"2026-11","bank_account":"基本户","bank_amount":"120.00","book_amount":"0.00","status":"BANK_ONLY","difference_type":"ENTERPRISE_OMISSION","raw":{"debit_account":"1002","credit_account":"1122"}}]'
+
+# 期末检查
+curl 'http://127.0.0.1:8000/api/v11/closing/check?period=2026-11&account_set_id=default'
+```
+注意：银行漏记自动生证需要业务人员确认正确的对应科目；系统不根据金额猜测贷方科目。税种、税率及纳税义务判断仍须按企业实际适用规则复核，软件仅负责底稿数据持久化和归档。
+一键启动（V11 修复版）
+Windows： 双击项目根目录的 `启动简账.bat`。首次运行会创建 `.venv`、安装 `backend/requirements.txt` 中的依赖、启动本地 FastAPI，并在服务健康检查通过后打开默认浏览器。
+macOS / Linux： 在项目根目录执行 `chmod +x start.sh`（首次需要），然后双击 `start.sh` 或在终端运行 `./start.sh`。脚本会执行相同的环境准备和服务检查；按 `Ctrl+C` 停止服务。
+默认访问地址：`http://127.0.0.1:8000/app`；健康检查：`http://127.0.0.1:8000/api/health`。
+新数据库首次启动会自动创建默认账套及 CAS 一级科目；通过账套管理新建的空白账套也会由后端自动初始化同一套科目。科目期初余额均为零，需按企业实际情况录入。
+仅限本机使用，不要将未配置身份认证的服务暴露到局域网或公网。
