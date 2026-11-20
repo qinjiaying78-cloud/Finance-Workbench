@@ -1439,7 +1439,7 @@ body{padding-bottom:62px}
     </div>
     <div style="overflow:auto">
       <table id="recon-result-table">
-        <thead><tr><th width="16%">单号</th><th width="13%">状态</th><th width="12%">银行金额</th><th width="12%">账面金额</th><th width="47%">缺失/差异详情</th></tr></thead>
+        <thead><tr><th width="13%">单号</th><th width="11%">状态</th><th width="11%">银行金额</th><th width="11%">账面金额</th><th width="25%">缺失/差异详情</th><th width="29%">逐笔处理、依据及凭证号 / 银行更正单号</th></tr></thead>
         <tbody id="recon-result-body"></tbody>
       </table>
     </div>
@@ -3397,7 +3397,7 @@ if(!SUITE_ACTIVE.demo) {
 }
 
 function getAuxOptionsForAccount(code) {
-  if (code === '1002') return BANK_SPECIAL_ACCOUNTS.map(b => b.name);
+  if (code === '1002') return (typeof ACCOUNTS!=='undefined'&&Array.isArray(ACCOUNTS)?ACCOUNTS.filter(a=>a.kind==='BANK').map(a=>a.name):BANK_SPECIAL_ACCOUNTS.map(b=>b.name));
   if (code === '1122') return AR_UNITS;
   if (code === '2202') return AP_UNITS;
   return [];
@@ -3571,7 +3571,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 /* ================= 5. 各模块逻辑 ================= */
 // 5.1 开票
 function initInvoiceModule() {
-  let currentAttachments = [], currentStamp = null, allRecords = [];
+  let currentAttachments = [], currentStamp = null, allRecords = [], invoiceARLinks = new Set();
   const itemsBody = document.getElementById('inv-items-body'), prevBody = document.getElementById('inv-prev-items-body');
   const today = new Date();
   let viewedKey = null;
@@ -3683,7 +3683,7 @@ function initInvoiceModule() {
     await saveRecords(STORE_NAME, [record], false, 'invoice');
     await loadAndRenderLedger(); resetInvoice(); showToast('发票记录已保存');
   });
-  async function loadAndRenderLedger() { allRecords = await getAllRecordsFromDB(); filterLedger(); }
+  async function loadAndRenderLedger() { allRecords = await getAllRecordsFromDB(); invoiceARLinks=new Set((await getAllFromStore(STORE_WORK)).filter(r=>r.invoiceRecordId).map(r=>r.invoiceRecordId)); filterLedger(); }
   function filtered() {
     return allRecords.filter(i => (i.invoiceNumber || '').includes(val('f-invoice-no')) &&
       (i.buyer.includes(val('f-buyer')) || (i.source || '').includes(val('f-buyer'))) &&
@@ -3694,9 +3694,23 @@ function initInvoiceModule() {
     const list = filtered(), tb = byId('inv-ledger-body'); tb.replaceChildren();
     for (const i of list) {
       const row = tableRow(tb, ['', i.invoiceNumber || '—', i.date, i.buyer, money(i.total), i.source, i.status]);
-      row.cells[0].append(action('查看', () => viewInvoice(i.invoiceNo)),deleteButton(async()=>{
+      row.cells[0].append(action('查看', () => viewInvoice(i.invoiceNo)));
+      if(i.status==='已开票') {
+        if(invoiceARLinks.has(i.invoiceNo))row.cells[0].append(txNode('span','已转入应收','note-text'));
+        else row.cells[0].append(action('转入应收',async()=>{
+          if(!i.invoiceNumber)throw Error('正式开票记录缺少发票号码');
+          const period=i.date.slice(0,7);await ensureOpen(period);
+          const workpapers=await getAllFromStore(STORE_WORK);
+          if(workpapers.some(r=>r.invoiceRecordId===i.invoiceNo))throw Error('该发票已经转入应收台账');
+          const ar={id:'ar:due:invoice:'+i.invoiceNo,customer:i.buyer,source:i.invoiceNumber,date:i.date,period,type:'due',amount:cents(String(i.total)),allocations:[],invoiceRecordId:i.invoiceNo};
+          await saveRecords(STORE_WORK,[ar],true);invoiceARLinks.add(i.invoiceNo);filterLedger();
+          showToast('已转入应收台账，请在应收管理中生成凭证草稿');
+        }));
+      }
+      row.cells[0].append(deleteButton(async()=>{
         const label=i.invoiceNumber||i.buyer;
         if(!await uiConfirm('删除本地发票记录「'+label+'」？税务平台上的发票状态由原平台处理。')) return;
+        if((await getAllFromStore(STORE_WORK)).some(r=>r.invoiceRecordId===i.invoiceNo))throw Error('该发票已转入应收台账，请先处理关联往来记录');
         await removeStored(STORE_NAME,[i],'发票台账',label);
         if(viewedKey===i.invoiceNo) resetInvoice();
         await loadAndRenderLedger();
@@ -3753,7 +3767,7 @@ function initInvoiceModule() {
 
 // 5.3 出纳
 function initCashierModule() {
-  let cashierRecords = [], cashierCurrentType = 'RECEIPT';
+  let cashierRecords = [], cashierVouchers = [], cashierCurrentType = 'RECEIPT';
   function refreshAccountDatalist() { document.getElementById('cash-account-options').innerHTML = ACCOUNTS.map(a => `<option value="${escapeHtml(a.name)}"></option>`).join(''); }
   function refreshJournalAccountOptions() {
     const jAcc = document.getElementById('cash-journal-account'); const prev = jAcc.value; const set = new Set();
@@ -3773,12 +3787,31 @@ function initCashierModule() {
     const tbody = document.getElementById('account-manage-body');
     tbody.innerHTML = ACCOUNTS.map(a => `<tr><td><input type="text" value="${escapeHtml(a.name)}" onchange="updateAccountName('${a.id}', this.value)"></td><td><select onchange="updateAccountKind('${a.id}', this.value)"><option value="BANK" ${a.kind === 'BANK' ? 'selected' : ''}>银行</option><option value="CASH" ${a.kind === 'CASH' ? 'selected' : ''}>现金</option></select></td><td><button type="button" class="btn-mini btn-danger" onclick="removeAccount('${a.id}')">删除</button></td></tr>`).join('');
   }
-  window.updateAccountName = function(id, name) { const a = ACCOUNTS.find(x => x.id === id); if (a) { a.name = name.trim() || a.name; saveCashierAccounts(); refreshAccountDatalist(); refreshJournalAccountOptions(); } };
-  window.updateAccountKind = function(id, kind) { const a = ACCOUNTS.find(x => x.id === id); if (a) { a.kind = kind; saveCashierAccounts(); } };
+  window.updateAccountName = function(id, name) {
+    const a=ACCOUNTS.find(x=>x.id===id),next=String(name||'').trim();if(!a)return;
+    if(!next){renderAccountManager();return showToast('账户名称不能为空');}
+    if(ACCOUNTS.some(x=>x.id!==id&&x.name===next))return showToast('账户名称已存在');
+    const old=a.name;
+    runAction(async()=>{
+      if(a.kind==='BANK'&&old!==next) {
+        if((await getAllFromStore(STORE_VOUCHER)).some(v=>(v.entries||[]).some(e=>e.account==='1002'&&e.aux===old)))throw Error('该银行账户已被总账凭证引用，不能直接改名；请保留原账户名称以维护辅助核算连续性');
+        const master=BANK_SPECIAL_ACCOUNTS.find(b=>b.name===old);if(master)master.name=next;
+      }
+      a.name=next;saveCashierAccounts();refreshAccountDatalist();refreshJournalAccountOptions();renderAccountManager();
+    });
+  };
+  window.updateAccountKind = function(id, kind) {
+    const a=ACCOUNTS.find(x=>x.id===id);if(!a)return;
+    runAction(async()=>{
+      if(a.kind==='BANK'&&kind!=='BANK'&&(await getAllFromStore(STORE_VOUCHER)).some(v=>(v.entries||[]).some(e=>e.account==='1002'&&e.aux===a.name)))throw Error('该账户已有银行存款总账凭证，不能直接改为现金账户');
+      a.kind=kind;saveCashierAccounts();refreshAccountDatalist();refreshJournalAccountOptions();renderAccountManager();
+    });
+  };
   window.removeAccount = id => runAction(async()=>{
     const account=ACCOUNTS.find(a=>a.id===id);
     if(!account || !await uiConfirm('删除出纳账户「'+account.name+'」？')) return;
     if((await getAllFromStore(STORE_CASHIER)).some(r=>r.account===id||r.account===account.name)) throw Error('该账户仍有关联出纳记录');
+    if(account.kind==='BANK'&&(await getAllFromStore(STORE_VOUCHER)).some(v=>(v.entries||[]).some(e=>e.account==='1002'&&e.aux===account.name)))throw Error('该银行账户已被总账凭证引用，不能直接删除');
     const next=ACCOUNTS.filter(a=>a.id!==id);
     await logDeletion('出纳账户',account.name,[account]);
     if(!safeLSSet('clean_cashier_accounts',JSON.stringify(next))) throw Error('未能写入出纳账户');
@@ -3802,7 +3835,7 @@ function initCashierModule() {
 
   let attachment = null;
   const restoreCashAttachment = filePicker('cash-receipt-upload-zone', 'cash-receipt-file-input', 'cash-receipt-preview', file => attachment = file);
-  const statusNames = {PENDING:'待办理', DONE:'已办理', POSTED:'已入账'};
+  const statusNames = {PENDING:'待办理', DONE:'已办理', POSTED:'已登记出纳日记账（待总账凭证）'};
   const types = {RECEIPT:'收款', PAYMENT:'付款', TRANSFER_OUT:'转出', TRANSFER_IN:'转入'};
   const signed = r => (['RECEIPT','TRANSFER_IN'].includes(r.type) ? 1 : -1) * Math.round(r.amount * 100);
   const cashFilterIds = ['cash-filter-type','cash-filter-status','cash-filter-start','cash-filter-end'];
@@ -3829,12 +3862,17 @@ function initCashierModule() {
           if(!await uiConfirm('删除出纳记录「'+label+'」？'+(r.transferId?'同一笔转账的转入与转出会一起删除。':'')+(r.status==='POSTED'?'出纳日记账将重算。':''))) return;
           for(const month of new Set(rows.map(x=>x.date.slice(0,7)))) await ensureOpen(month);
           const keys=new Set(rows.flatMap(x=>[x.sourceDoc,x.receiptNo]).filter(Boolean));
-          if((await getAllFromStore(STORE_VOUCHER)).some(v=>v.status==='POSTED'&&keys.has(v.source))) throw Error('该出纳单据关联已记账凭证，请先处理凭证');
+          if((await getAllFromStore(STORE_VOUCHER)).some(v=>(v.cashierIds||[]).some(id=>rows.some(x=>x.id===id))||v.status==='POSTED'&&keys.has(v.source))) throw Error('该出纳单据已关联总账凭证，请先处理或删除关联凭证');
           const latest=await getGroup();
           if(latest.length!==rows.length) throw Error('转账记录已变化，请刷新');
           await removeStored(STORE_CASHIER,rows,'出纳流水',label);
           await loadCashier();
         }));
+        const linkedCashVoucher=cashierVouchers.find(v=>v.id==='cash-voucher:'+(r.transferId||r.id));
+        if(r.status==='POSTED'&&(!r.transferId||r.type==='TRANSFER_OUT')) {
+          if(linkedCashVoucher) row.lastChild.append(txNode('span',({PENDING:'凭证待审核',APPROVED:'凭证待记账',POSTED:'总账已记账'}[linkedCashVoucher.status]||'已有凭证'),'note-text'));
+          else row.lastChild.append(action('生成总账凭证',()=>generateCashVoucher(r)));
+        }
         if (r.status !== 'POSTED') row.lastChild.append(action(r.status === 'PENDING' ? '确认办理' : '确认入账', async () => {
           const current = await getAllFromStore(STORE_CASHIER);
           const next = current.filter(item => r.transferId ? item.transferId === r.transferId : item.id === r.id);
@@ -3878,8 +3916,50 @@ function initCashierModule() {
       daily.append(details);
     }
   }
+  async function generateCashVoucher(record) {
+    const period=record.date.slice(0,7);await ensureOpen(period);
+    const group=record.transferId?cashierRecords.filter(x=>x.transferId===record.transferId):[record];
+    if(group.some(x=>x.status!=='POSTED'))throw Error('请先将该笔出纳业务全部确认入账');
+    const voucherId='cash-voucher:'+(record.transferId||record.id);
+    if((await getAllFromStore(STORE_VOUCHER)).some(v=>v.id===voucherId))throw Error('该出纳记录已经生成总账凭证');
+    const accountEntry=name=>{
+      const account=ACCOUNTS.find(a=>a.name===name);
+      if(!account)throw Error('出纳账户「'+name+'」已不存在，请先维护账户资料');
+      return account.kind==='CASH'?{account:'1001',aux:''}:account.kind==='BANK'?{account:'1002',aux:account.name}:null;
+    };
+    let entries=[],summary=[record.counterparty,record.memo,record.sourceDoc].filter(Boolean).join(' · ')||'出纳业务';
+    const amount=Math.round(record.amount*100)/100;
+    if(record.transferId) {
+      const out=group.find(x=>x.type==='TRANSFER_OUT'),inc=group.find(x=>x.type==='TRANSFER_IN');
+      if(!out||!inc||Math.round(out.amount*100)!==Math.round(inc.amount*100))throw Error('转账记录不完整或金额不一致');
+      const from=accountEntry(getAccountName(out.account)),to=accountEntry(getAccountName(inc.account));
+      if(!from||!to)throw Error('转账账户类型无效');
+      entries=[{...to,summary:'账户转入：'+getAccountName(inc.account),debit:amount,credit:0},{...from,summary:'账户转出：'+getAccountName(out.account),debit:0,credit:amount}];
+    } else {
+      const base=accountEntry(getAccountName(record.account));if(!base)throw Error('出纳账户类型无效');
+      const defaultContra=record.type==='RECEIPT'?'1122':'2202';
+      const contraCode=(await uiPrompt('请输入对方会计科目编码（例如 1122 应收账款、2202 应付账款、6001 主营业务收入）',defaultContra))?.trim();
+      if(!contraCode||!SUBJ_MAP[contraCode])throw Error('请输入有效的对方会计科目编码');
+      let contraAux='';
+      if(['1122','2202','1002'].includes(contraCode)) {
+        const choices=getAuxOptionsForAccount(contraCode);
+        const suggested=choices.includes(record.counterparty)?record.counterparty:choices.includes(record.counterparty)?record.counterparty:'';
+        contraAux=(await uiPrompt('请输入对方科目辅助核算名称'+(choices.length?'（可选：'+choices.join('、')+'）':''),suggested||record.counterparty||''))?.trim()||'';
+        if(!contraAux)throw Error('该科目必须填写辅助核算名称');
+      }
+      const contra={account:contraCode,aux:contraAux,summary};
+      entries=record.type==='RECEIPT'
+        ?[{...base,summary:'收款：'+summary,debit:amount,credit:0},{...contra,credit:amount,debit:0}]
+        :[{...contra,debit:amount,credit:0},{...base,summary:'付款：'+summary,credit:amount,debit:0}];
+    }
+    const total=entries.reduce((n,e)=>n+Math.round(e.debit*100),0)/100;
+    await saveRecords(STORE_VOUCHER,[{id:voucherId,voucherNo:'出纳-'+record.date.replace(/-/g,'')+'-'+recordId().slice(0,6),date:record.date,period,bizLabel:record.transferId?'银行账户转账':record.type==='RECEIPT'?'出纳收款':'出纳付款',
+      source:record.sourceDoc||record.receiptNo||record.id,sourceType:'出纳流水',cashierIds:group.map(x=>x.id),entries,totalDebit:total,totalCredit:total,status:'PENDING'}],true);
+    cashierVouchers=await getAllFromStore(STORE_VOUCHER);await refreshVouchers();await refreshAccounting();renderCash();
+    showToast('总账凭证草稿已生成，请复核、审核并记账');
+  }
   async function loadCashier() {
-    cashierRecords = await getAllFromStore(STORE_CASHIER);
+    [cashierRecords,cashierVouchers] = await Promise.all([getAllFromStore(STORE_CASHIER),getAllFromStore(STORE_VOUCHER)]);
     refreshJournalAccountOptions(); renderCash();
   }
 
@@ -3986,8 +4066,17 @@ function initVoucherModule() {
   }
   window.closePeriod = () => runAction(async () => {
     const period = val('voucher-period-input'); if (!period) throw Error('请选择期间');
-    if (!(await uiConfirm('锁定该期间的制证、审核和记账？'))) return;
-    await lockPeriod(period, '手动锁定'); await refreshClosed();
+    const previousLock=await work('closed:'+period);
+    if(previousLock&&!previousLock.archive&&previousLock.reason==='手动锁定') {
+      if(!await uiConfirm('该期间此前仅被手动锁定，未完成正式财务结账。是否解除旧锁并改为执行完整结账检查？'))return;
+      await removeStored(STORE_WORK,[previousLock],'期间锁定','解除旧版手动锁定 '+period);
+    }
+    byId('closing-period').value=period;
+    openWorkspaceTab('fin-closing');
+    await window.checkClosing();
+    await window.finalizeClosing();
+    if(await work('closed:'+period))await refreshClosed();
+    else throw Error('该期间未完成正式结账。请查看「期末结转与成本作业」中的未通过项目；系统不会再允许绕过结账检查直接锁定期间。');
   });
   onAction('voucher-btn-submit', async () => {
     const date = val('voucher-date'), period = date.slice(0,7), source = val('voucher-source-no');
@@ -4184,6 +4273,7 @@ function exportRows(name, headers, rows) {
   }
   const cell = value => '"' + String(typeof value === 'string' && /^[=+\-@\t\r]/.test(value) ? "'"+value : value ?? '').replaceAll('"','""') + '"';
   downloadFile(name+'.csv', '\ufeff' + [headers,...rows].map(row => row.map(cell).join(',')).join('\r\n'), 'text/csv;charset=utf-8');
+  showToast('Excel 组件未加载，已改为导出 CSV；联网后可使用 XLSX 格式');
 }
 function tabs(selector, prefix, panels) {
   const items = [...document.querySelectorAll(selector)];
@@ -4203,10 +4293,25 @@ async function lockPeriod(period, reason, archive = null) {
   if (all.some(v => v.period === period && v.status !== 'POSTED')) throw Error('期间仍有未记账凭证');
   await saveRecords(STORE_WORK, [{id:'closed:'+period,period,reason,archive,createdAt:new Date().toISOString()}],true);
 }
+function validateVoucherRecord(v) {
+  if(!v||!/^\d{4}-\d{2}$/.test(v.period||'')||!/^\d{4}-\d{2}-\d{2}$/.test(v.date||'')||v.date.slice(0,7)!==v.period)throw Error('凭证日期与会计期间不一致');
+  if(!Array.isArray(v.entries)||v.entries.length<2)throw Error('凭证至少需要两条分录');
+  let debit=0,credit=0;
+  for(const e of v.entries) {
+    const d=Math.round(Number(e.debit||0)*100),c=Math.round(Number(e.credit||0)*100);
+    if(!SUBJ_MAP[e.account]||!Number.isSafeInteger(d)||!Number.isSafeInteger(c)||d<0||c<0||(d>0)===(c>0)||!String(e.summary||'').trim())throw Error('凭证 '+(v.voucherNo||v.id)+' 存在科目无效、摘要缺失或分录金额错误');
+    debit+=d;credit+=c;
+  }
+  if(!Number.isSafeInteger(debit)||!Number.isSafeInteger(credit)||debit<=0||debit!==credit)throw Error('凭证 '+(v.voucherNo||v.id)+' 借贷不平，不能记账');
+  if(v.totalDebit!=null&&Math.round(Number(v.totalDebit)*100)!==debit)throw Error('凭证借方合计与分录不一致');
+  if(v.totalCredit!=null&&Math.round(Number(v.totalCredit)*100)!==credit)throw Error('凭证贷方合计与分录不一致');
+  return true;
+}
 async function changeVoucherStatus(ids, from, to) {
   const all = await getAllFromStore(STORE_VOUCHER), records = ids.map(id => all.find(v => v.id === id));
   if (records.some(v => !v || v.status !== from)) throw Error('凭证状态已变化，请刷新');
   for (const period of new Set(records.map(v => v.period))) await ensureOpen(period);
+  if(to==='POSTED')records.forEach(validateVoucherRecord);
   await saveRecords(STORE_VOUCHER, records.map(v => ({...v,status:to})));
 }
 
@@ -4698,50 +4803,245 @@ function compareFlows(bank, company) {
     const b = bank[0], c = company[0];
     const bad = !id || bank.length>1 || company.length>1 || [...bank,...company].some(r => r.amount === null);
     const status = bad ? 'ERROR' : !b ? 'COMPANY_ONLY' : !c ? 'BANK_ONLY' : b.amount === c.amount ? 'MATCH' : 'DIFF';
-    const note = bad ? '单号重复、缺失或金额无效' : status === 'MATCH' ? '单号与金额相同' : '待核实';
-    return {id,status,bank,company,note};
+    const note = bad ? '单号重复、缺失或金额无效' : status === 'MATCH' ? '单号与金额相同' : '待逐笔核实';
+    return {id,status,bank,company,note,resolution:'',evidence:'',voucherNo:''};
   });
 }
 function initReconModule() {
   const data = {}, sides = ['bank','company'], reconTabs = [...document.querySelectorAll('#recon-tabs .tab')];
-  const labels = {MATCH:'完全匹配', BANK_ONLY:'仅银行有',COMPANY_ONLY:'仅账面有',DIFF:'金额不符',ERROR:'异常'};
-  let filter = 'ALL', results = [], verified = false, resultKey = null;
+  const labels = {MATCH:'完全匹配', BANK_ONLY:'企业漏记',COMPANY_ONLY:'银行未达',DIFF:'金额不符',ERROR:'异常'};
+  let filter = 'ALL', results = [], verified = false, resultKey = null, loadedSaved = false, adjustment = null;
   const area = byId('recon-mapping-area');
   const control = document.createElement('div'); control.className = 'mapping-area'; control.style.display = 'block';
-  const balances = [['银行期末余额','recon-bank-end'],['账面期末余额','recon-book-end'],['银行侧已核实调整净额','recon-bank-adjust'],['账面侧已核实调整净额','recon-book-adjust']];
+  const balanceFields = [
+    ['银行期末余额','recon-bank-end'],
+    ['账面期初余额','recon-book-opening'],
+    ['账面期末余额（须与总账一致）','recon-book-end'],
+    ['银行侧未达项调整净额','recon-bank-adjust'],
+    ['账面侧调整净额（已记账后应为 0）','recon-book-adjust']
+  ];
   control.append(makeField('对账期间','recon-period','month'), makeField('银行账户','recon-account'));
   const inputs = document.createElement('div'); inputs.className='form-grid';
-  for (const spec of balances) inputs.append(makeField(...spec,'number'));
-  inputs.append(makeField('调整及差异核实依据','recon-evidence')); control.append(inputs); area.before(control);
+  for (const spec of balanceFields) inputs.append(makeField(...spec,'number'));
+  inputs.append(makeField('期初余额依据 / 其他说明','recon-evidence'));
+  control.append(inputs); area.before(control);
   const key = () => val('recon-period')+':'+val('recon-account');
-  let adjustment = null;
+  const previousMonth = p => {
+    if(!/^\d{4}-\d{2}$/.test(p))return '';
+    const [y,m]=p.split('-').map(Number),d=new Date(y,m-2,1);
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  };
+  const field = id => byId(id);
   function readAdjustment() {
-    if (!val('recon-bank-end') || !val('recon-book-end')) return null;
-    const [bank,book,bankAdj,bookAdj] = balances.map(([,id])=>cents(val(id)||'0'));
-    return {bank,book,bankAdj,bookAdj,evidence:val('recon-evidence'),gap:bank+bankAdj-book-bookAdj};
+    const bankText=val('recon-bank-end'), openingText=val('recon-book-opening'), bookText=val('recon-book-end');
+    if(bankText===''||openingText===''||bookText==='')return null;
+    const bank=cents(bankText), opening=cents(openingText), book=cents(bookText);
+    const bankAdj=cents(val('recon-bank-adjust')||'0'), bookAdj=cents(val('recon-book-adjust')||'0');
+    return {bank,opening,book,bankAdj,bookAdj,evidence:val('recon-evidence'),gap:bank+bankAdj-book-bookAdj};
+  }
+  async function ledgerMovement(account,period) {
+    const vouchers=await getAllFromStore(STORE_VOUCHER);
+    return vouchers.filter(v=>v.status==='POSTED'&&v.period===period).flatMap(v=>v.entries||[])
+      .filter(e=>e.account==='1002'&&String(e.aux||'').trim()===account)
+      .reduce((n,e)=>n+Math.round(e.debit*100)-Math.round(e.credit*100),0);
+  }
+  async function openingDefault(account,period) {
+    const prior=previousMonth(period), saved=prior?await work('recon:'+prior+':'+account):null;
+    if(saved?.validationVersion===2&&saved.verified&&saved.adjustment&&Number.isSafeInteger(saved.adjustment.book))return saved.adjustment.book;
+    const all=await getAllFromStore(STORE_WORK);
+    const earlier=all.filter(r=>r.id?.startsWith('recon:')&&r.account===account&&r.period<period);
+    if(earlier.length)return null;
+    const master=BANK_SPECIAL_ACCOUNTS.find(a=>a.name===account);
+    if(SUITE_ACTIVE.demo&&master) {
+      const vouchers=await getAllFromStore(STORE_VOUCHER);
+      const priorMovement=vouchers.filter(v=>v.status==='POSTED'&&v.period<period).flatMap(v=>v.entries||[])
+        .filter(e=>e.account==='1002'&&String(e.aux||'').trim()===account)
+        .reduce((n,e)=>n+Math.round(e.debit*100)-Math.round(e.credit*100),0);
+      return Math.round(master.opening*100)+priorMovement;
+    }
+    return null;
+  }
+  async function prefill() {
+    const period=val('recon-period'),account=val('recon-account');
+    if(!/^\d{4}-\d{2}$/.test(period)||!account)return;
+    const saved=await work('recon:'+period+':'+account);
+    if(saved) {
+      results=Array.isArray(saved.results)?saved.results:[];resultKey=key();loadedSaved=true;
+      const a=saved.adjustment||{};
+      field('recon-bank-end').value=a.bank==null?'':a.bank/100;
+      field('recon-book-opening').value=a.opening==null?'':a.opening/100;
+      field('recon-book-end').value=a.book==null?'':a.book/100;
+      field('recon-bank-adjust').value=a.bankAdj==null?'':a.bankAdj/100;
+      field('recon-book-adjust').value=a.bookAdj==null?'':a.bookAdj/100;
+      field('recon-evidence').value=a.evidence||'';
+      adjustment=a;verified=false;
+      if(saved.validationVersion===2&&saved.verified===true) {
+        try{await validateReconciliation();verified=true;}catch(error){showToast('已保存对账记录需重新核验：'+error.message);}
+      }
+      render();return;
+    }
+    results=[];resultKey=null;loadedSaved=false;verified=false;adjustment=null;
+    const opening=await openingDefault(account,period);
+    field('recon-book-opening').value=opening==null?'':(opening/100).toFixed(2);
+    field('recon-book-end').value=opening==null?'':((opening+await ledgerMovement(account,period))/100).toFixed(2);
+    field('recon-bank-end').value='';field('recon-bank-adjust').value='0.00';field('recon-book-adjust').value='0.00';
+    field('recon-evidence').value='';render();
   }
   byId('recon-period').value = localDay().slice(0,7);
+  const bankAccounts=()=>ACCOUNTS.filter(a=>a.kind==='BANK').map(a=>a.name).filter(Boolean);
+  const firstBank=bankAccounts()[0]||BANK_SPECIAL_ACCOUNTS[0]?.name||'';
+  field('recon-account').value=firstBank;
   const btn = byId('recon-btn-reconcile');
   const controls = byId('recon-actions');
   const summary = document.createElement('p'); summary.className = 'note-text recon-summary';
   summary.setAttribute('role', 'status'); controls.after(summary);
+  const visible = () => filter === 'ALL' ? results : results.filter(r => r.status === filter);
+  const amounts = rows => rows.map(r => r.amount === null ? '无效' : fromCents(r.amount)).join(' / ') || '—';
+  function render() {
+    byId('recon-result-area').style.display = 'block';
+    const tb = byId('recon-result-body'); tb.replaceChildren();
+    for (const r of visible()) {
+      const lines = [...r.bank.map(x=>'银行第'+x.line+'行'),...r.company.map(x=>'账面第'+x.line+'行')];
+      const tr=tb.insertRow();
+      for(const value of [r.id||'（空单号）',labels[r.status],amounts(r.bank),amounts(r.company),r.note+' · '+lines.join('、')])tr.insertCell().textContent=value;
+      const actionCell=tr.insertCell();
+      if(r.status==='MATCH') { actionCell.textContent='无需处理'; continue; }
+      if(r.status==='ERROR') { actionCell.textContent='请修正源数据后重新上传'; continue; }
+      const select=document.createElement('select');
+      const options=r.status==='BANK_ONLY'?[['','请选择处理方式'],['BOOK_POSTED','已补记账面并正式记账'],['BANK_ERROR','银行流水差错（有银行更正依据）']]
+        :r.status==='COMPANY_ONLY'?[['','请选择处理方式'],['BANK_PENDING','企业未达项（银行待清算）'],['BOOK_POSTED','已更正账面并正式记账']]
+        :[['','请选择处理方式'],['BOOK_POSTED','已更正账面并正式记账'],['BANK_ERROR','银行流水差错（有银行更正依据）']];
+      select.append(...options.map(([v,t])=>new Option(t,v)));select.value=r.resolution||'';
+      select.addEventListener('change',()=>{r.resolution=select.value;verified=false;renderSummaryOnly();});
+      actionCell.append(select);
+      const evidence=document.createElement('input');evidence.type='text';
+      evidence.placeholder=r.resolution==='BANK_ERROR'?'银行更正单号及逐笔依据':'逐笔处理依据';
+      evidence.value=r.evidence||'';evidence.maxLength=200;
+      evidence.addEventListener('input',()=>{r.evidence=evidence.value;verified=false;});
+      actionCell.append(evidence);
+      const voucher=document.createElement('input');voucher.type='text';voucher.placeholder='关联本期已记账凭证号';voucher.value=r.voucherNo||'';voucher.maxLength=60;
+      voucher.hidden=r.resolution==='BANK_ERROR';
+      voucher.addEventListener('input',()=>{r.voucherNo=voucher.value;verified=false;});actionCell.append(voucher);
+      const updateResolutionUI=()=>{
+        const bankError=r.resolution==='BANK_ERROR';
+        evidence.placeholder=bankError?'银行更正单号及逐笔依据':'逐笔处理依据';
+        voucher.hidden=bankError;
+        if(bankError){r.voucherNo='';voucher.value='';}
+      };
+      select.addEventListener('change',()=>{updateResolutionUI();renderSummaryOnly();});
+    }
+    for (const tab of reconTabs) byId('badge-'+tab.dataset.type).textContent = tab.dataset.type === 'ALL' ? results.length : results.filter(r => r.status === tab.dataset.type).length;
+    renderSummaryOnly();
+  }
+  function renderSummaryOnly() {
+    let a=null;try{a=readAdjustment();}catch{}
+    const unresolved=results.filter(r=>r.status==='ERROR'||(r.status!=='MATCH'&&(!r.resolution||!String(r.evidence||'').trim()||(r.resolution!=='BANK_ERROR'&&!String(r.voucherNo||'').trim())))).length;
+    summary.textContent = !results.length ? (resultKey===key()?'无流水发生，请核对双方期末余额':'请上传双方流水并运行对账') : a
+      ? '银行调节后 '+fromCents(a.bank+a.bankAdj)+' ／ 账面调节后 '+fromCents(a.book+a.bookAdj)+' ／ 差额 '+fromCents(a.gap)+' ／ 待逐笔处理 '+unresolved+(verified?' · 已通过校验':' · 尚未通过校验')
+      : '请补录银行期末、账面期初及账面期末余额。';
+  }
+  for(const [,id] of balanceFields)field(id).addEventListener('input',()=>{verified=false;renderSummaryOnly();});
+  field('recon-evidence').addEventListener('input',()=>{verified=false;renderSummaryOnly();});
+  async function validateReconciliation() {
+    const period=val('recon-period'),account=val('recon-account');
+    if(!/^\d{4}-\d{2}$/.test(period)||!bankAccounts().includes(account))throw Error('请选择有效期间及已登记的银行账户');
+    if(resultKey!==key()||(!loadedSaved&&(!Array.isArray(data.bank)||!Array.isArray(data.company))))throw Error('请先上传双方流水并运行对账，或读取已保存对账');
+    const a=readAdjustment();if(!a)throw Error('请填写银行期末、账面期初和账面期末余额');
+    const vouchers=await getAllFromStore(STORE_VOUCHER);
+    const priorPeriod=previousMonth(period),prior=priorPeriod?await work('recon:'+priorPeriod+':'+account):null;
+    const allWork=await getAllFromStore(STORE_WORK);
+    const earlier=allWork.filter(r=>r.id?.startsWith('recon:')&&r.account===account&&r.period<period);
+    if(prior) {
+      const priorClose=await work('closed:'+priorPeriod);
+      if(prior.validationVersion!==2||!prior.verified||!prior.adjustment||!priorClose?.archive?.checks?.reconReady)throw Error('上期尚未完成正式结账或银行对账校验，不能结转本期期初');
+      if(a.opening!==prior.adjustment.book)throw Error('本期期初余额必须等于上期已核实账面期末余额');
+    } else if(earlier.length) {
+      throw Error('存在更早期间的对账记录，但上期未完成对账；请按月连续核对');
+    } else if(SUITE_ACTIVE.demo&&BANK_SPECIAL_ACCOUNTS.some(x=>x.name===account)) {
+      const master=BANK_SPECIAL_ACCOUNTS.find(x=>x.name===account);
+      const priorMovement=vouchers.filter(v=>v.status==='POSTED'&&v.period<period).flatMap(v=>v.entries||[])
+        .filter(e=>e.account==='1002'&&String(e.aux||'').trim()===account)
+        .reduce((n,e)=>n+Math.round(e.debit*100)-Math.round(e.credit*100),0);
+      if(a.opening!==Math.round(master.opening*100)+priorMovement)throw Error('演示账套期初余额必须与银行账户初始化余额及以前期间已记账流水一致');
+    } else if(!a.evidence.trim()) {
+      throw Error('首次对账须填写期初余额的来源依据');
+    }
+    const movement=vouchers.filter(v=>v.status==='POSTED'&&v.period===period).flatMap(v=>v.entries||[])
+      .filter(e=>e.account==='1002'&&String(e.aux||'').trim()===account)
+      .reduce((n,e)=>n+Math.round(e.debit*100)-Math.round(e.credit*100),0);
+    const ledgerEnd=a.opening+movement;
+    if(a.book!==ledgerEnd)throw Error('账面期末余额与已记账银行存款明细不一致。按总账计算应为 '+fromCents(ledgerEnd));
+    const expected={bankAdj:0,bookAdj:0},usedVouchers=new Set();
+    const postedFor=(r,expectedMovement)=>{
+      const voucherNo=String(r.voucherNo||'').trim();
+      if(!voucherNo)throw Error('流水 '+r.id+' 必须填写关联的本期已记账凭证号');
+      const matches=vouchers.filter(v=>v.voucherNo===voucherNo&&v.period===period&&v.status==='POSTED');
+      if(matches.length!==1)throw Error('流水 '+r.id+' 的凭证号不存在或不唯一，请核对本期已记账凭证');
+      const voucher=matches[0];
+      if(usedVouchers.has(voucher.id))throw Error('同一张凭证不能重复用于多笔对账差异，请逐笔关联对应凭证');
+      try{validateVoucherRecord(voucher);}catch(error){throw Error('关联凭证校验失败：'+error.message);}
+      const actual=(voucher.entries||[]).filter(e=>e.account==='1002'&&String(e.aux||'').trim()===account)
+        .reduce((n,e)=>n+Math.round(e.debit*100)-Math.round(e.credit*100),0);
+      if(actual!==expectedMovement)throw Error('凭证 '+voucherNo+' 对 '+account+' 的银行存款净额为 '+fromCents(actual)+'，与该笔应处理金额 '+fromCents(expectedMovement)+' 不一致');
+      usedVouchers.add(voucher.id);return voucher;
+    };
+    for(const r of results) {
+      if(r.status==='MATCH') {
+        if(r.bank?.length!==1||r.company?.length!==1||r.bank[0].amount!==r.company[0].amount)throw Error('匹配流水 '+r.id+' 的原始数据结构异常');
+        continue;
+      }
+      if(r.status==='ERROR')throw Error('存在单号重复、缺失或金额无效的异常流水，请修正文件后重新导入');
+      if(!r.resolution||!String(r.evidence||'').trim())throw Error('所有未匹配流水都必须逐笔选择处理方式并填写依据');
+      if(r.status==='BANK_ONLY'&&r.resolution==='BOOK_POSTED') {
+        if(r.bank?.length!==1||r.company?.length!==0)throw Error('企业漏记流水结构异常');
+        postedFor(r,r.bank[0].amount);
+      } else if(r.status==='BANK_ONLY'&&r.resolution==='BANK_ERROR') {
+        if(r.bank?.length!==1||r.company?.length!==0)throw Error('银行差错流水结构异常');
+        expected.bankAdj-=r.bank[0].amount;
+      } else if(r.status==='COMPANY_ONLY'&&r.resolution==='BANK_PENDING') {
+        if(r.bank?.length!==0||r.company?.length!==1)throw Error('银行未达流水结构异常');
+        postedFor(r,r.company[0].amount);
+        expected.bankAdj+=r.company[0].amount;
+      } else if(r.status==='COMPANY_ONLY'&&r.resolution==='BOOK_POSTED') {
+        if(r.bank?.length!==0||r.company?.length!==1)throw Error('账面冲回流水结构异常');
+        postedFor(r,-r.company[0].amount);
+      } else if(r.status==='DIFF'&&r.resolution==='BOOK_POSTED') {
+        if(r.bank?.length!==1||r.company?.length!==1)throw Error('账面更正流水结构异常');
+        postedFor(r,r.bank[0].amount-r.company[0].amount);
+      } else if(r.status==='DIFF'&&r.resolution==='BANK_ERROR') {
+        if(r.bank?.length!==1||r.company?.length!==1)throw Error('银行差错流水结构异常');
+        expected.bankAdj+=r.company[0].amount-r.bank[0].amount;
+      } else throw Error('流水 '+r.id+' 的处理方式与差异类型不匹配');
+    }
+    if(a.bankAdj!==expected.bankAdj||a.bookAdj!==expected.bookAdj)throw Error('调节金额与逐笔未达项不一致。银行侧应为 '+fromCents(expected.bankAdj)+'，账面侧应为 0.00；请修正调节金额或处理记录');
+    if(a.gap!==0)throw Error('银行调节后与账面调节后仍有差额 '+fromCents(a.gap));
+    return {a,ledgerEnd,expected};
+  }
   const save = action('保存对账结果',async () => {
     const period=val('recon-period'), account=val('recon-account');
-    if (!period || !account || !results.length || resultKey !== key()) throw Error('请填写期间、账户并运行对账');
-    await ensureOpen(period);
-    adjustment = readAdjustment();
-    verified = Boolean(adjustment && adjustment.gap === 0 &&
-      (adjustment.evidence || (!adjustment.bankAdj && !adjustment.bookAdj && results.every(r=>r.status==='MATCH'))) &&
-      !results.some(r=>r.status==='ERROR'));
-    await saveToStore(STORE_WORK,{id:'recon:'+period+':'+account,period,account,results,verified,adjustment,createdAt:new Date().toISOString()}); render();
-    showToast('对账记录已保存');
+    const checked=await validateReconciliation();
+    adjustment={...checked.a,ledgerBookEnd:checked.ledgerEnd,expectedBankAdj:checked.expected.bankAdj,expectedBookAdj:checked.expected.bookAdj};
+    verified=true;
+    await saveToStore(STORE_WORK,{id:'recon:'+period+':'+account,period,account,results,verified,validationVersion:2,adjustment,createdAt:new Date().toISOString()});
+    loadedSaved=true;render();showToast('对账已通过逐笔、总账及余额连续性校验并保存');
   }, 'btn');
   controls.append(save, action('读取已保存对账',async () => {
     const saved = await work('recon:'+val('recon-period')+':'+val('recon-account'));
     if (!saved) throw Error('该期间及账户暂无对账记录');
-    results = saved.results; resultKey=key(); verified=saved.verified; adjustment=saved.adjustment;
-    ['bank','book','bankAdj','bookAdj'].forEach((field,i)=>byId(balances[i][1]).value=adjustment ? adjustment[field]/100 : '');
-    byId('recon-evidence').value=adjustment?.evidence || ''; render();
+    results = Array.isArray(saved.results)?saved.results:[]; resultKey=key();loadedSaved=true;
+    adjustment=saved.adjustment||{};verified=false;
+    const a=adjustment;
+    field('recon-bank-end').value=a.bank==null?'':a.bank/100;
+    field('recon-book-opening').value=a.opening==null?'':a.opening/100;
+    field('recon-book-end').value=a.book==null?'':a.book/100;
+    field('recon-bank-adjust').value=a.bankAdj==null?'':a.bankAdj/100;
+    field('recon-book-adjust').value=a.bookAdj==null?'':a.bookAdj/100;
+    field('recon-evidence').value=a.evidence||'';
+    if(saved.validationVersion===2&&saved.verified===true) {
+      try{await validateReconciliation();verified=true;}catch(error){verified=false;showToast('已保存对账记录需重新核验：'+error.message);}
+    }
+    render();
+    if(!verified)showToast('该记录为旧版或未通过新版校验，请重新核对并保存');
   }, 'btn'),action('删除已保存对账',async()=>{
     const saved=await work('recon:'+key());
     if(!saved) throw Error('该期间及账户暂无对账记录');
@@ -4749,71 +5049,69 @@ function initReconModule() {
     await ensureOpen(saved.period);
     await removeStored(STORE_WORK,[saved],'银行对账',saved.period+' '+saved.account);
     if(key()===saved.period+':'+saved.account) {
-      results=[];resultKey='';verified=false;adjustment=null;
-      balances.forEach(([,id])=>byId(id).value='');byId('recon-evidence').value='';render();
+      results=[];resultKey=null;loadedSaved=false;verified=false;adjustment=null;
+      balanceFields.forEach(([,id])=>field(id).value='');field('recon-evidence').value='';render();
     }
   },'btn'));
-  const visible = () => filter === 'ALL' ? results : results.filter(r => r.status === filter);
-  const amounts = rows => rows.map(r => r.amount === null ? '无效' : fromCents(r.amount)).join(' / ');
-  function render() {
-    byId('recon-result-area').style.display = 'block';
-    const tb = byId('recon-result-body'); tb.replaceChildren();
-    for (const r of visible()) {
-      const lines = [...r.bank.map(x=>'银行第'+x.line+'行'),...r.company.map(x=>'账面第'+x.line+'行')];
-      tableRow(tb,[r.id,labels[r.status],amounts(r.bank),amounts(r.company),r.note+' · '+lines.join('、')]);
-    }
-    for (const tab of reconTabs) byId('badge-'+tab.dataset.type).textContent = tab.dataset.type === 'ALL' ? results.length : results.filter(r => r.status === tab.dataset.type).length;
-    summary.textContent = !results.length ? '暂无对账结果' : adjustment
-      ? '银行调节后 '+fromCents(adjustment.bank+adjustment.bankAdj)+' ／ 账面调节后 '+fromCents(adjustment.book+adjustment.bookAdj)+' ／ 差额 '+fromCents(adjustment.gap)+(verified?' · 已保存核对结果':' · 待核实')
-      : '请补录双方期末余额，核对差异并保存。';
-  }
   for (const side of sides) {
     const input = byId('recon-file-'+side), zone = byId('recon-drop-'+side);
     zone.addEventListener('click',e => { if (e.target !== input) input.click(); });
     async function loadFile(file) {
       if (!file) return;
-      delete data[side]; btn.disabled=true; results=[]; verified=false; render();
+      delete data[side]; btn.disabled=true; results=[]; verified=false; resultKey=null;loadedSaved=false;render();
       let rows;
       if (/\.csv$/i.test(file.name)) rows = readCsv(await file.text());
       else {
         if (!window.XLSX) throw Error('Excel 组件未加载，请联网重试或另存为 UTF-8 CSV');
-        const book = XLSX.read(await file.arrayBuffer());
-        rows = XLSX.utils.sheet_to_json(book.Sheets[book.SheetNames[0]],{header:1,raw:false,defval:''});
+        const book = XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
+        const sheet=book.Sheets[book.SheetNames[0]];if(!sheet)throw Error('Excel 文件中没有工作表');
+        rows = XLSX.utils.sheet_to_json(sheet,{header:1,raw:false,defval:''});
       }
-      if (rows.length < 2 || (rows[0] || []).length < 2) throw Error('需要表头、单号列和金额列');
-      data[side]=rows.slice(1);
-      for (const field of ['id','amount']) {
-        const select = byId('recon-map-'+side+'-'+field);
-        select.replaceChildren(...rows[0].map((name,i) => new Option(name || '第'+(i+1)+'列',i)));
-        select.selectedIndex=field==='id' ? 0 : 1;
-      }
-      zone.querySelector('p').textContent='已载入 '+file.name;
-      area.style.display='block'; btn.disabled=!sides.every(k=>data[k]);
+      try {
+        if (!rows.length || (rows[0] || []).length < 2) throw Error('需要表头、单号列和金额列');
+        data[side]=rows.slice(1);
+        for (const fieldName of ['id','amount']) {
+          const select = byId('recon-map-'+side+'-'+fieldName);
+          select.replaceChildren(...rows[0].map((name,i) => new Option(name || '第'+(i+1)+'列',i)));
+          select.selectedIndex=fieldName==='id' ? 0 : 1;
+        }
+        zone.querySelector('p').textContent='已载入 '+file.name;
+        area.style.display='block'; btn.disabled=!sides.every(k=>Array.isArray(data[k]));
+      } catch(error) { btn.disabled=!sides.every(k=>Array.isArray(data[k])); throw error; }
     }
     input.addEventListener('change', () => { const file=input.files[0]; input.value=''; runAction(()=>loadFile(file)); });
     zone.addEventListener('dragover', e => e.preventDefault());
     zone.addEventListener('drop', e => { e.preventDefault(); runAction(()=>loadFile(e.dataTransfer.files[0])); });
   }
   onAction('recon-btn-reconcile', () => {
+    if(!sides.every(k=>Array.isArray(data[k])))throw Error('请先上传银行流水和企业账面流水');
     const records = sides.map(side => {
       const idCol=val('recon-map-'+side+'-id'), amtCol=val('recon-map-'+side+'-amount');
       if (idCol===amtCol) throw Error('请选择不同的单号列和金额列');
       return data[side].map((row,i) => {
-        let amt=null; try { amt=cents(String(row[amtCol] ?? '').replaceAll(',','')); } catch {}
+        let amt=null; try { amt=cents(String(row[amtCol] ?? '').replace(/[，,￥¥\s]/g,'')); } catch {}
         return {id:String(row[idCol] ?? '').trim(),amount:amt,line:i+2};
       });
     });
-    results=compareFlows(...records); resultKey=key(); verified=false; adjustment=readAdjustment(); render();
+    results=compareFlows(...records);resultKey=key();loadedSaved=false;verified=false;adjustment=readAdjustment();render();
   });
   reconTabs.forEach(tab => tab.addEventListener('click', () => {
-    filter=tab.dataset.type; reconTabs.forEach(t => t.classList.toggle('active',t===tab)); render();
+    filter=tab.dataset.type;reconTabs.forEach(t=>t.classList.toggle('active',t===tab));render();
   }));
-  onAction('recon-btn-export', () => exportRows('对账结果',['单号','状态','银行金额','账面金额','说明'],
-    visible().map(r=>[r.id,labels[r.status],amounts(r.bank),amounts(r.company),r.note])));
+  onAction('recon-btn-export', () => exportRows('对账结果',['单号','状态','银行金额','账面金额','处理方式','处理依据','调整凭证号','说明'],
+    visible().map(r=>[r.id,labels[r.status],amounts(r.bank),amounts(r.company),r.resolution,r.evidence,r.voucherNo,r.note])));
   controls.append(action('导出余额调节表', () => {
-    if (!adjustment || resultKey !== key()) throw Error('请先录入双方期末余额并保存对账');
-    const a=adjustment; exportRows('余额调节表',['期间','账户','银行期末','银行调整','账面期末','账面调整','调节差额','依据'],[[val('recon-period'),val('recon-account'),a.bank/100,a.bankAdj/100,a.book/100,a.bookAdj/100,a.gap/100,a.evidence]]);
+    if (!adjustment || resultKey !== key()) throw Error('请先录入双方期末余额并运行对账');
+    const a=readAdjustment();if(!a)throw Error('请补录银行期末、账面期初和账面期末余额');
+    exportRows('余额调节表',['期间','账户','银行期末','账面期初','账面期末','银行调整','账面调整','调节差额','依据'],[[val('recon-period'),val('recon-account'),a.bank/100,a.opening/100,a.book/100,a.bankAdj/100,a.bookAdj/100,a.gap/100,a.evidence]]);
   }, 'btn'));
+  const changeReconScope=()=>{
+    for(const side of sides){delete data[side];const input=byId('recon-file-'+side);input.value='';byId('recon-drop-'+side).querySelector('p').textContent='支持 .xlsx / .xls / .csv 格式';}
+    btn.disabled=true;results=[];resultKey=null;loadedSaved=false;verified=false;adjustment=null;render();runAction(prefill);
+  };
+  field('recon-period').addEventListener('change',changeReconScope);
+  field('recon-account').addEventListener('change',changeReconScope);
+  runAction(prefill);
 }
 
 function initARModule() {
@@ -4833,6 +5131,38 @@ function initARModule() {
   const sourceBody=sourcePanel.querySelector('tbody');
   customerBody.closest('.module-grid').before(box);
   async function records() { return (await getAllFromStore(STORE_WORK)).filter(r=>r.id.startsWith('ar:')); }
+  async function generateARVoucher(record) {
+    const voucherId='ar-voucher:'+record.id;await ensureOpen(record.period);
+    const existing=(await getAllFromStore(STORE_VOUCHER)).find(v=>v.id===voucherId);
+    if(existing)throw Error('该往来记录已经生成凭证');
+    const amount=Math.round(record.amount),summary=(record.type==='due'?'确认应收：':'收到客户回款：')+record.customer+' · '+record.source;
+    let entries=[];
+    if(record.type==='due') {
+      const taxRaw=await uiPrompt('本笔应收金额中包含的销项税额（元；不含税收入 + 税额必须等于应收总额）','0.00');
+      if(taxRaw===null)return;
+      const tax=cents(taxRaw),revenue=amount-tax;
+      if(tax<0||tax>amount||revenue<=0)throw Error('销项税额须在 0 至应收总额之间，且不含税收入必须大于零');
+      const revenueCode=(await uiPrompt('不含税收入对应科目编码（例如 6001）','6001'))?.trim();
+      if(!['6001','6051','6301'].includes(revenueCode))throw Error('收入科目请选择 6001、6051 或 6301');
+      entries=[{account:'1122',aux:record.customer,summary,debit:amount/100,credit:0},{account:revenueCode,aux:'',summary,debit:0,credit:revenue/100}];
+      if(tax)entries.push({account:'2221',aux:'',summary:'确认销项税额',debit:0,credit:tax/100});
+    } else {
+      const bankNames=ACCOUNTS.filter(a=>a.kind==='BANK').map(a=>a.name);
+      const cashNames=ACCOUNTS.filter(a=>a.kind==='CASH').map(a=>a.name);
+      const names=[...bankNames,...cashNames];
+      if(!names.length)throw Error('请先维护收款账户');
+      const accountName=(await uiPrompt('请选择实际收款账户名称（'+names.join('、')+'）',bankNames[0]||cashNames[0]))?.trim();
+      const account=ACCOUNTS.find(a=>a.name===accountName);
+      if(!account)throw Error('收款账户名称不在账户档案中');
+      const debitAccount=account.kind==='CASH'?{account:'1001',aux:''}:{account:'1002',aux:account.name};
+      entries=[{...debitAccount,summary:'收到回款：'+record.source,debit:amount/100,credit:0},{account:'1122',aux:record.customer,summary:'冲减应收：'+record.customer, debit:0,credit:amount/100}];
+    }
+    const total=entries.reduce((n,e)=>n+Math.round(e.debit*100),0)/100;
+    await saveRecords(STORE_VOUCHER,[{id:voucherId,voucherNo:'往来-'+record.date.replace(/-/g,'')+'-'+recordId().slice(0,6),date:record.date,period:record.period,
+      bizLabel:record.type==='due'?'确认应收账款':'应收账款回款',source:record.source,sourceType:'应收管理',arRecordIds:[record.id],counterparty:record.customer,
+      entries,totalDebit:total,totalCredit:total,status:'PENDING'}],true);
+    await refreshVouchers();await refreshAccounting();await loadARData();showToast('往来凭证草稿已生成，请复核、审核并记账');
+  }
   box.append(action('保存应收或回款',async () => {
     const customer=val('ar-customer'),source=val('ar-source'),date=val('ar-date'),type=val('ar-type'),amt=cents(val('ar-amount'));
     if (!customer || !source || !date || amt<=0) throw Error('请填写客户、日期、单据和正金额');
@@ -4856,15 +5186,19 @@ function initARModule() {
     return totals;
   }
   window.loadARData = () => runAction(async () => {
-    const [rows,period]=[await records(),val('ar-period')], totals=summarize(rows,period);
+    const [rows,period,vouchers]=[await records(),val('ar-period'),await getAllFromStore(STORE_VOUCHER)], totals=summarize(rows,period);
     const diff=byId('ar-confirmation-diffs'), allocations=byId('ar-allocations'), options=byId('ar-unallocated');
     customerBody.replaceChildren(); diff.replaceChildren(); allocations.replaceChildren(); sourceBody.replaceChildren();
     options.replaceChildren(new Option('选择待分配回款',''));
     for(const r of rows.filter(r=>r.period<=period&&['due','receipt'].includes(r.type))) {
       const line=tableRow(sourceBody,[r.customer,r.type==='due'?'应收':'回款',r.source,r.date,fromCents(r.amount),'']);
+      const linkedVoucher=vouchers.find(v=>v.id==='ar-voucher:'+r.id);
+      if(linkedVoucher)line.lastChild.append(txNode('span',({PENDING:'凭证待审核',APPROVED:'凭证待记账',POSTED:'总账已记账'}[linkedVoucher.status]||'已有凭证'),'note-text'));
+      else line.lastChild.append(action('生成凭证草稿',()=>generateARVoucher(r)));
       line.lastChild.append(deleteButton(async()=>{
         if(!await uiConfirm('删除往来单据「'+r.source+'」？')) return;
         await ensureOpen(r.period);
+        if((await getAllFromStore(STORE_VOUCHER)).some(v=>v.id==='ar-voucher:'+r.id))throw Error('该往来记录已有凭证，请先处理或删除关联凭证');
         if(r.allocations?.length) throw Error('请先撤销该回款的冲销记录');
         if(r.type==='due'&&rows.some(x=>x.customer===r.customer&&x.allocations?.length)) throw Error('该客户存在已冲销回款，请先核实并撤销相关冲销');
         if(rows.some(x=>x.type==='conf'&&x.customer===r.customer&&x.period>=r.period)) throw Error('该单据影响已登记函证，请先处理相关函证');
@@ -5062,52 +5396,265 @@ function initCostModule() {
     }
   });
   async function closingData(p) {
-    const all=await getAllFromStore(STORE_VOUCHER), periodRecords=all.filter(v=>v.period===p);
-    const reconciliations=(await getAllFromStore(STORE_WORK)).filter(r=>r.id.startsWith('recon:') && r.period===p);
+    const [all,workpapers,cashRecords]=await Promise.all([getAllFromStore(STORE_VOUCHER),getAllFromStore(STORE_WORK),getAllFromStore(STORE_CASHIER)]);
+    const periodRecords=all.filter(v=>v.period===p);
+    const reconciliations=workpapers.filter(r=>r.id?.startsWith('recon:')&&r.period===p);
     const outstanding=periodRecords.filter(v=>v.status!=='POSTED').length;
-    return {all,periodRecords,reconciliations,outstanding,ready:reconciliations.length>0 && reconciliations.every(r=>r.verified)};
+    const invalidPostedVouchers=periodRecords.filter(v=>v.status==='POSTED').filter(v=>{try{validateVoucherRecord(v);return false;}catch{return true;}});
+    const bankAccounts=ACCOUNTS.filter(a=>a.kind==='BANK').map(a=>a.name).filter(Boolean);
+    const reconMap=new Map(reconciliations.map(r=>[r.account,r]));
+    const missingRecon=bankAccounts.filter(name=>!reconMap.has(name));
+    const savedReconValid=(r,account)=>{
+      if(!r||r.validationVersion!==2||r.verified!==true||!r.adjustment||!Array.isArray(r.results)||!Number.isSafeInteger(r.adjustment.gap)||r.adjustment.gap!==0)return false;
+      const a=r.adjustment;
+      if(![a.bank,a.opening,a.book,a.bankAdj,a.bookAdj,a.ledgerBookEnd].every(Number.isSafeInteger)||a.bookAdj!==0)return false;
+      const movement=all.filter(v=>v.status==='POSTED'&&v.period===p).flatMap(v=>v.entries||[])
+        .filter(e=>e.account==='1002'&&String(e.aux||'').trim()===account)
+        .reduce((n,e)=>n+Math.round(e.debit*100)-Math.round(e.credit*100),0);
+      const ledgerEnd=a.opening+movement;
+      if(a.book!==ledgerEnd||a.ledgerBookEnd!==ledgerEnd)return false;
+      const expected={bankAdj:0},usedVouchers=new Set();
+      const postedFor=(line,expectedMovement)=>{
+        const no=String(line.voucherNo||'').trim();if(!no)return false;
+        const matches=all.filter(v=>v.voucherNo===no&&v.period===p&&v.status==='POSTED');
+        if(matches.length!==1)return false;
+        const v=matches[0];if(usedVouchers.has(v.id))return false;
+        try{validateVoucherRecord(v);}catch{return false;}
+        const net=(v.entries||[]).filter(e=>e.account==='1002'&&String(e.aux||'').trim()===account)
+          .reduce((n,e)=>n+Math.round(e.debit*100)-Math.round(e.credit*100),0);
+        if(net!==expectedMovement)return false;
+        usedVouchers.add(v.id);return true;
+      };
+      for(const line of r.results) {
+        if(line.status==='MATCH') {
+          if(line.bank?.length!==1||line.company?.length!==1||line.bank[0].amount!==line.company[0].amount)return false;
+          continue;
+        }
+        if(line.status==='ERROR'||!line.resolution||!String(line.evidence||'').trim())return false;
+        if(line.status==='BANK_ONLY'&&line.resolution==='BOOK_POSTED') {
+          if(line.bank?.length!==1||line.company?.length!==0||!postedFor(line,line.bank[0].amount))return false;
+        } else if(line.status==='BANK_ONLY'&&line.resolution==='BANK_ERROR') {
+          if(line.bank?.length!==1||line.company?.length!==0)return false;
+          expected.bankAdj-=line.bank[0].amount;
+        } else if(line.status==='COMPANY_ONLY'&&line.resolution==='BANK_PENDING') {
+          if(line.bank?.length!==0||line.company?.length!==1||!postedFor(line,line.company[0].amount))return false;
+          expected.bankAdj+=line.company[0].amount;
+        } else if(line.status==='COMPANY_ONLY'&&line.resolution==='BOOK_POSTED') {
+          if(line.bank?.length!==0||line.company?.length!==1||!postedFor(line,-line.company[0].amount))return false;
+        } else if(line.status==='DIFF'&&line.resolution==='BOOK_POSTED') {
+          if(line.bank?.length!==1||line.company?.length!==1||!postedFor(line,line.bank[0].amount-line.company[0].amount))return false;
+        } else if(line.status==='DIFF'&&line.resolution==='BANK_ERROR') {
+          if(line.bank?.length!==1||line.company?.length!==1)return false;
+          expected.bankAdj+=line.company[0].amount-line.bank[0].amount;
+        } else return false;
+      }
+      if(a.bankAdj!==expected.bankAdj||a.expectedBankAdj!==expected.bankAdj||a.expectedBookAdj!==0||a.bank+a.bankAdj-a.book!==0)return false;
+      const prevMonth=p=>{const [y,m]=p.split('-').map(Number),d=new Date(y,m-2,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');};
+      const priorPeriod=prevMonth(p),prior=workpapers.find(x=>x.id==='recon:'+priorPeriod+':'+account);
+      const priorClose=workpapers.find(x=>x.id==='closed:'+priorPeriod);
+      const anyEarlier=workpapers.some(x=>x.id?.startsWith('recon:')&&x.account===account&&x.period<p);
+      if(prior&&(!prior.verified||prior.validationVersion!==2||prior.adjustment?.book!==a.opening||!priorClose?.archive?.checks?.reconReady))return false;
+      if(!prior&&anyEarlier)return false;
+      if(!prior&&!SUITE_ACTIVE.demo&&!String(a.evidence||'').trim())return false;
+      if(SUITE_ACTIVE.demo&&!prior&&BANK_SPECIAL_ACCOUNTS.some(x=>x.name===account)) {
+        const master=BANK_SPECIAL_ACCOUNTS.find(x=>x.name===account);
+        const before=all.filter(v=>v.status==='POSTED'&&v.period<p).flatMap(v=>v.entries||[])
+          .filter(e=>e.account==='1002'&&String(e.aux||'').trim()===account)
+          .reduce((n,e)=>n+Math.round(e.debit*100)-Math.round(e.credit*100),0);
+        if(a.opening!==Math.round(master.opening*100)+before)return false;
+      } else if(SUITE_ACTIVE.demo&&!prior&&!String(a.evidence||'').trim())return false;
+      return true;
+    };
+    const invalidRecon=bankAccounts.filter(name=>!savedReconValid(reconMap.get(name),name));
+    const unassignedBankEntries=periodRecords.filter(v=>v.status==='POSTED').flatMap(v=>v.entries||[]).filter(e=>e.account==='1002'&&!bankAccounts.includes(String(e.aux||'').trim())).length;
+    const cashPeriod=cashRecords.filter(r=>r.date?.slice(0,7)===p);
+    const cashUnlinked=cashPeriod.filter(r=>{
+      if(r.status!=='POSTED')return true;
+      const linked=all.filter(v=>v.status==='POSTED'&&v.period===p&&(v.cashierIds||[]).includes(r.id));
+      if(linked.length!==1)return true;
+      const voucher=linked[0],ids=Array.isArray(voucher.cashierIds)?voucher.cashierIds:[];
+      if(!ids.length||new Set(ids).size!==ids.length||voucher.id!=='cash-voucher:'+(r.transferId||r.id)||voucher.sourceType!=='出纳流水')return true;
+      const group=cashPeriod.filter(x=>ids.includes(x.id));
+      if(group.length!==ids.length||group.some(x=>x.status!=='POSTED'))return true;
+      try{validateVoucherRecord(voucher);}catch{return true;}
+      if((voucher.entries||[]).length!==2)return true;
+      const expected=new Map();
+      for(const item of group){
+        const account=ACCOUNTS.find(x=>x.name===getAccountName(item.account));
+        if(!account||!Number.isFinite(Number(item.amount)))return true;
+        const code=account.kind==='CASH'?'1001':account.kind==='BANK'?'1002':'';
+        if(!code)return true;
+        const sign=['RECEIPT','TRANSFER_IN'].includes(item.type)?1:['PAYMENT','TRANSFER_OUT'].includes(item.type)?-1:0;
+        if(!sign)return true;
+        const aux=code==='1002'?account.name:'' ,key=code+'|'+aux;
+        expected.set(key,(expected.get(key)||0)+sign*Math.round(Number(item.amount)*100));
+      }
+      let expectedTotal=0;
+      if(group.some(x=>x.transferId)){
+        const out=group.filter(x=>x.type==='TRANSFER_OUT'),inc=group.filter(x=>x.type==='TRANSFER_IN');
+        if(group.length!==2||out.length!==1||inc.length!==1||out[0].transferId!==inc[0].transferId||Math.round(Number(out[0].amount)*100)!==Math.round(Number(inc[0].amount)*100))return true;
+        expectedTotal=Math.round(Number(out[0].amount)*100);
+      } else {
+        if(group.length!==1)return true;
+        expectedTotal=Math.round(Number(group[0].amount)*100);
+      }
+      if(Math.round(Number(voucher.totalDebit)*100)!==expectedTotal||Math.round(Number(voucher.totalCredit)*100)!==expectedTotal)return true;
+      const actual=new Map();
+      for(const entry of voucher.entries||[])if(['1001','1002'].includes(entry.account)){
+        const key=entry.account+'|'+(entry.account==='1002'?String(entry.aux||'').trim():'' );
+        actual.set(key,(actual.get(key)||0)+Math.round(entry.debit*100)-Math.round(entry.credit*100));
+      }
+      const keys=new Set([...expected.keys(),...actual.keys()]);
+      return [...keys].some(k=>(expected.get(k)||0)!==(actual.get(k)||0));
+    });
+    const arPeriod=workpapers.filter(r=>r.period===p&&/^ar:(due|receipt):/.test(r.id||''));
+    const arUnlinked=arPeriod.filter(r=>{
+      if(!r.customer||!Number.isSafeInteger(r.amount)||r.amount<=0)return true;
+      const linked=all.filter(v=>v.id==='ar-voucher:'+r.id&&v.status==='POSTED'&&v.period===p&&v.date?.slice(0,7)===p&&(v.arRecordIds||[]).includes(r.id));
+      if(linked.length!==1)return true;
+      const voucher=linked[0];
+      try{validateVoucherRecord(voucher);}catch{return true;}
+      if(Math.round(Number(voucher.totalDebit)*100)!==r.amount||Math.round(Number(voucher.totalCredit)*100)!==r.amount)return true;
+      const arNet=(voucher.entries||[]).filter(e=>e.account==='1122'&&String(e.aux||'').trim()===r.customer)
+        .reduce((n,e)=>n+Math.round(e.debit*100)-Math.round(e.credit*100),0);
+      const expected=r.type==='due'?r.amount:r.type==='receipt'?-r.amount:null;
+      if(expected===null||arNet!==expected)return true;
+      if(r.type==='due'){
+        const validCredits=(voucher.entries||[]).filter(e=>e.credit>0).every(e=>e.account==='1122'||['6001','6051','6301','2221'].includes(e.account));
+        const revenueCredit=(voucher.entries||[]).filter(e=>['6001','6051','6301'].includes(e.account)).reduce((n,e)=>n+Math.round(e.credit*100),0);
+        const arDebits=(voucher.entries||[]).filter(e=>e.account==='1122').every(e=>e.debit>0&&e.credit===0);
+        if(!validCredits||revenueCredit<=0||!arDebits)return true;
+      }
+      if(r.type==='receipt'){
+        const cashEntries=(voucher.entries||[]).filter(e=>['1001','1002'].includes(e.account));
+        const cashNet=cashEntries.reduce((n,e)=>n+Math.round(e.debit*100)-Math.round(e.credit*100),0);
+        if(cashNet!==r.amount||cashEntries.some(e=>e.credit>0)||cashEntries.length!==1)return true;
+      }
+      return false;
+    });
+    const issuedInvoices=(await getAllRecordsFromDB()).filter(i=>i.date?.slice(0,7)===p&&i.status==='已开票');
+    const invoiceNotTransferred=issuedInvoices.filter(i=>!workpapers.some(r=>r.invoiceRecordId===i.invoiceNo));
+    const expensePeriod=expenseRecords().filter(r=>r.date?.slice(0,7)===p&&r.status!=='REJECTED');
+    const expenseUnlinked=expensePeriod.filter(r=>{
+      if(r.status!=='APPROVED'||!Number.isSafeInteger(r.amount)||r.amount<=0)return true;
+      const linked=all.filter(v=>v.id===expenseVoucherId(r)&&v.status==='POSTED'&&v.period===p&&v.date?.slice(0,7)===p);
+      if(linked.length!==1)return true;
+      const voucher=linked[0];
+      try{validateVoucherRecord(voucher);}catch{return true;}
+      const debitCode=r.dept==='销售部'?'6601':'6602';
+      const debit=(voucher.entries||[]).filter(e=>e.account===debitCode).reduce((n,e)=>n+Math.round(e.debit*100)-Math.round(e.credit*100),0);
+      const credit=(voucher.entries||[]).filter(e=>e.account===r.credit&&(r.credit!=='1002'||String(e.aux||'').trim()===r.bank)).reduce((n,e)=>n+Math.round(e.credit*100)-Math.round(e.debit*100),0);
+      return (voucher.entries||[]).length!==2||Math.round(Number(voucher.totalDebit)*100)!==r.amount||Math.round(Number(voucher.totalCredit)*100)!==r.amount||debit!==r.amount||credit!==r.amount;
+    });
+    const taxTasks=workpapers.filter(r=>r.id?.startsWith('tax-task:')&&r.period===p);
+    const taxResults=workpapers.filter(r=>r.id?.startsWith('tax-result:')&&r.period===p);
+    const taxIncomplete=taxTasks.filter(t=>t.status!=='申报成功'||!String(t.response||'').trim()||!String(t.payment||'').trim()||!String(t.proof||'').trim()||!String(t.voucher||'').trim()||!all.some(v=>v.period===p&&v.voucherNo===String(t.voucher||'').trim()&&v.status==='POSTED'&&(v.entries||[]).some(e=>['2221','6403','6801'].includes(e.account))));
+    const periodInputInvoices=inputInvoices().filter(r=>(r.period||r.date?.slice(0,7))===p);
+    const taxLedgerActivity=periodRecords.some(v=>v.status==='POSTED'&&(v.entries||[]).some(e=>['6001','6051','6301','2221','6403','6801'].includes(e.account)));
+    const taxRelevant=taxTasks.length>0||issuedInvoices.length>0||periodInputInvoices.length>0||taxLedgerActivity;
+    const latestTaxResult=taxResults.sort((a,b)=>String(b.saved||'').localeCompare(String(a.saved||'')))[0];
+    const quarterEnd=['03','06','09','12'].includes(p.slice(-2));
+    const taxResultValid=!!latestTaxResult&&!!String(latestTaxResult.basis||'').trim()&&Number.isSafeInteger(latestTaxResult.values?.vat)&&Number.isSafeInteger(latestTaxResult.values?.surtax)&&(!quarterEnd||Number.isSafeInteger(latestTaxResult.values?.cit));
+    const taxMissingResult=taxRelevant&&!taxResultValid;
+    const assets=phaseGet('assets',demoAssets).filter(a=>a.active!==false&&a.start?.slice(0,7)<=p);
+    const expectedDepreciation=assets.reduce((n,a)=>n+depreciation(a,p).amount,0);
+    const depreciationData=phaseGet('asset-depr:'+p,null);
+    const depreciationVoucher=all.find(v=>v.id==='cost:'+p+':depr:固定资产台账');
+    const savedDepreciation=depreciationData?.rows?.reduce((n,a)=>n+Math.round(a.amount||0),0)??null;
+    const voucherDepreciation=depreciationVoucher?.entries?.filter(e=>e.account==='6602'&&e.debit>0).reduce((n,e)=>n+Math.round(e.debit*100),0)??0;
+    const accumulatedDepreciation=depreciationVoucher?.entries?.filter(e=>e.account==='1602'&&e.credit>0).reduce((n,e)=>n+Math.round(e.credit*100),0)??0;
+    const depreciationReady=expectedDepreciation<=0||(!!depreciationData&&savedDepreciation===expectedDepreciation&&!!depreciationVoucher&&depreciationVoucher.status==='POSTED'&&voucherDepreciation===expectedDepreciation&&accumulatedDepreciation===expectedDepreciation);
+    const rows=bookRows(all,p,await openingFor(all,p));
+    const initialDebit=rows.reduce((n,r)=>n+Math.max(r.initial,0),0),initialCredit=rows.reduce((n,r)=>n+Math.max(-r.initial,0),0);
+    const debit=rows.reduce((n,r)=>n+r.debit,0),credit=rows.reduce((n,r)=>n+r.credit,0);
+    const closingDebit=rows.reduce((n,r)=>n+Math.max(r.end,0),0),closingCredit=rows.reduce((n,r)=>n+Math.max(-r.end,0),0);
+    const trialBalanced=initialDebit===initialCredit&&debit===credit&&closingDebit===closingCredit;
+    const assetsTotal=rows.filter(r=>/^[15]/.test(r.code)).reduce((n,r)=>n+r.end,0);
+    const liabilities=-rows.filter(r=>/^2/.test(r.code)).reduce((n,r)=>n+r.end,0);
+    const profit=-rows.filter(r=>isProfitAccount(r.code)).reduce((n,r)=>n+r.end,0);
+    const equity=-rows.filter(r=>/^(4|6901)/.test(r.code)).reduce((n,r)=>n+r.end,0)+profit;
+    const balanceSheetBalanced=assetsTotal===liabilities+equity;
+    const settlement=periodRecords.find(v=>v.id==='settlement:'+p);
+    const profitRemaining=rows.some(r=>isProfitAccount(r.code)&&r.end!==0);
+    const annualProfitRemaining=p.endsWith('-12')&&!!rows.find(r=>r.code==='4103')?.end;
+    const settlementReady=!profitRemaining&&!annualProfitRemaining&&(!settlement||settlement.status==='POSTED');
+    const reconBaseReady=bankAccounts.length>0&&invalidRecon.length===0&&missingRecon.length===0&&unassignedBankEntries===0;
+    const bankSubledgerTotal=bankAccounts.reduce((n,name)=>n+(reconMap.get(name)?.adjustment?.book||0),0);
+    const bankControlBalance=rows.find(r=>r.code==='1002')?.end??0;
+    const bankLedgerTieOut=missingRecon.length===0&&bankSubledgerTotal===bankControlBalance;
+    const reconReady=reconBaseReady&&bankLedgerTieOut;
+    const cashReady=cashUnlinked.length===0,arReady=arUnlinked.length===0&&invoiceNotTransferred.length===0;
+    const expenseReady=expenseUnlinked.length===0,taxReady=taxIncomplete.length===0&&!taxMissingResult;
+    const reportReady=trialBalanced&&balanceSheetBalanced;
+    const ready=reconReady&&outstanding===0&&invalidPostedVouchers.length===0&&cashReady&&arReady&&expenseReady&&taxReady&&depreciationReady&&settlementReady&&reportReady;
+    return {all,workpapers,cashRecords,periodRecords,reconciliations,outstanding,invalidPostedVouchers,bankAccounts,missingRecon,invalidRecon,unassignedBankEntries,bankSubledgerTotal,bankControlBalance,bankLedgerTieOut,
+      cashPeriod,cashUnlinked,arPeriod,arUnlinked,issuedInvoices,invoiceNotTransferred,expensePeriod,expenseUnlinked,taxTasks,taxIncomplete,taxMissingResult,taxResults,assets,expectedDepreciation,depreciationData,depreciationVoucher,
+      rows,trialBalanced,balanceSheetBalanced,settlement,profitRemaining,annualProfitRemaining,settlementReady,reconReady,cashReady,arReady,expenseReady,taxReady,depreciationReady,reportReady,ready};
   }
   window.checkClosing = () => runAction(async () => {
     const p=selectedPeriod(), data=await closingData(p), closed=await work('closed:'+p);
-    const transfer=data.periodRecords.find(v=>v.id==='settlement:'+p);
-    byId('check-vouchers').textContent=data.outstanding ? data.outstanding+' 张待审核或记账' : '无待审核或记账';
-    byId('check-recon').textContent=data.ready ? '已保存流水匹配' : '缺对账记录或存在差异';
-    byId('check-transfer').textContent=transfer ? transfer.status==='POSTED' ? '已记账' : '待审核或记账' : '未生成';
-    byId('check-report').textContent=closed?.archive ? '已保存期末快照' : '未归档';
+    const transfer=data.settlement;
+    const voucherIssues=data.outstanding+data.invalidPostedVouchers.length+data.cashUnlinked.length+data.arUnlinked.length+data.expenseUnlinked.length;
+    byId('check-vouchers').textContent=voucherIssues ? '待处理 '+voucherIssues+' 项（凭证/出纳/往来/报销）' : '业务凭证均已记账';
+    byId('check-recon').textContent=data.reconReady?'全部银行账户逐笔核实通过，辅助账与1002总账一致':'未完成：缺 '+data.missingRecon.length+' 个账户；未通过 '+data.invalidRecon.length+' 个；未分配流水 '+data.unassignedBankEntries+' 条；辅助账/总账差额 '+fromCents(data.bankSubledgerTotal-data.bankControlBalance);
+    byId('check-transfer').textContent=transfer?(transfer.status==='POSTED'?'已记账': '待审核或记账'):data.settlementReady?'无需结转':'未生成或未记账';
+    byId('check-report').textContent=data.reportReady?'试算平衡、资产负债表平衡':'试算或资产负债表不平';
     await calculateCost();
+    const messages=[];
+    if(data.taxIncomplete.length||data.taxMissingResult)messages.push('税务申报/测算/凭证未完成 '+(data.taxIncomplete.length+(data.taxMissingResult?1:0))+' 项');
+    if(!data.depreciationReady)messages.push('固定资产折旧尚未计提并记账');
+    if(!data.settlementReady)messages.push('损益结转未完成');
+    if(!data.cashReady)messages.push('出纳流水尚未全部生成正确的总账凭证并记账（'+data.cashUnlinked.length+' 项）');
+    if(!data.arReady)messages.push('已开票发票/应收回款尚未全部关联并正确记账（'+(data.arUnlinked.length+data.invoiceNotTransferred.length)+' 项）');
+    if(!data.expenseReady)messages.push('费用报销尚有未审批或未生成正确凭证的单据（'+data.expenseUnlinked.length+' 项）');
+    if(data.invalidPostedVouchers.length)messages.push('已记账凭证校验异常 '+data.invalidPostedVouchers.length+' 张');
+    if(messages.length)showToast('结账检查：'+messages.join('；'));
   });
   window.executeSettlement = () => runAction(async () => {
     const p=selectedPeriod(); await ensureOpen(p);
     const data=await closingData(p);
-    if (!data.ready || data.outstanding) throw Error('请先保存无差异流水对账，并处理待审核或记账凭证');
+    if(!data.reconReady||data.outstanding||data.invalidPostedVouchers.length||!data.cashReady||!data.arReady||!data.expenseReady||!data.taxReady||!data.depreciationReady||!data.reportReady||data.unassignedBankEntries)
+      throw Error('结转前检查未通过：请先完成银行逐笔对账、出纳/往来/报销凭证、税务任务、固定资产折旧和报表复核，并处理异常或待记账凭证');
     if (data.periodRecords.some(v=>v.id==='settlement:'+p)) throw Error('该期已有结转凭证');
-    const rows=bookRows(data.all,p,await openingFor(data.all,p));
-    const entries=[];
+    const rows=data.rows,entries=[];
     function move(account,amt,summary) { if (amt) entries.push({account,summary,debit:Math.max(amt,0)/100,credit:Math.max(-amt,0)/100}); }
     for (const row of rows.filter(r=>isProfitAccount(r.code))) move(row.code,-row.end,'损益结转');
     const net=rows.filter(r=>isProfitAccount(r.code)).reduce((n,r)=>n+r.end,0);
     move('4103',net,'损益结转');
     if (p.endsWith('-12')) {
-      const profit=rows.find(r=>r.code==='4103').end+net;
+      const profit=(rows.find(r=>r.code==='4103')?.end||0)+net;
       move('4103',-profit,'年末利润结转'); move('4104',profit,'年末利润结转');
     }
-    if (!entries.length) throw Error('本期无待结转余额');
+    if (!entries.length) { await checkClosing(); throw Error('本期无待结转损益；如无损益发生，可直接进行结账前检查'); }
     const totalDebit=entries.reduce((sum,e)=>sum+Math.round(e.debit*100),0)/100;
     await saveRecords(STORE_VOUCHER,[{id:'settlement:'+p,voucherNo:'结转-'+p,period:p,date:lastDay(p),bizLabel:'期末结转',
       source:'期末账簿 '+p,status:'PENDING',entries,totalDebit,totalCredit:totalDebit}],true);
-    await refreshVouchers(); await checkClosing(); showToast('结转凭证已生成，待审核');
+    await refreshVouchers(); await checkClosing(); showToast('结转凭证已生成，待审核、记账后重新检查');
   });
   window.finalizeClosing = () => runAction(async () => {
     const p=selectedPeriod(); await ensureOpen(p);
     const data=await closingData(p);
-    if (!data.ready || data.outstanding || !data.periodRecords.length) throw Error('请处理待审核和待记账事项，并保存无差异对账');
-    const rows=bookRows(data.all,p,await openingFor(data.all,p));
-    if (rows.some(r=>isProfitAccount(r.code) && r.end) || (p.endsWith('-12') && rows.find(r=>r.code==='4103').end)) throw Error('仍有科目余额待结转');
-    if (rows.reduce((n,r)=>n+r.end,0)!==0) throw Error('期末余额试算不平');
-    if (!(await uiConfirm('确认账户期末余额已人工核对，并锁定本期间？'))) return;
+    if(!data.ready) {
+      const issues=[];
+      if(!data.reconReady)issues.push('所有银行账户均须完成新版逐笔对账，且银行辅助明细合计必须等于1002总账余额');
+      if(data.outstanding)issues.push('仍有 '+data.outstanding+' 张凭证待审核或记账');
+      if(data.invalidPostedVouchers.length)issues.push('已记账凭证校验异常 '+data.invalidPostedVouchers.length+' 张');
+      if(!data.cashReady)issues.push('出纳流水须全部生成金额及账户正确的总账凭证并记账');
+      if(!data.arReady)issues.push('已开票发票须转入应收，且应收及回款须全部生成并正确记账');
+      if(!data.expenseReady)issues.push('费用报销须全部审批完成，并生成金额、科目及账户一致的已记账凭证');
+      if(!data.taxReady)issues.push('有税务业务时须保存有效测算底稿；申报任务须成功并归档回执、付款、完税证明及已记账税务凭证');
+      if(!data.depreciationReady)issues.push('固定资产须完成本期折旧计提并记账');
+      if(!data.settlementReady)issues.push('损益结转凭证须正式记账');
+      if(!data.reportReady)issues.push('试算平衡或资产负债表平衡未通过');
+      if(data.unassignedBankEntries)issues.push('有 '+data.unassignedBankEntries+' 条银行存款凭证缺少银行账户辅助核算');
+      throw Error('不能结账：'+issues.join('；'));
+    }
+    if(data.rows.some(r=>isProfitAccount(r.code)&&r.end!==0)||(p.endsWith('-12')&&(data.rows.find(r=>r.code==='4103')?.end||0)!==0))throw Error('仍有损益或本年利润余额待结转');
+    if (!(await uiConfirm('全部结账检查已通过。确认锁定 '+p+' 期间并保存账簿、银行对账及业务凭证快照？'))) return;
     const records=(await getAllFromStore(STORE_WORK)).filter(r=>r.period===p);
-    await lockPeriod(p,'正式结账',{rows,vouchers:data.periodRecords,workpapers:records}); await checkClosing();
-    showToast('本期已结账并保存账簿及资料快照');
+    await lockPeriod(p,'正式结账',{rows:data.rows,vouchers:data.periodRecords,reconciliations:data.reconciliations,workpapers:records,
+      checks:{trialBalanced:data.trialBalanced,balanceSheetBalanced:data.balanceSheetBalanced,reconReady:data.reconReady,cashReady:data.cashReady,arReady:data.arReady,expenseReady:data.expenseReady,taxReady:data.taxReady,depreciationReady:data.depreciationReady,settlementReady:data.settlementReady},closedAt:new Date().toISOString()});
+    await checkClosing();showToast('本期已通过完整检查并正式结账归档');
   });
   byId('closing-actions').append(action('下载本期归档',async () => {
     const p=selectedPeriod(), record=await work('closed:'+p);
@@ -5851,8 +6398,8 @@ function depreciation(card,period) {
   const elapsed=Math.max(0,Math.min(life,monthIndex(period)-monthIndex(card.start)));
   const cumulative=Math.round(depreciable*elapsed/life);
   const previous=Math.round(depreciable*Math.max(0,elapsed-1)/life);
-  const active=period>=card.start.slice(0,7);
-  const amount=monthIndex(period)-monthIndex(card.start)<=life?cumulative-previous:0;
+  const active=card.active!==false&&period>=card.start.slice(0,7);
+  const amount=active&&monthIndex(period)-monthIndex(card.start)<=life?cumulative-previous:0;
   return {amount,cumulative,net:active?card.cost-cumulative:0};
 }
 const ASSET_EXCEL_HEADERS=['资产编号','资产名称','资产类别','原值（元）','净残值率（%）','使用年限（年）','开始使用日期','使用部门','存放地点','保管人','账面数量','资产启用状态'];
@@ -6010,7 +6557,7 @@ function initAssets() {
   };
   const period=byId('depr-period'); period.value=reportPeriod();
   const id=()=> 'asset-depr:'+period.value;
-  const compute=()=>assets().filter(a=>a.start.slice(0,7)<=period.value).map(a=>({...a,...depreciation(a,period.value)}));
+  const compute=()=>assets().filter(a=>a.active!==false&&a.start.slice(0,7)<=period.value).map(a=>({...a,...depreciation(a,period.value)}));
   const render=async()=>{
     const month=period.value;
     if(!month) throw Error('请选择折旧期间');
