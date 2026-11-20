@@ -2320,7 +2320,15 @@ body{padding-bottom:62px}
 </section>
 <section id="module-ops-assets" class="module phase-module">
  <div class="module-header"><div><h1 class="serif-title">固定资产卡片</h1><p>按卡片维护折旧参数。卡片建档及借款登记属于管理台账。</p></div></div>
- <div class="panel" id="assets-controls"></div>
+ <div class="panel" id="assets-controls">
+  <div class="toolbar no-print">
+   <button class="btn" type="button" id="assets-export">导出资产卡片 Excel</button>
+   <button class="btn" type="button" id="assets-template">下载 Excel 导入模板</button>
+   <button class="btn btn-primary" type="button" id="assets-import-pick">导入 Excel</button>
+   <input type="file" id="assets-import-file" accept=".xlsx,.xls,.csv" hidden>
+  </div>
+  <p class="note-text" id="assets-import-status" role="status">支持按模板批量导入；重复资产编号会自动跳过，不会覆盖已有资产。</p>
+ </div>
  <div class="panel"><div class="report-table-wrap"><table class="fin-table"><thead><tr><th scope="col">资产编号</th><th scope="col">名称</th><th scope="col">类别</th><th scope="col">原值</th><th scope="col">净残值率</th><th scope="col">使用年限</th><th scope="col">开始使用日期</th><th scope="col">部门 / 地点</th><th scope="col">保管人</th><th scope="col">账面数量</th><th scope="col">启用状态</th><th scope="col">操作</th></tr></thead><tbody id="assets-rows"></tbody></table></div></div>
 </section>
 <section id="module-ops-depr" class="module phase-module">
@@ -2394,11 +2402,15 @@ body{padding-bottom:62px}
    <label>历史盘点单 <select id="count-task"></select></label>
    <button class="btn btn-primary" id="count-show-new" type="button">发起新盘点任务</button>
    <button class="btn" id="count-export" type="button">导出盘点表（CSV/Excel）</button>
+   <button class="btn btn-primary" id="count-import-pick" type="button">导入资产</button>
+   <button class="btn" id="count-template" type="button">下载资产导入模板</button>
+   <input type="file" id="count-import-file" accept=".xlsx,.xls,.csv" hidden>
    <button class="btn" id="count-print" type="button">打印 A4 盘点清册</button>
    <button class="btn" id="count-preview" type="button">生成盘点盈亏处理凭证预览</button>
    <button class="btn phase-delete" id="count-delete" type="button">删除盘点单</button>
   </div>
   <p id="count-task-meta" class="note-text" role="status"></p>
+  <p id="count-import-status" class="note-text" role="status">导入资产将新增至固定资产卡片；已发起的历史盘点单保持不变，请发起新盘点任务纳入新增资产。</p>
   <form id="count-new-form" class="form-grid count-inline" hidden>
    <label>盘点单号 <input id="count-new-no" placeholder="PD-202611-01" maxlength="35" required></label>
    <label>盘点基准日期 <input id="count-new-date" type="date" required></label>
@@ -5843,6 +5855,114 @@ function depreciation(card,period) {
   const amount=monthIndex(period)-monthIndex(card.start)<=life?cumulative-previous:0;
   return {amount,cumulative,net:active?card.cost-cumulative:0};
 }
+const ASSET_EXCEL_HEADERS=['资产编号','资产名称','资产类别','原值（元）','净残值率（%）','使用年限（年）','开始使用日期','使用部门','存放地点','保管人','账面数量','资产启用状态'];
+function assetExcelRows(rows) {
+  return rows.map(a=>[a.code,a.name,a.type,a.cost/100,a.residual,a.years,a.start,a.dept||'',a.place||'',a.keeper||'',a.qty??1,a.active===false?'停用':'启用']);
+}
+function normalizeAssetHeader(value) {
+  return String(value??'').trim().toLowerCase().replace(/[\s_（）()【】\[\]·%％]/g,'').replace(/[.\-]/g,'');
+}
+function parseAssetImportDate(value) {
+  if(value instanceof Date&&!Number.isNaN(value.getTime())) {
+    return [value.getFullYear(),value.getMonth()+1,value.getDate()].map((n,i)=>i?String(n).padStart(2,'0'):String(n)).join('-');
+  }
+  let text=String(value??'').trim();
+  if(!text)throw Error('开始使用日期不能为空');
+  if(/^\d+(?:\.\d+)?$/.test(text)&&window.XLSX?.SSF?.parse_date_code) {
+    const parts=XLSX.SSF.parse_date_code(Number(text));
+    if(parts)text=[parts.y,parts.m,parts.d].map((n,i)=>i?String(n).padStart(2,'0'):String(n)).join('-');
+  }
+  text=text.replace(/[/.]/g,'-').split(/[ T]/)[0];
+  const match=text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(match)text=match[1]+'-'+match[2].padStart(2,'0')+'-'+match[3].padStart(2,'0');
+  if(!phaseDate(text))throw Error('开始使用日期格式无效，请使用 YYYY-MM-DD');
+  return text;
+}
+async function importAssetWorkbook(file) {
+  if(!file) return;
+  if(file.size>10*1024*1024)throw Error('Excel 文件不能超过 10 MB');
+  let grid;
+  if(/\.csv$/i.test(file.name)) {
+    let raw;
+    try{raw=new TextDecoder('utf-8',{fatal:true}).decode(await file.arrayBuffer());}
+    catch{raw=new TextDecoder('gb18030',{fatal:true}).decode(await file.arrayBuffer());}
+    grid=readReportCsv(raw);
+  } else {
+    if(!/\.xlsx?$/i.test(file.name))throw Error('请选择 .xlsx、.xls 或 .csv 文件');
+    if(!window.XLSX)throw Error('Excel 解析组件未加载，请联网打开页面后重试');
+    const workbook=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true,dateNF:'yyyy-mm-dd'});
+    const first=workbook.SheetNames[0];
+    if(!first)throw Error('Excel 文件中没有可读取的工作表');
+    grid=XLSX.utils.sheet_to_json(workbook.Sheets[first],{header:1,defval:'',raw:false,dateNF:'yyyy-mm-dd'});
+  }
+  if(!Array.isArray(grid)||grid.length<2)throw Error('文件至少需要一行表头和一行资产数据');
+  if(grid.length>5001)throw Error('单次最多导入 5,000 项资产');
+  const headers=(grid[0]||[]).map(normalizeAssetHeader);
+  const aliases={
+    code:['资产编号','资产编码','编号','编码','assetcode','code'],
+    name:['资产名称','名称','assetname','name'],
+    type:['资产类别','类别','类型','assettype','type'],
+    cost:['原值元','原值','资产原值','入账原值','originalcost','cost'],
+    residual:['净残值率','残值率','residualrate','residualpercent'],
+    years:['使用年限年','使用年限','折旧年限','预计使用年限','usefullife','years'],
+    start:['开始使用日期','启用日期','购置日期','开始日期','startdate','start'],
+    dept:['使用部门','所属部门','部门','department','dept'],
+    place:['存放地点','使用地点','地点','存放位置','location','place'],
+    keeper:['保管人','责任人','管理人','keeper'],
+    qty:['账面数量','资产数量','数量','quantity','qty'],
+    active:['资产启用状态','启用状态','状态','active','status']
+  };
+  const index={};
+  for(const [key,names] of Object.entries(aliases))index[key]=headers.findIndex(h=>names.some(name=>normalizeAssetHeader(name)===h));
+  const required=['code','name','type','cost','years','start','dept'];
+  const missing=required.filter(key=>index[key]<0);
+  if(missing.length)throw Error('缺少必要表头：'+missing.map(key=>({code:'资产编号',name:'资产名称',type:'资产类别',cost:'原值（元）',years:'使用年限（年）',start:'开始使用日期',dept:'使用部门'}[key])).join('、')+'。请先下载导入模板');
+  const existing=phaseGet('assets',demoAssets), known=new Set(existing.map(a=>String(a.code).trim().toUpperCase()));
+  const seen=new Set(), additions=[], duplicates=[], errors=[];
+  for(let i=1;i<grid.length;i++) {
+    const row=grid[i]||[];
+    if(!row.some(value=>String(value??'').trim()))continue;
+    const get=key=>index[key]<0?'':row[index[key]]??'';
+    try {
+      const code=String(get('code')).trim(), name=String(get('name')).trim(), type=String(get('type')).trim();
+      if(!code||code.length>40)throw Error('资产编号不能为空且不能超过 40 个字符');
+      if(!name||name.length>80)throw Error('资产名称不能为空且不能超过 80 个字符');
+      if(!type||type.length>40)throw Error('资产类别不能为空且不能超过 40 个字符');
+      const normalizedCode=code.toUpperCase();
+      if(known.has(normalizedCode)||seen.has(normalizedCode)){duplicates.push(code);continue;}
+      const costText=String(get('cost')).trim().replace(/[，,￥¥\s]/g,'');
+      const cost=positiveAmount(costText);
+      const residualText=String(get('residual')).trim().replace(/[%％]/g,'');
+      const residual=residualText===''?5:Number(residualText);
+      const years=Number(String(get('years')).trim());
+      if(!Number.isFinite(residual)||residual<0||residual>100)throw Error('净残值率须为 0 至 100');
+      if(!Number.isFinite(years)||years<1/12||years>100)throw Error('使用年限须在 1 个月至 100 年之间');
+      const start=parseAssetImportDate(get('start'));
+      const dept=String(get('dept')).trim();
+      if(!dept||dept.length>50)throw Error('使用部门不能为空且不能超过 50 个字符');
+      const place=String(get('place')).trim(), keeper=String(get('keeper')).trim();
+      if(place.length>60||keeper.length>40)throw Error('存放地点最多 60 个字符，保管人最多 40 个字符');
+      const qtyValue=String(get('qty')).trim(), qtyNumber=qtyValue===''?1:Number(qtyValue);
+      if(!Number.isSafeInteger(qtyNumber)||qtyNumber<1||qtyNumber>1000000)throw Error('账面数量须为 1 至 1,000,000 的整数');
+      const activeText=String(get('active')).trim().toLowerCase();
+      const active=!['停用','禁用','否','false','0','inactive','disabled'].includes(activeText);
+      additions.push({code,name,type,cost,residual,years,start,dept,place,keeper,qty:qtyNumber,active});
+      seen.add(normalizedCode);
+    } catch(error) {
+      errors.push('第 '+(i+1)+' 行：'+error.message);
+    }
+  }
+  if(errors.length)throw Error('文件校验未通过，本次没有导入任何数据：'+errors.slice(0,5).join('；')+(errors.length>5?'；另有 '+(errors.length-5)+' 行错误':''));
+  if(!additions.length)throw Error('没有可新增的资产'+(duplicates.length?'；有 '+duplicates.length+' 条资产编号重复，已跳过':''));
+  const confirmed=await uiConfirm('识别到 '+additions.length+' 项新资产'+(duplicates.length?'，另有 '+duplicates.length+' 条重复编号将跳过':'')+'。导入只会新增资产卡片，不覆盖现有资料，也不会修改已发起的历史盘点单。是否继续？');
+  if(!confirmed)return;
+  phaseSet('assets',[...existing,...additions]);
+  if(phaseRefresh.assets)phaseRefresh.assets();
+  if(phaseRefresh.count)await phaseRefresh.count();
+  const message='成功导入 '+additions.length+' 项资产'+(duplicates.length?'；跳过重复编号 '+duplicates.length+' 项':'')+'。请发起新盘点任务纳入新增资产。';
+  for(const id of ['assets-import-status','count-import-status']){const node=byId(id);if(node)node.textContent=message;}
+  showToast('已导入 '+additions.length+' 项资产');
+}
 function initAssets() {
   const assets=()=>phaseGet('assets',demoAssets);
   function draw() {
@@ -5880,6 +6000,14 @@ function initAssets() {
     phaseSet('assets',[...assets(),{...data,qty,active:data.active==='启用',cost:positiveAmount(data.cost),residual,years}]); form.reset(); draw();
   });
   phaseRefresh.assets=draw;
+  onAction('assets-export',()=>exportRows('固定资产卡片',ASSET_EXCEL_HEADERS,assetExcelRows(assets())));
+  onAction('assets-template',()=>exportRows('固定资产导入模板',ASSET_EXCEL_HEADERS,[]));
+  const assetImportFile=byId('assets-import-file'), assetImportPick=byId('assets-import-pick');
+  assetImportPick.onclick=()=>assetImportFile.click();
+  assetImportFile.onchange=()=>{
+    const file=assetImportFile.files?.[0];assetImportFile.value='';
+    if(file)runAction(()=>importAssetWorkbook(file),assetImportPick);
+  };
   const period=byId('depr-period'); period.value=reportPeriod();
   const id=()=> 'asset-depr:'+period.value;
   const compute=()=>assets().filter(a=>a.start.slice(0,7)<=period.value).map(a=>({...a,...depreciation(a,period.value)}));
@@ -7197,6 +7325,13 @@ function initAssetCount(){
  filter.onchange=()=>drawRows(task());
  window.addEventListener('storage',event=>{if(event.key===scopedKey(COUNT_KEY)&&root.classList.contains('active'))runAction(draw);});
  function cardList(){return phaseGet('assets',demoAssets);}
+  const countImportFile=byId('count-import-file'), countImportPick=byId('count-import-pick');
+  countImportPick.onclick=()=>countImportFile.click();
+  countImportFile.onchange=()=>{
+   const file=countImportFile.files?.[0];countImportFile.value='';
+   if(file)runAction(()=>importAssetWorkbook(file),countImportPick);
+  };
+  onAction('count-template',()=>exportRows('固定资产导入模板',ASSET_EXCEL_HEADERS,[]));
  onAction('count-show-new',()=>{
   newForm.hidden=!newForm.hidden;if(newForm.hidden)return;
   const now=localDay();
