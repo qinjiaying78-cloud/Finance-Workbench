@@ -1624,7 +1624,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .fw-file-control { display:inline-flex; gap:10px; align-items:center; flex-wrap:nowrap; min-width:0; max-width:100%; vertical-align:middle; }
 .fw-file-button { flex:none; border:1px solid var(--border); border-radius:999px; background:var(--card); color:var(--text-main); padding:9px 18px; cursor:pointer; font:inherit; font-size:14px; }
 .fw-file-button:hover { border-color:var(--primary); background:var(--input-bg); }
-.fw-file-button:focus-visible,.module-entry-card .btn:focus-visible { outline:2px solid var(--primary); outline-offset:3px; }
+.fw-file-button:focus-visible { outline:2px solid var(--primary); outline-offset:3px; }
 .fw-file-button:disabled { opacity:.55; cursor:not-allowed; }
 .fw-file-name { min-width:0; flex:0 1 auto; overflow-wrap:anywhere; color:#64564d; font-size:13px; line-height:1.5; text-align:left; }
 .drop-zone .fw-file-control { width:min(100%,360px); justify-content:center; }
@@ -1632,22 +1632,8 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .recon-table-scroll { overflow-x:auto; max-width:100%; }
 input[type=file]::file-selector-button { border-radius:999px; border:1px solid var(--border); background:var(--card); color:var(--text-main); padding:10px 18px; font:inherit; }
 .tree-subgroup-title { padding:16px 16px 6px; color:#64564d; font-size:12px; font-weight:650; }
-.module-entry-section { margin-bottom:28px; }
-.module-entry-section>h2 { margin:0 0 14px; font-size:18px; }
-.module-entry-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr)); gap:16px; }
-.module-entry-card { display:flex; flex-direction:column; align-items:start; min-width:0; padding:20px; border:1px solid var(--border); border-radius:14px; background:var(--card); }
-.module-entry-card h3 { margin:0 0 8px; font-size:17px; }
-.module-entry-card p { margin:0 0 18px; line-height:1.7; color:#64564d; }
-.module-entry-card .btn { margin-top:auto; }
 #module-accounting[data-accounting-area=posting] .acc-tab:not([data-tab=pending]),
 #module-accounting[data-accounting-area=analysis] .acc-tab[data-tab=pending] { display:none; }
-#acc-report-content .acc-table { table-layout:auto; }
-#acc-report-content .acc-table :is(th,td) { padding:10px 12px; }
-#acc-report-content .acc-table :is(th,td):first-child { width:65%; text-align:left; }
-#acc-report-content .acc-table :is(th,td):last-child { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
-#acc-report-content .report-account-link { display:inline-flex; flex-wrap:wrap; gap:8px; align-items:baseline; min-height:32px; padding:4px 0; border:0; border-radius:0; background:transparent; box-shadow:none; text-align:left; color:var(--text-main); font:inherit; cursor:pointer; }
-.report-account-code { font-variant-numeric:tabular-nums; color:#64564d; }
-#acc-report-content .report-account-link:hover { color:var(--primary); text-decoration:underline; text-underline-offset:3px; }
 #module-standard-bs .standard-table :is(td,th) { padding:10px 12px; }
 #module-standard-bs .standard-table :is(td,th):is(:nth-child(2),:nth-child(3),:nth-child(5),:nth-child(6)) { text-align:right; font-variant-numeric:tabular-nums; }
 #module-ops-count .toolbar { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr)); align-items:end; gap:10px; }
@@ -1665,12 +1651,12 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
 }
 @media(max-width:640px) {
   :root { --fw-control-height:44px; }
-  .recon-parameters,.recon-parameters>.form-grid,.module-entry-grid { grid-template-columns:1fr; }
+  .recon-parameters,.recon-parameters>.form-grid { grid-template-columns:1fr; }
   .module :is(.form-grid,.cash-form-grid,.financing-form),#module-ops-count .toolbar { grid-template-columns:1fr; }
   .module .toolbar>* { max-width:100%; }
   #module-recon .upload-container { gap:16px; }
 }
-@media print { .fw-file-control,.module-entry { display:none!important; } }
+@media print { .fw-file-control { display:none!important; } }
 
 </style>
 </head>
@@ -1777,7 +1763,7 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
     </div>
 
     <div class="home-cards">
-      <div class="home-card" data-open-tab="group-biz">
+      <div class="home-card" data-open-group="biz">
         <div class="home-card-content">
           <h3 class="serif-title">业务核算</h3>
           <p>采购入库、生产与销售、业务结算、开票及工资计提。</p>
@@ -1790,7 +1776,7 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
         </svg>
       </div>
 
-      <div class="home-card" data-open-tab="group-fund">
+      <div class="home-card" data-open-group="fund">
         <div class="home-card-content">
           <h3 class="serif-title">资金模块</h3>
           <p>登记收付款与报销，管理银行账户、借还款并核对流水。</p>
@@ -1803,7 +1789,7 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
         </svg>
       </div>
 
-      <div class="home-card" data-open-tab="group-ar">
+      <div class="home-card" data-open-group="ar">
         <div class="home-card-content">
           <h3 class="serif-title">往来管理 (AR / AP)</h3>
           <p>核对客户与供应商往来，完成收付款核销、账龄分析及函证。</p>
@@ -1816,7 +1802,7 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
         </svg>
       </div>
 
-      <div class="home-card" data-open-tab="group-fa">
+      <div class="home-card" data-open-group="fa">
         <div class="home-card-content">
           <h3 class="serif-title">固定资产</h3>
           <p>登记资产卡片，进行月度折旧计提和资产盘点。</p>
@@ -1829,7 +1815,7 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
         </svg>
       </div>
 
-      <div class="home-card" data-open-tab="group-gl">
+      <div class="home-card" data-open-group="gl">
         <div class="home-card-content">
           <h3 class="serif-title">总账模块</h3>
           <p>凭证制单、审核记账、账簿核对，完成期末结转与结账。</p>
@@ -1842,7 +1828,7 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
         </svg>
       </div>
 
-      <div class="home-card" data-open-tab="group-tax">
+      <div class="home-card" data-open-group="tax">
         <div class="home-card-content">
           <h3 class="serif-title">税务管理与导航</h3>
           <p>归集进项发票，测算税费，查看申报流程、征期及历史记录。</p>
@@ -1855,7 +1841,7 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
         </svg>
       </div>
 
-      <div class="home-card" data-open-tab="group-fin">
+      <div class="home-card" data-open-group="fin">
         <div class="home-card-content">
           <h3 class="serif-title">财务与成本分析</h3>
           <p>编制财务报表，开展财务与成本分析，归集电子会计档案。</p>
@@ -2600,7 +2586,6 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
     <div class="acc-tab" data-tab="detail">明细账</div>
     <div class="acc-tab" data-tab="ledger">总账</div>
     <div class="acc-tab" data-tab="trial">试算平衡表</div>
-    <div class="acc-tab" data-tab="report">财务报表</div>
   </div>
 
   <div class="acc-tab-panel active" id="acc-panel-pending">
@@ -2675,20 +2660,7 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
     <div id="acc-trial-check" style="margin-top:16px;"></div>
   </div>
 
-  <div class="acc-tab-panel" id="acc-panel-report">
-    <div class="acc-report-subtabs">
-      <div class="acc-report-subtab active" data-rtab="bs" onclick="switchReportTab('bs')">资产负债表</div>
-      <div class="acc-report-subtab" data-rtab="is" onclick="switchReportTab('is')">利润表</div>
-    </div>
-    <div id="acc-report-content" style="margin-top:20px;"></div>
-    <div style="margin-top:24px;">
-      <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:6px;">编表说明</label>
-      <textarea id="acc-report-note" placeholder="填写本报表的编制说明..." style="min-height:80px; font-size:13px;"></textarea>
-      <div style="text-align:right; margin-top:8px;">
-        <button type="button" class="btn-mini" onclick="saveReportNote()">保存说明</button>
-      </div>
-    </div>
-  </div>
+
 </div>
 
 <!-- ================= 期末风险扫描与审计底稿 ================= -->
@@ -3204,6 +3176,12 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
       <label>制表人 <input name="preparer" maxlength="40"></label>
       <label>审核人 <input name="reviewer" maxlength="40"></label>
     </div>
+    <details class="report-compilation-note">
+      <summary>编表说明</summary>
+      <label for="acc-report-note">本期编表说明</label>
+      <textarea id="acc-report-note" rows="3" placeholder="填写本报表的编制说明"></textarea>
+      <button type="button" class="btn" id="save-bs-note">保存说明</button>
+    </details>
     <p class="note-text report-storage" role="status"></p>
   </form>
   <div class="panel report-document">
@@ -3853,8 +3831,8 @@ const NAV_TREE = [
     id: 'ar',
     num: '2',
     title: '往来管理 (AR / AP)',
-    landing: { key: 'ar-subledger', label: '往来管理 (AR / AP)', moduleId: 'module-ar-subledger' },
     children: [
+      { key: 'ar-subledger', label: '往来明细与核销', moduleId: 'module-ar-subledger' },
       { key: 'ar-contracts', label: '合同台账与履约结算', moduleId: 'module-contract-ledger' },
       { key: 'ar-balance', label: '单位往来余额表', moduleId: 'module-ar-balance' },
       { key: 'ar-baddebt', label: '往来坏账分析', moduleId: 'module-ops-aging' }
@@ -3940,49 +3918,13 @@ navFinance.children.unshift(
   {key:'fin-summary',label:'科目汇总表',moduleId:'module-accounting',accountingTab:'summary'},
   ...movedAnalysis.filter(item=>['gl-balance','gl-detail'].includes(item.key)),
   {key:'fin-ledger',label:'总账查询',moduleId:'module-accounting',accountingTab:'ledger'},
-  {key:'fin-trial',label:'试算平衡表',moduleId:'module-accounting',accountingTab:'trial'},
-  {key:'fin-report-check',label:'财务报表（账套内部核对）',moduleId:'module-accounting',accountingTab:'report'}
+  {key:'fin-trial',label:'试算平衡表',moduleId:'module-accounting',accountingTab:'trial'}
 );
 navFinance.children.push(...movedAnalysis.filter(item=>!['gl-balance','gl-detail'].includes(item.key)));
 navFinance.children.find(item=>item.key==='fin-analysis').label='财务健康度与成本分析';
 const navTax=NAV_TREE.find(group=>group.id==='tax');
 for(const item of navTax.children)item.section=['tax-wizard','tax-calendar'].includes(item.key)?'申报引导与日历':'税务计算与台账';
 navTax.children.sort((a,b)=>(a.section==='申报引导与日历')-(b.section==='申报引导与日历'));
-const NAV_DESCRIPTIONS={
-  'biz-inventory':'管理采购入库、库存流水和销售成本结转。','biz-settlement':'登记业务应收应付及对应收付款结算。','biz-production':'创建生产订单，办理领料与完工入库。','invoice':'管理销项发票、开票记录与附件。','biz-payroll':'导入工资明细，办理工资计提和发放。',
-  'ar-subledger':'按往来单位查询明细、对账和核销。','ar-contracts':'管理合同履约节点、订单及结算追踪。','ar-balance':'查看客户与供应商的往来余额。','ar-baddebt':'分析往来账龄与坏账风险。',
-  'fund-bank':'登记收款、付款、内部转账及出纳日记账。','fund-governance':'核对银行流水、合同链路与总账数据。','fund-loan':'导入银行与账面流水，匹配并逐笔处理差异。','fund-internal':'管理内部资金账户。','fund-loans':'登记借还款及还款明细。','fund-financing':'管理筹资合同、借款和还款计划。','fund-expense':'登记费用报销，核对预算执行。',
-  'fa-card':'登记资产卡片、保管人与使用信息。','fa-depr':'计算并生成月度折旧凭证。','fa-count':'发起盘点，记录实物数量和盘盈盘亏依据。',
-  'gl-voucher':'录入日常凭证，检查借贷平衡及附件。','gl-query':'查看待记账凭证，完成审核后的记账。','gl-review':'复核凭证并查看制单与审核记录。','fin-closing':'完成损益结转、关账检查和期末结账。',
-  'fin-summary':'汇总当前期间各科目的借贷发生额。','gl-balance':'查看科目期初、本期发生额和期末余额。','gl-detail':'按科目联查三栏明细账及原始凭证。','fin-ledger':'查询总账的期初、借贷发生额和期末余额。','fin-trial':'核对期初、本期和期末借贷平衡。','fin-report-check':'查看现有账套内部报表并联查科目明细。','gl-print':'按期间与账簿类型打印会计账簿。',
-  'tax-input-inv':'归集进项发票及相关税额。','tax-overview':'查看税务测算汇总和当前税务状态。','tax-calc':'使用现有七大税种计算器测算税费。','tax-burden':'测算税负率并查看行业预警。','tax-history':'查看历史测算记录、对比与税务设置。','tax-wizard':'按业务类型查看八大申报流程向导。','tax-calendar':'查看申报日期、征期和提醒。',
-  'fin-bs':'从当前账套生成标准资产负债表。','fin-pl':'查看本期及累计利润表。','fin-cf':'核对现金流量及期末现金余额。','fin-analysis':'查看财务指标、健康度与成本分析。','fin-budget':'编制预算，核对预算与实际执行。','fin-archive':'归集并查询电子会计档案。','gl-risk-audit':'执行期末风险扫描并保留核查底稿。','gl-remediation':'跟踪整改任务、依据和复核结果。'
-};
-for(const group of NAV_TREE){
-  if(group.landing)group.children.unshift({...group.landing,label:'往来明细与核销'});
-  group.landing={key:'group-'+group.id,label:group.title,moduleId:'module-entry-'+group.id};
-  const root=document.createElement('section');root.id=group.landing.moduleId;root.className='module module-entry';
-  const header=document.createElement('div');header.className='module-header';
-  const title=document.createElement('h1');title.className='serif-title';title.textContent=group.title;header.append(title);root.append(header);
-  const intro=document.createElement('p');intro.textContent='请选择要使用的子功能。';intro.className='note-text';root.append(intro);
-  const sections=[...new Set(group.children.map(item=>item.section||''))];
-  for(const section of sections){
-    const block=document.createElement('section');block.className='module-entry-section';
-    if(section){const heading=document.createElement('h2');heading.textContent=section;block.append(heading);}
-    const grid=document.createElement('div');grid.className='module-entry-grid';block.append(grid);
-    for(const item of group.children.filter(child=>(child.section||'')===section)){
-      const card=document.createElement('article');card.className='module-entry-card';
-      const name=document.createElement('h3');name.textContent=item.label;
-      const description=document.createElement('p');description.textContent=NAV_DESCRIPTIONS[item.key]||'打开'+item.label+'，查看与处理当前账套数据。';
-      const enter=document.createElement('button');enter.type='button';enter.className='btn';enter.textContent='进入'+item.label;enter.dataset.entryKey=item.key;
-      enter.addEventListener('click',()=>openWorkspaceTab(item.key));card.append(name,description,enter);grid.append(card);
-    }
-    root.append(block);
-  }
-  document.querySelector('.workspace-content').append(root);
-}
-
-
 const EXTRA_TABS = {
   'tax-workpapers': {key:'tax-workpapers',label:'原税务底稿和申报归档',moduleId:'module-tax',groupTitle:'税务管理与导航'},
   'home': { key: 'home', label: '工作台首页', moduleId: 'module-home', pinned: true },
@@ -3992,7 +3934,7 @@ const EXTRA_TABS = {
 function findNavMeta(key) {
   if (EXTRA_TABS[key]) return EXTRA_TABS[key];
   for (const g of NAV_TREE) {
-    const item = g.landing?.key === key ? g.landing : g.children.find(c => c.key === key);
+    const item = g.children.find(c => c.key === key);
     if (item) return { ...item, groupId: g.id, groupTitle: g.title };
   }
   return null;
@@ -4024,27 +3966,24 @@ function setSidebarGroup(groupId, anchor = null) {
 function renderSidebarTree() {
   const container = document.getElementById('sidebar-tree');
   container.replaceChildren();
-  NAV_TREE.forEach((group, idx) => {
+  NAV_TREE.forEach(group => {
     const groupEl = document.createElement('div');
-    groupEl.className = 'tree-group' + (idx === 0 ? ' open' : '');
+    groupEl.className = 'tree-group';
     groupEl.dataset.groupId = group.id;
 
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'tree-group-btn';
     btn.innerHTML = `<span class="tree-group-label"><span class="tree-group-num">${group.num}</span><span>${escapeHtml(group.title)}</span></span><span class="tree-chevron">▸</span>`;
-    if(group.landing)btn.dataset.tabKey=group.landing.key;
     btn.addEventListener('click', () => {
-      openWorkspaceTab(group.landing.key);
-      setSidebarGroup(group.id,btn);
-      closeMobileSidebar();
+      setSidebarGroup(groupEl.classList.contains('open') ? null : group.id, btn);
     });
 
     const childrenEl = document.createElement('div');
     childrenEl.className = 'tree-children';
     childrenEl.id = 'nav-children-' + group.id;
     btn.setAttribute('aria-controls', childrenEl.id);
-    btn.setAttribute('aria-expanded', String(idx === 0));
+    btn.setAttribute('aria-expanded', 'false');
     let lastSection='';
     group.children.forEach(item => {
       if(item.section&&item.section!==lastSection){
@@ -4095,6 +4034,7 @@ function renderWorkspaceTabs() {
 }
 
 function openWorkspaceTab(key) {
+  if (typeof key==='string' && key.startsWith('group-')) return revealSidebarGroup(key.slice(6));
   const legacyCost=key==='fin-cost';if(legacyCost)key='fin-analysis';
   if(key==='ar-ledger'){key='ar-subledger'; if(window.fwSetARTab)fwSetARTab(2);}
   else if(key==='ar-subledger'&&window.fwSetARTab)fwSetARTab(0);
@@ -4137,7 +4077,7 @@ function activateWorkspaceTab(key) {
   renderWorkspaceTabs();
 
   document.getElementById('nav-home-btn').classList.toggle('active', key === 'home');
-  document.querySelectorAll('.tree-item-btn, .tree-group-btn[data-tab-key]').forEach(btn => {
+  document.querySelectorAll('.tree-item-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tabKey === key);
   });
   if (meta.groupId) setSidebarGroup(meta.groupId);
@@ -4186,10 +4126,22 @@ function switchModule(targetId) {
   if (targetId.startsWith('module-standard-') && window.refreshStandardReport) refreshStandardReport(targetId.slice('module-standard-'.length));
 }
 
-function closeMobileSidebar() {
-  document.getElementById('app-sidebar').classList.remove('open');
-  document.getElementById('sidebar-backdrop').classList.remove('open');
-  document.getElementById('sidebar-toggle')?.setAttribute('aria-expanded','false');
+function setMobileSidebar(open) {
+  byId('app-sidebar').classList.toggle('open',open);
+  byId('sidebar-backdrop').classList.toggle('open',open);
+  byId('sidebar-toggle')?.setAttribute('aria-expanded',String(open));
+}
+
+function closeMobileSidebar() { setMobileSidebar(false); }
+
+function revealSidebarGroup(groupId) {
+  const group = NAV_TREE.find(item => item.id === groupId);
+  if (!group) return;
+  const button = byId('sidebar-tree').querySelector('[data-group-id="'+group.id+'"] > .tree-group-btn');
+  if (!button) return;
+  if (byId('sidebar-toggle').getClientRects().length) setMobileSidebar(true);
+  setSidebarGroup(group.id,button);
+  button.focus();
 }
 
 const animation = window.gsap || {
@@ -5671,7 +5623,7 @@ function getAccountName(valStr) {
 
 function initCommandSearch(){
  const input=byId('fw-command-input'),results=byId('fw-command-results');let hits=[],active=-1,revision=0;
- const moduleEntries=()=>NAV_TREE.flatMap(group=>[...(group.landing?[{...group.landing,groupTitle:group.title}]:[]),...group.children.map(item=>({...item,groupTitle:group.title}))]);
+ const moduleEntries=()=>NAV_TREE.flatMap(group=>[{key:'group-'+group.id,label:group.title,groupTitle:group.title},...group.children.map(item=>({...item,groupTitle:group.title}))]);
  function close(){results.hidden=true;input.setAttribute('aria-expanded','false');input.removeAttribute('aria-activedescendant');active=-1;}
  function choose(hit){close();input.value='';if(hit.kind==='module'){openWorkspaceTab(hit.key);return;}
   if(hit.kind==='voucher'){openWorkspaceTab('gl-voucher');void comPreview(comJsonAttachment('记账凭证.json',hit.record),'记账凭证');return;}
@@ -5721,9 +5673,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('placeholder-back-home').addEventListener('click', () => activateWorkspaceTab('home'));
   document.getElementById('sidebar-toggle').setAttribute('aria-expanded','false');
   document.getElementById('sidebar-toggle').addEventListener('click', () => {
-    const sidebar=document.getElementById('app-sidebar'),open=!sidebar.classList.contains('open');
-    sidebar.classList.toggle('open',open);document.getElementById('sidebar-backdrop').classList.toggle('open',open);
-    document.getElementById('sidebar-toggle').setAttribute('aria-expanded',String(open));
+    setMobileSidebar(!byId('app-sidebar').classList.contains('open'));
   });
   document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMobileSidebar();});
   document.getElementById('sidebar-backdrop').addEventListener('click', closeMobileSidebar);
@@ -5734,8 +5684,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     renderWorkspaceTabs();
   });
-  document.querySelectorAll('.home-card[data-open-tab]').forEach(card => {
-    card.addEventListener('click', () => openWorkspaceTab(card.dataset.openTab));
+  document.querySelectorAll('.home-card[data-open-group]').forEach(card => {
+    card.addEventListener('click', () => revealSidebarGroup(card.dataset.openGroup));
   });
 
   if (window.ResizeObserver) {
@@ -7202,7 +7152,7 @@ async function changeVoucherStatus(ids, from, to) {
   await saveRecords(STORE_VOUCHER, records.map(v => ({...v,status:to})));
 }
 
-let bookReport = 'bs', currentBook = [];
+let currentBook = [];
 function bookRows(records, period, opening = {}) {
   return VOUCHER_ACCOUNTS.map(account => {
     const entries = records.filter(v => v.period === period && v.status === 'POSTED')
@@ -7238,32 +7188,8 @@ function renderBookDetail() {
     if (e.source) row.cells[1].title = '来源：'+e.source;
   }
 }
-function renderBookReport() {
-  const node = byId('acc-report-content'); node.replaceChildren();
-  const table = document.createElement('table'); table.className='acc-table'; node.append(table);
-  const body = table.createTBody();
-  const rows = bookReport === 'bs'
-    ? currentBook.filter(r => /^(1|2|4|5|6901)/.test(r.code)).map(r => [r,r.end])
-    : currentBook.filter(r => isProfitAccount(r.code)).map(r => [r,r.entries.filter(e => e.biz !== '期末结转').reduce((sum,e) => sum+Math.round(e.credit*100)-Math.round(e.debit*100),0)]);
-  const total = prefix => rows.filter(([r]) => prefix.test(r.code)).reduce((sum,[,amt]) => sum+amt,0);
-  tableRow(body,['科目','账套内部核对金额']);
-  if (bookReport === 'bs') {
-    const profit = currentBook.filter(r => isProfitAccount(r.code)).reduce((sum,r) => sum-r.end,0);
-    tableRow(body,['资产合计',fromCents(total(/^[15]/))]);
-    tableRow(body,['负债合计',fromCents(-total(/^2/))]);
-    tableRow(body,['权益及未结转损益合计',fromCents(-total(/^(4|6901)/) + profit)]);
-  } else tableRow(body,['本期损益合计',fromCents(total(/^6/))]);
-  for (const [r,amt] of rows) {
-    const row = tableRow(body,['',fromCents(bookReport === 'bs' && !/^[15]/.test(r.code) ? -amt : amt)]);
-    const accountLink=action('', () => {
-      byId('acc-detail-account').value = r.code; renderBookDetail();
-      document.querySelector('#acc-tabs [data-tab="detail"]').click();
-    },'report-account-link');
-    accountLink.append(txNode('span',r.code,'report-account-code'),txNode('span',r.name,'report-account-name'));row.firstChild.append(accountLink);
-  }
-}
 async function renderBooks(records, period) {
-  const book=await financialBook(period), note=await work('report-note:'+period);
+  const book=await financialBook(period);
   if (byId('acc-period-select').value !== period) return;
   currentBook = book.rows;
   for (const id of ['summary-body','ledger-body','trial-body','summary-foot','trial-foot']) byId('acc-'+id).replaceChildren();
@@ -7278,18 +7204,12 @@ async function renderBooks(records, period) {
   tableRow(byId('acc-trial-foot'),['合计','',...sums.map(fromCents)]);
   byId('acc-trial-check').textContent = [0,2,4].every(i => sums[i] === sums[i+1]) ? '期初、本期、期末借贷合计相等' : '试算不平，请复核';
   byId('acc-period-summary').textContent = '已记账 '+records.filter(v => v.period===period && v.status==='POSTED').length+' 张';
-  byId('acc-report-note').value = note?.note || '';
-  renderBookDetail(); renderBookReport();
+  renderBookDetail();
 }
 function wireBookEditors(period, refresh) {
   const accounts = byId('acc-detail-account');
   accounts.replaceChildren(...VOUCHER_ACCOUNTS.map(a => new Option(a.code+' '+a.name,a.code)));
   accounts.addEventListener('change',renderBookDetail);
-  window.switchReportTab = type => {
-    bookReport = type;
-    document.querySelectorAll('#module-accounting .acc-report-subtab').forEach(tab => tab.classList.toggle('active',tab.dataset.rtab === type));
-    renderBookReport();
-  };
   window.toggleOpeningEditor = () => {
     const box = byId('acc-opening-editor'), body = byId('acc-opening-body');
     if (box.style.display !== 'none') { box.style.display = 'none'; return; }
@@ -7327,9 +7247,7 @@ function wireBookEditors(period, refresh) {
     }
     faNotify();await refresh(); byId('acc-opening-editor').style.display='none'; showToast('期初余额已保存');
   });
-  window.saveReportNote = () => runAction(async () => {
-    const p = period(); await saveToStore(STORE_WORK,{id:'report-note:'+p,period:p,note:val('acc-report-note')}); showToast('编制说明已保存');
-  });
+
 }
 
 /* ================= 5.7 融合核心：七列科目余额表 + 右键穿透 + 单位往来三栏账 ================= */
@@ -9764,6 +9682,15 @@ function initStandardReports() {
     const company=form.elements.company, preparer=form.elements.preparer, reviewer=form.elements.reviewer;
     const check=root.querySelector('.report-check'), table=root.querySelector('table');
     const note=form.elements.note;
+    const compilationNote=form.querySelector('#acc-report-note');
+    const saveNote=form.querySelector('#save-bs-note');
+    let notePeriod='';
+    if (saveNote) saveNote.onclick=()=>runAction(async()=>{
+      const month=period.value;
+      if (!month || notePeriod!==month) return;
+      await saveToStore(STORE_WORK,{id:'report-note:'+month,period:month,note:compilationNote.value.trim()});
+      showToast('编制说明已保存');
+    },saveNote);
     const editor=root.querySelector('.report-adjustments');
     const adjustmentInputs={};
     if (editor) for (const [code,label] of cashItems) {
@@ -9799,8 +9726,16 @@ function initStandardReports() {
     async function refresh() {
       const token=++revision, month=period.value;
       if (!month) throw Error('请选择会计期间');
-      const book=await financialBook(month);
+      const loadNote=compilationNote && notePeriod!==month;
+      if (loadNote) { compilationNote.disabled=true; saveNote.disabled=true; }
+      const [book,savedNote]=await Promise.all([financialBook(month),loadNote?work('report-note:'+month):null]);
       if (token!==revision||period.value!==month) return;
+      if (loadNote) {
+        compilationNote.value=savedNote?.note||'';
+        notePeriod=month;
+        compilationNote.disabled=false;
+        saveNote.disabled=false;
+      }
       const adjusted=financialSession.get(adjustmentKey())||financialRead(adjustmentKey(),{});
       const report=key==='bs'?balanceStatement(book):key==='pl'?profitStatement(book,month):cashStatement(book,month,adjusted.amounts||{});
       updateHeading();
