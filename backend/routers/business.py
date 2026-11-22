@@ -1,5 +1,6 @@
 """Normalized operating subledgers: procurement, sales, inventory, production, payroll and fixed assets."""
 from __future__ import annotations
+from .returns_core import active_returns, stock_adjustments, validate_return, validate_auxiliary_voucher
 
 import json
 import re
@@ -103,7 +104,7 @@ def _upsert_inventory_opening(conn, book, r):
     for line in rows:
         account = str(line.get("account") or "1405")
         sku, name = _str(line, "sku"), _str(line, "name")
-        key = (account, sku.upper())
+        key = (account, sku.upper(), str(line.get("warehouse") or "主仓库").strip())
         if key in seen:
             raise HTTPException(422, f"期初库存商品编码重复：{sku}")
         seen.add(key)
@@ -132,7 +133,7 @@ def _upsert_inventory_opening(conn, book, r):
     return opening["id"]
 
 
-def _assert_inventory_ready(conn, book, doc_date, sku, account, quantity_milli, cost_cents, legacy_id, kind):
+def _assert_inventory_ready(conn, book, doc_date, sku, account, warehouse, quantity_milli, cost_cents, legacy_id, kind):
     opening=conn.execute("SELECT * FROM inventory_openings WHERE account_set_id=? AND verified=1 AND period<=? ORDER BY period DESC,id DESC LIMIT 1",(book,doc_date[:7])).fetchone()
     if not opening: raise HTTPException(409,"请先建立并核实库存期初")
     if doc_date < opening["period"]+"-01": raise HTTPException(409,"库存业务日期不能早于库存启用期间")
@@ -143,25 +144,30 @@ def _assert_inventory_ready(conn, book, doc_date, sku, account, quantity_milli, 
             raise HTTPException(409,"已记账或已冲销的库存单据不可修改")
     pending=conn.execute("""SELECT d.doc_no,v.status FROM business_documents d LEFT JOIN vouchers v
         ON v.account_set_id=d.account_set_id AND v.legacy_id=d.voucher_legacy_id
-        WHERE d.account_set_id=? AND d.sku=? AND d.inventory_account_code=? AND d.legacy_id<>?
-        AND COALESCE(v.status,'MISSING')<>'POSTED' LIMIT 1""",(book,sku,account,legacy_id)).fetchone()
+        WHERE d.account_set_id=? AND UPPER(d.sku)=UPPER(?) AND d.inventory_account_code=? AND d.warehouse=? AND d.legacy_id<>?
+        AND COALESCE(v.status,'MISSING')<>'POSTED' LIMIT 1""",(book,sku,account,warehouse,legacy_id)).fetchone()
     if pending: raise HTTPException(409,f"商品 {sku} 存在未完成库存单据 {pending['doc_no']}，请先处理凭证")
     latest=conn.execute("""SELECT MAX(d.doc_date) AS latest FROM business_documents d JOIN vouchers v
         ON v.account_set_id=d.account_set_id AND v.legacy_id=d.voucher_legacy_id
-        WHERE d.account_set_id=? AND d.sku=? AND d.inventory_account_code=? AND v.status='POSTED' AND d.legacy_id<>?""",
-        (book,sku,account,legacy_id)).fetchone()["latest"]
+        WHERE d.account_set_id=? AND UPPER(d.sku)=UPPER(?) AND d.inventory_account_code=? AND d.warehouse=? AND v.status='POSTED' AND d.legacy_id<>?""",
+        (book,sku,account,warehouse,legacy_id)).fetchone()["latest"]
     if latest and doc_date<latest: raise HTTPException(409,"不允许补录早于该商品最近一笔已记账库存业务的日期")
-    if kind not in ("SALE","PROD_ISSUE"): return
-    opening_qty=conn.execute("SELECT COALESCE(SUM(quantity_milli),0) AS qty,COALESCE(SUM(stock_cost_cents),0) AS value FROM inventory_opening_lines WHERE account_set_id=? AND opening_id=? AND sku=? AND inventory_account_code=?",
-        (book,opening["id"],sku,account)).fetchone()
+    returned_qty, returned_value = stock_adjustments(conn, book, account, sku, warehouse, doc_date)
+    if kind not in ("SALE","PROD_ISSUE","PURCHASE_RETURN"): return
+    opening_qty=conn.execute("SELECT COALESCE(SUM(quantity_milli),0) AS qty,COALESCE(SUM(stock_cost_cents),0) AS value FROM inventory_opening_lines WHERE account_set_id=? AND opening_id=? AND UPPER(sku)=UPPER(?) AND inventory_account_code=? AND warehouse=?",
+        (book,opening["id"],sku,account,warehouse)).fetchone()
     movement=conn.execute("""SELECT COALESCE(SUM(m.quantity_milli),0) AS qty,COALESCE(SUM(m.amount_cents),0) AS value
         FROM inventory_movements m JOIN business_documents d ON d.account_set_id=m.account_set_id AND d.id=m.document_id
         JOIN vouchers v ON v.account_set_id=m.account_set_id AND v.legacy_id=m.voucher_legacy_id
-        WHERE m.account_set_id=? AND m.sku=? AND m.inventory_account_code=? AND m.movement_date>=? AND m.movement_date<=?
-          AND d.legacy_id<>? AND v.status='POSTED'""",(book,sku,account,opening["period"]+"-01",doc_date,legacy_id)).fetchone()
-    available_qty=int(opening_qty["qty"])+int(movement["qty"])
-    available_value=int(opening_qty["value"])+int(movement["value"])
+        WHERE m.account_set_id=? AND UPPER(m.sku)=UPPER(?) AND m.inventory_account_code=? AND m.warehouse=? AND m.movement_date>=? AND m.movement_date<=?
+          AND d.legacy_id<>? AND v.status='POSTED'""",(book,sku,account,warehouse,opening["period"]+"-01",doc_date,legacy_id)).fetchone()
+    available_qty=int(opening_qty["qty"])+int(movement["qty"])+returned_qty
+    available_value=int(opening_qty["value"])+int(movement["value"])+returned_value
     if available_qty<quantity_milli: raise HTTPException(409,f"可用库存不足：当前 {available_qty/1000:g}，本次出库 {quantity_milli/1000:g}")
+    if kind=='PURCHASE_RETURN':
+        if cost_cents > available_value or (quantity_milli == available_qty and cost_cents != available_value):
+            raise HTTPException(409, '采购退货后库存成本会出现差额，请核对原仓库存')
+        return
     expected=round(quantity_milli*available_value/available_qty) if available_qty>0 else 0
     if abs(expected-cost_cents)>1: raise HTTPException(409,f"库存移动加权平均成本不一致：应为 {expected} 分，提交 {cost_cents} 分")
 
@@ -210,9 +216,14 @@ def _upsert_inventory_doc(conn, book, r, enforce_stock=False):
             if not issue or issue["status"]!="POSTED": raise HTTPException(409,"请先完成生产领料凭证记账，再办理完工入库")
             if order["completion_doc_legacy_id"] and order["completion_doc_legacy_id"]!=legacy_id: raise HTTPException(409,"该生产订单已经存在完工入库单")
     if enforce_stock:
-        _assert_inventory_ready(conn,book,doc_date,sku,account,qty,cost,legacy_id,kind)
+        _assert_inventory_ready(conn,book,doc_date,sku,account,warehouse,qty,cost,legacy_id,kind)
     voucher_legacy_id = str(r.get("voucherId") or "") or None
     invoice_legacy_id = str(r.get("invoiceRecordId") or "") or None
+    if enforce_stock and kind == "SALE" and invoice_legacy_id:
+        duplicate = conn.execute("SELECT 1 FROM business_documents WHERE account_set_id=? AND doc_type='SALE' AND invoice_legacy_id=? AND legacy_id<>?", (book, invoice_legacy_id, legacy_id)).fetchone()
+        ar = conn.execute("SELECT 1 FROM app_records WHERE account_set_id=? AND store_name='Workpapers' AND record_id LIKE 'ar:due:invoice:%' AND json_extract(payload_json,'$.source')=?", (book, invoice_legacy_id)).fetchone()
+        if duplicate or ar:
+            raise HTTPException(409,"发票已关联其他销售或应收业务")
     production_id = str(r.get("productionOrderId") or "") or None
     values = (book, legacy_id, kind, doc_no, doc_date, period, r.get("supplier") or r.get("customer"), account,
         sku, name, warehouse, qty, unit_price, unit_cost, net, tax, stock_cost, gross, cost,
@@ -265,6 +276,7 @@ def _upsert_settlement(conn, book, r):
     if settlement_date[:7]!=settlement_period: raise HTTPException(422,"结算期间必须与结算日期一致")
     if settlement_date < source_doc["doc_date"]: raise HTTPException(422,"结算日期不能早于来源单据日期")
     source_amount=source_doc["gross_cents"] if kind=="AR_RECEIPT" else source_doc["net_cents"]+source_doc["tax_cents"]
+    source_amount-=sum(row['grossCents'] for row,_ in active_returns(conn,book) if row['sourceDocId']==source)
     used=conn.execute("SELECT COALESCE(SUM(amount_cents),0) AS total FROM business_settlements WHERE account_set_id=? AND source_doc_legacy_id=? AND legacy_id<>?",(book,source,legacy_id)).fetchone()["total"]
     if amount+used>source_amount: raise HTTPException(409,"结算金额超过来源单据剩余未结金额")
     conn.execute("""INSERT INTO business_settlements(account_set_id,legacy_id,settlement_type,settlement_no,source_doc_legacy_id,source_doc_no,source_date,counterparty,settlement_date,period,bank,amount_cents,voucher_legacy_id,created_at)
@@ -567,8 +579,32 @@ def commit_business_and_vouchers(payload: BusinessCommit, conn: sqlite3.Connecti
             legacy=str(record["id"])
             period=str(record.get("period") or str(record.get("date") or "")[:7])
             if period:
-                locked=conn.execute("SELECT is_locked FROM accounting_periods WHERE account_set_id=? AND period=?",(payload.account_set_id,period)).fetchone()
-                if locked and locked["is_locked"]: raise HTTPException(409,f"会计期间 {period} 已锁定，不能保存业务单据")
+                validate_period(period)
+                assert_period_unlocked(conn, period + "-01", payload.account_set_id)
+            if legacy.startswith(('fw-return:', 'fw-refund:', 'fw-fx:')):
+                book=payload.account_set_id
+                if conn.execute("SELECT 1 FROM app_records WHERE account_set_id=? AND store_name='Workpapers' AND record_id=?", (book,legacy)).fetchone():
+                    raise HTTPException(409,'业务记录已经保存')
+                if legacy.startswith('fw-return:'):
+                    validate_return(conn,book,record,prepared_vouchers,_assert_inventory_ready)
+                else:
+                    validate_auxiliary_voucher(conn,book,record,prepared_vouchers)
+                conn.execute("INSERT INTO app_records(account_set_id,store_name,record_id,payload_json) VALUES(?,'Workpapers',?,?)", (book,legacy,json.dumps(record,ensure_ascii=False)))
+                continue
+            if legacy.startswith("ar:due:invoice:"):
+                book = payload.account_set_id
+                source = _str(record, "source")
+                if not any(str(model.legacy_id) == "ar-voucher:" + legacy for model in prepared_vouchers):
+                    raise HTTPException(422,"发票应收须与对应凭证一起保存")
+                duplicate = conn.execute("SELECT 1 FROM business_documents WHERE account_set_id=? AND doc_type='SALE' AND invoice_legacy_id=?", (book, source)).fetchone()
+                if duplicate:
+                    raise HTTPException(409,"发票已关联销售出库")
+                old = conn.execute("SELECT 1 FROM app_records WHERE account_set_id=? AND store_name='Workpapers' AND record_id=?", (book, legacy)).fetchone()
+                if (old and legacy in payload.insert_only_record_ids) or (not old and legacy in payload.update_only_record_ids):
+                    raise HTTPException(409,"发票应收记录已变化，请刷新")
+                conn.execute("""INSERT INTO app_records(account_set_id,store_name,record_id,payload_json) VALUES(?,'Workpapers',?,?)
+                    ON CONFLICT(account_set_id,store_name,record_id) DO UPDATE SET payload_json=excluded.payload_json""", (book,legacy,json.dumps(record,ensure_ascii=False)))
+                continue
             exists=any(conn.execute(f"SELECT 1 FROM {table} WHERE account_set_id=? AND legacy_id=?",(payload.account_set_id,legacy)).fetchone() for table in ("inventory_openings","business_documents","business_settlements","production_orders","payroll_batches"))
             if legacy in payload.insert_only_record_ids and exists: raise HTTPException(409,f"业务记录编号已存在：{legacy}")
             if legacy in payload.update_only_record_ids and not exists: raise HTTPException(404,f"待更新业务记录不存在：{legacy}")
@@ -948,11 +984,16 @@ def inventory_balance(account_set_id: str = Query(default="default"), period: st
       ), combined AS (
         SELECT account_code,sku,warehouse,qty,value FROM opening_rows
         UNION ALL SELECT account_code,sku,warehouse,qty,value FROM movement_rows
+        UNION ALL SELECT json_extract(a.payload_json,'$.inventoryAccount'),json_extract(a.payload_json,'$.sku'),json_extract(a.payload_json,'$.warehouse'),
+          (CASE json_extract(a.payload_json,'$.kind') WHEN 'SALE_RETURN' THEN 1 ELSE -1 END)*json_extract(a.payload_json,'$.qtyMilli'),
+          (CASE json_extract(a.payload_json,'$.kind') WHEN 'SALE_RETURN' THEN 1 ELSE -1 END)*json_extract(a.payload_json,'$.stockCostCents')
+        FROM app_records a JOIN vouchers v ON v.account_set_id=a.account_set_id AND v.legacy_id=json_extract(a.payload_json,'$.voucherId')
+        WHERE a.account_set_id=? AND a.store_name='Workpapers' AND a.record_id LIKE 'fw-return:%' AND v.status='POSTED' AND v.voucher_date BETWEEN ? AND ?
       )
       SELECT c.account_code,c.sku,i.name,c.warehouse,SUM(c.qty) AS quantity_milli,SUM(c.value) AS amount_cents
       FROM combined c JOIN inventory_items i ON i.account_set_id=? AND i.sku=c.sku AND i.inventory_account_code=c.account_code
       GROUP BY c.account_code,c.sku,i.name,c.warehouse ORDER BY c.account_code,c.sku,c.warehouse""",
-      (account_set_id,opening["id"],account_set_id,start_date,end_date,account_set_id)).fetchall()
+      (account_set_id,opening["id"],account_set_id,start_date,end_date,account_set_id,start_date,end_date,account_set_id)).fetchall()
     items=[]
     for row in rows:
         qty=int(row["quantity_milli"] or 0); amount=int(row["amount_cents"] or 0)

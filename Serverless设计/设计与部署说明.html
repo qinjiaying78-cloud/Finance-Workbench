@@ -1,0 +1,104 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finance Workbench 无服务器协作设计</title>
+<style>body{max-width:1060px;margin:36px auto;padding:0 20px;font:16px/1.75 system-ui,"Microsoft YaHei",sans-serif;color:#222}h1{line-height:1.25}h2{margin-top:40px}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #ddd;padding:10px;text-align:left;vertical-align:top}th{background:#f4f3ee}code{overflow-wrap:anywhere}pre{background:#f4f3ee;padding:16px;overflow:auto}a{color:#194f70}.scroll{overflow-x:auto}</style>
+<h1>Finance Workbench 无服务器协作设计</h1>
+<p>确认稿 · 2026 年 11 月 22 日</p>
+<p>采用 GitHub Pages 托管现有前端，Supabase 免费版提供 PostgreSQL、Auth、RLS 与 Edge Functions，GitHub Actions 每天北京时间 02:17 发起同步。此包提供初始 SQL、前端接入契约，以及定时调用脚本和工作流。业务 RPC、飞书和 Google 的读取适配器、Edge Function 实现以及生产部署放在方案确认后的阶段。</p>
+<ul><li><a href="001_schema_rls.sql">Supabase 建表与 RLS 初始化 SQL</a></li><li><a href="scripts/sync-nightly.mjs">定时同步调用脚本</a></li><li><a href=".github/workflows/finance-sync.yml">GitHub Actions 配置</a></li></ul>
+
+<h2>1. 整体架构与部署</h2>
+<p>现有工作台的 <code>initStorage()</code> 先准备浏览器存储，再探测本机 FastAPI。<code>saveRecords()</code>、<code>getAllFromStore()</code> 和 <code>financialBook()</code> 是现有数据入口，界面还有本地期末校验及凭证流程。分阶段保留七个侧栏模块、子菜单和互动导览，新增独立的 Supabase 数据适配层。云协作模式将过账、锁定、报表生成和权限验证交由数据库。云连接断开时停止协作账套写入。离线练习用单独的数据空间。</p>
+<pre>浏览器 ── GitHub Pages 下载静态前端
+    ├── Supabase Auth 登录 → PostgreSQL RLS 读账、RPC 写账
+    └── 立即同步 → sync-manual（用户 JWT） ┐
+GitHub Actions 02:17 → sync-cron（专用密钥） ├→ 同步引擎 → 外部官方 API
+                                              └→ PostgreSQL 证据、异常、流程任务</pre>
+<p>GitHub Free 的 Pages 通常需要公开仓库。页面、前端代码和项目公开配置可见，账套、业务样例以外的备份、数据库、凭证附件和密钥均不进入 Pages 构建或仓库。采用独立静态构建目录、HTTPS 和受邀登录。GitHub Pages 对商业 SaaS 和涉及敏感交易的网站有限制。若面向客户经营在线财务 SaaS，正式发布前须选符合用途的静态托管，该替换不会改变数据库设计。<a href="https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits">GitHub Pages 使用限制</a></p>
+<p>免费版适合小规模试运行。设置数据库、附件、Edge 调用与流量监控，单次 Edge 请求分批运行。免费项目有闲置暂停与配额限制。GitHub 定时任务可延迟，公开仓库连续 60 天无活动时可能被禁用。首页记录最后一次成功同步，超过 30 小时显示提示并保留「立即同步」入口。定期加密导出 PostgreSQL 和私有附件，并做恢复演练。<a href="https://supabase.com/pricing">Supabase 套餐</a> · <a href="https://supabase.com/docs/guides/functions/limits">Edge Functions 限制</a> · <a href="https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule">GitHub 定时任务规则</a></p>
+
+<h2>2. 数据库与权限</h2>
+<div class="scroll"><table><thead><tr><th>用途</th><th>表</th><th>约束与读取范围</th></tr></thead><tbody>
+<tr><td>账套、成员与账期</td><td><code>books</code>、<code>book_members</code>、<code>periods</code>、<code>reporter_scopes</code></td><td>角色按账套配置。所有业务对象和关系带账套 ID，复合外键阻断跨账套关联。停用成员后 RLS 即时收回权限。</td></tr>
+<tr><td>总账与明细</td><td><code>accounts</code>、<code>dimensions</code>、<code>account_dimensions</code>、<code>vouchers</code> 及分录、分录辅助表，<code>opening_snapshots</code> 及期初分录</td><td>凭证、币种和期初按整数分保存；数量用定点小数。过账时事务核对借贷、科目启停、辅助维度、期间状态、自审及版本。</td></tr>
+<tr><td>业务台账</td><td><code>ledger_items</code>、<code>match_allocations</code></td><td>仓管、报销、固定资产与出纳单据。记录预付款或发货款、发票齐全状态、是否催票、研发项目。按采购单行、入库单行和发票行分配数量与金额。</td></tr>
+<tr><td>外部同步与预警</td><td><code>sync_connections</code>、<code>sync_batches</code>、<code>sync_runs</code>、<code>sync_observations</code>、<code>external_rows</code>、<code>reconcile_alerts</code></td><td>服务侧暂存分页证据，已接受的外部基线禁止修改或删除。来源连接、记录 ID 唯一；重跑不会重复入账。</td></tr>
+<tr><td>个人配置与流程</td><td><code>user_preferences</code>、<code>workflow_cases</code>、<code>workflow_tasks</code></td><td>个人快捷模块按用户与账套存储。流程分申请与任务，用户只读本人参与或发起的流程。源单据跳转仍重新鉴权。</td></tr>
+<tr><td>税务与审计</td><td><code>vat_closings</code>、<code>audit_logs</code></td><td>每账套每期间最多一个有效 VAT 结转版本。事务内审计触发器记录操作者、关联键、时间、请求 ID 及前后快照；日志为追加型。</td></tr>
+</tbody></table></div>
+<p>SQL 已启用 RLS。匿名无数据访问权，浏览器角色仅获必要的读取权限。业务写入 RPC 会逐条授予执行权限，校验 <code>auth.uid()</code> 对账套的当前角色和单据范围，禁止默认 <code>PUBLIC EXECUTE</code>。系统密钥仅在 Edge Function 环境使用。审计追加保护覆盖应用身份和服务身份的正常操作，项目数据库所有者能改变数据库规则。正式运行时将审计摘要和周期快照独立保管。<a href="https://supabase.com/docs/guides/database/postgres/row-level-security">Supabase RLS</a> · <a href="https://supabase.com/docs/guides/getting-started/api-keys">公开与服务密钥的边界</a></p>
+<div class="scroll"><table><thead><tr><th>角色</th><th>权限</th></tr></thead><tbody>
+<tr><td>财务总监</td><td>账套业务全查、授权导出、终审、期间锁定或有理由重开、成员与外部连接配置。同一人跨角色也禁止自审。</td></tr>
+<tr><td>会计</td><td>会计凭证与科目维护、核对差异、发起锁定单据更正或红冲、报表与增值税草稿及必要财务导出。终审由另一位授权人员完成。</td></tr>
+<tr><td>出纳</td><td>资金记录与相关采购、收货、发票台账只读。通过专用 RPC 登记资金或提交催票状态，不获得修改总账和已锁定业务凭证的权限。催票动作留痕并在服务侧限制对象和字段。</td></tr>
+<tr><td>仓管／业务填报员</td><td>仅在获授权的仓管、报销或资产模块填报与查看本人的提交记录。业务表单使用专用的项目选项接口，后端按允许的辅助字段返回最小数据集。</td></tr>
+</tbody></table></div>
+<p>附件后续使用 Supabase 私有 Storage bucket，按账套、单据和当前权限签发短时访问链接。SQLite 的附件、库存资产明细、合同、银行对账、工资及其他既有档案需另做迁移映射。上面的首期 schema 覆盖本次六个模块的基础模型；现有全部业务的迁移表与写入 RPC 属于确认后的开发工作。</p>
+
+<h2>3. 核心接口与流程</h2>
+<div class="scroll"><table><thead><tr><th>接口契约</th><th>权限与状态变化</th></tr></thead><tbody>
+<tr><td><code>workspace_context()</code>、<code>save_shortcuts(book_id, keys, version)</code></td><td>返回可见账套、角色、菜单权限、个人配置。保存校验用户、导航键和版本。操作成功后刷新快捷入口。</td></tr>
+<tr><td><code>submit_ledger_item(...)</code>、<code>update_invoice_followup(...)</code>、<code>request_correction(...)</code></td><td>提交进入待核对或待审。账期锁定后停用本期写入。已锁定台账由财务填写原因走更正单，产生关联的新版本或冲销，原凭证与来源证据保留。出纳只调用催票专用入口。</td></tr>
+<tr><td><code>submit_voucher(...)</code>、<code>review_voucher(...)</code>、<code>post_voucher(...)</code>、<code>reverse_voucher(...)</code></td><td>草稿 → 待审 → 已审核 → 已记账。驳回留痕后可修订重提。已记账凭证不能直接改分录，红冲应在开放期间生成关联凭证。提交、审批、过账均带版本；写请求带唯一请求键。</td></tr>
+<tr><td><code>lock_period(...)</code>、<code>reopen_period(...)</code></td><td>开放 → 待复核 → 锁定。总监在关账前验证试算、银行、业务和税务状态。重开记原因并重跑受影响的报表与税务链。凭证过账、结转和关账竞争同一账期行锁。</td></tr>
+<tr><td><code>save_account(...)</code>、<code>trial_balance(book_id, month, level)</code></td><td>财务创建或停用账户，校验父子编码。余额由服务器聚合已记账分录。返回逐行借贷、期初期末、级次、父级与辅助维度下钻数据。</td></tr>
+<tr><td><code>workflow_inbox(...)</code>、<code>workflow_act(...)</code>、<code>mark_notice_read(...)</code></td><td>我的待办为本人未处理任务，待阅为本人未读通知，已办与已阅按处理或已读时间，我的发起按本人创建查询。筛选支持类别、发起人及状态。审批必须属于指派且仍有源单据权限；通知只改本人的已读状态。</td></tr>
+<tr><td><code>vat_preview(book_id, month)</code>、<code>vat_create_draft(...)</code></td><td>财务从已记账数据预览，再生成待审凭证或确认无需凭证。审批过账后更新月度结转状态。对已有记录幂等返回。快照变动时要求重算。</td></tr>
+<tr><td><code>POST /functions/v1/sync-manual</code>、<code>POST /functions/v1/sync-cron</code></td><td>手动由会计或总监指定其获授权账套的连接，验证用户 JWT。定时接口仅持有专用随机密钥的运行器可用，后端只取启用且允许定时的连接。两者共用同步逻辑与连接锁。</td></tr>
+</tbody></table></div>
+<p>业务写入把状态转移、原始单据、任务、凭证与审计日志提交在一个数据库事务内。校验旧版本失败返回 409，界面提示刷新；角色和账套不匹配返回拒绝。第一位总监通过 Supabase 控制台创建 Auth 用户后，由数据库管理员写入 <code>books</code> 与 <code>book_members</code>；后续角色分配走总监专用接口。</p>
+
+<h2>4. 外部表格、同步与三单核对</h2>
+<ol>
+<li>连接配置绑定账套、来源、表、用途和字段映射版本。总监可管理映射和凭据引用，密钥值从 Supabase Secrets 注入。飞书自建应用通过 <code>tenant_access_token</code> 分页读取并使用稳定 <code>record_id</code>。Google Sheets 用获指定表格读取权限的身份调用 values.batchGet，必须预先提供受保护的稳定 <code>external_id</code> 列。行号、摘要或金额都不作主键。<a href="https://open.feishu.cn/document/docs/bitable-v1/faq?lang=zh-CN">飞书查询与权限说明</a> · <a href="https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets.values/batchGet">Google Sheets 批量读取</a></li>
+<li>首期每天做一次完整分页核验，只把新增行写入业务台账。规范化金额为分、数量为定点、枚举为统一值、空值与日期按固定规则处理。基线保留规范化快照、SHA-256、映射版本。可在后续加增量拉取提速，完整核验仍用于发现删除和旧行修改。</li>
+<li>接收到新 ID 先放暂存，发现重复 ID 时把该 ID 整组隔离。完整性确认后，用事务创建外部基线及锁定台账，台账进入「待财务核对」，不会自动过账。相同 ID、相同快照跳过写入。已存在 ID 内容不同，创建「疑似篡改」。完整扫描确认缺行后创建「疑似删除／缺失」提醒。权限变化、分页超时、视图过滤变更或异常空结果时标记扫描不完整，禁止据此判断删除；可要求再做一次独立完整扫描确认缺失。</li>
+<li>单次处理以连接为单位加数据库租约，续跑持相同请求键和租约栅栏。页面显示开始、结束、上次成功及读取、新增、成功、异常数；错误响应不回填历史账。并发手动与定时请求复用或等待在跑连接。失败在租约回收后继续，观察表保留短期以供核对。</li>
+<li>按采购订单号＋行号、供应商、商品、币种和税率匹配。分批到货、部分开票用数量与不含税金额分配行，校验累计不超单。预付款先列为付款阶段，不直接对冲到货数量；发货款按确认收货与发票链核对。把外部金额、数量、款项性质及发票状态和系统账逐项对照，按稳定指纹汇总异常，避免每晚重复发待办。差异弹窗按字段显示前后值与来源。外表的真正「仅追加」由飞书权限或 Google 表保护、专用提交入口实现；有编辑覆写权限的来源系统仍需接受事后核对。</li>
+</ol>
+
+<h2>5. 科目、余额表与增值税</h2>
+<p>代码采用 4／6／8／10 位的项目编码约定，默认展开或查询 1～3 级，可启用 4 级。父级取去掉最后两位后的代码，由复合外键校验。在报表中同时显示「本级直接发生额」与「含下级汇总」。期初按正式启用期余额与前期已记账流水计算，本期借和贷分别向上归并，期末按带符号余额计算后展示借贷方向。合计基于原始分录一次汇总；不再把父级和子级显示金额相加。</p>
+<div class="scroll"><table><thead><tr><th>新增模板代码</th><th>科目</th></tr></thead><tbody>
+<tr><td><code>1001</code>／<code>1002</code>／<code>100201–100203</code></td><td>库存现金、银行存款、基本户／一般户／专户。实际账号另用银行账户辅助核算。</td></tr>
+<tr><td><code>1012</code>／<code>101201–101204</code></td><td>其他货币资金，明细可含外埠存款、银行汇票存款、银行本票存款、信用证保证金存款。</td></tr>
+<tr><td><code>1221</code>／<code>2241</code></td><td>其他应收款、其他应付款，按往来、部门或项目启用辅助核算。</td></tr>
+<tr><td><code>2221</code>／<code>22210101–22210108</code></td><td>应交税费／应交增值税专栏。依次为进项税额、销项税额、转出未交增值税、已交税金、进项税额转出、销项税额抵减、转出多交增值税、减免税款。以税务标签取数，代码不会写死在界面。</td></tr>
+<tr><td><code>222102–222109</code></td><td>未交增值税、预交增值税、待认证进项税额、待转销项税额、应交企业所得税、应交城市维护建设税、应交教育费附加、应交地方教育附加。其余专栏按适用税制补充。</td></tr>
+</tbody></table></div>
+<p>科目管理支持新增明细、改名称、停用和恢复。历史报表保留旧分录。迁移已有父级发生额时保留历史的直接发生额，或审批后映射至专用历史明细。禁止把历史 2221 汇总余额静默拆分成进销项。已使用科目禁止物理删除。财政部允许在遵守确认、计量及报告规定的前提下按实际增设明细。<a href="https://kjs.mof.gov.cn/zhengcefabu/201111/P020111118325852734144.pdf">小企业会计准则科目附录</a></p>
+<p>税务菜单在「税务计算与台账」下新增「进项与销项期末结转」。一般纳税人简化路径下，已从待认证转入进项专栏的金额只计一次，进项转出调减可抵扣净额。上期留抵由上一期已确认结转承接，迁移首月从已核对的期初底稿录入。差额＝本期净销项 − 本期可抵扣进项净额 − 上期留抵。仅在该月没有已缴、预缴、减免、退税等需单独处理项目时，差额大于零可生成建议分录，借 22210103、贷 222102。小于等于零时记录留抵或零，无须生成此分录。</p>
+<p>有当月已缴、预缴、多交、抵减、出口或留抵退税等情况时，分开显示各项并进入人工复核，确认会计与申报口径后再过账。小规模纳税人另走适用的简易模型。预览保存来源分录 ID、期间、政策参数与哈希；过账前复验。已有结转凭证需先在开放期间办理审批更正或红冲，后续期间承接值受影响时标记重算。<a href="https://www.mof.gov.cn/gkml/caizhengwengao/2017wg/wg201703/201707/t20170707_2641107.htm">财政部《增值税会计处理规定》</a></p>
+
+<h2>6. 首页、待办与前端 SDK 接入</h2>
+<p>首页压缩 Banner，新增「编辑常用模块」。七个一级入口点击后仍展开侧栏，子功能直接打开现有页。快捷模块可勾选、排序、保存；给键盘移动提供上移与下移按钮。权限变化后在显示和保存时过滤不可访问项。顶栏铃铛分开展示待办和未读数量，从当前账套按人聚合，点击列表进入业务单据。完整「流程中心」分四类视图及已阅／已办细分，可按类别、发起人、状态筛选；切换账套后重载。首版使用分页和有界刷新，避免依赖实时订阅才能获得正确状态。</p>
+<p>引入 <code>@supabase/supabase-js</code>，依赖版本和锁文件随静态构建提交，并配置 GitHub Pages 子路径。前端配置只有项目 URL、公开 publishable key 和应用回调地址。首版建议 GitHub OAuth 受邀账号，第三方表格权限仍由服务端独立管理；Auth 注册策略与邀请流程在测试项目先验证。若使用邮件方式，先核对 SMTP 发信限制并配置合适的邮件服务。下列是接入形状，其中 <code>workspace_context</code> 属于下一阶段 RPC。</p>
+<pre>import { createClient } from '@supabase/supabase-js';
+const sb = createClient(projectUrl, publishableKey);
+await sb.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: pagesAppUrl } });
+// Redirect 回到页面后：
+const { data: { session } } = await sb.auth.getSession();
+if (session) {
+  const { data, error } = await sb.rpc('workspace_context');
+  if (error) throw error;
+  renderAuthorizedWorkspace(data);
+}
+// 手动同步按钮点击时：
+const result = await sb.functions.invoke('sync-manual', {
+  body: { book_id: activeBookId, connection_id: selectedConnectionId, request_key: crypto.randomUUID() }
+});</pre>
+<p>保留现有日期、金额和工作区渲染；用 adapter 替换 IndexedDB/SQLite 读写协议，逐步把直接读取本地台账的模块迁移到受控读取。旧的 <code>fwActor.role</code> 菜单控制改由账套上下文驱动。撤权、退出和切换账套时清理内存缓存，取消未完成请求，关闭敏感弹窗。金额在 API 以字符串传输或检查 JS 安全整数范围。<a href="https://supabase.com/docs/reference/javascript/initializing">Supabase SDK 初始化</a> · <a href="https://supabase.com/docs/guides/functions/auth">Edge Functions 鉴权</a></p>
+
+<h2>7. GitHub Actions 配置步骤</h2>
+<ol>
+<li>新建 Supabase Free 测试项目，在测试项目运行本包 SQL。创建首个授权身份与账套，检查角色可见性。生产数据迁移前先导出备份，导入临时账套，比对期初、分录、附件和期末报表。</li>
+<li>实际开发并部署 <code>sync-manual</code>、<code>sync-cron</code> 后再启用 workflow。前者验证 Supabase 用户 JWT 和账套角色。后者是专用机器入口，配置该函数的入口以接受自定义机器认证，并在函数首行恒时校验 <code>x-fw-cron-secret</code>，校验失败不查数据库。不要全局关闭 JWT 验证。设置 32 字节随机值，例如由管理员使用密码管理器生成；独立于 Supabase 管理密钥。</li>
+<li>在 Supabase Edge Secrets 配置 <code>FW_CRON_SECRET</code> 及飞书或 Google 只读凭据，后台只选择命名引用和映射。GitHub 仓库打开 <strong>Settings → Secrets and variables → Actions</strong>，在 Variables 设置 <code>SUPABASE_URL</code>，在 Secrets 设置同值 <code>FW_CRON_SECRET</code>。仓库无需存 Supabase 管理密钥或外部表格凭证。</li>
+<li>把 <code>scripts/sync-nightly.mjs</code> 与 <code>.github/workflows/finance-sync.yml</code> 放入默认分支。首次在 Actions 运行 <strong>Finance Workbench nightly sync → Run workflow</strong>，确认应出现一次同步、重复运行不覆盖或重复入账。UTC <code>17 18 * * *</code> 对应北京时间次日 02:17。</li>
+<li>Pages 部署只发布构建产物，设置 Supabase Auth Site URL 和允许的精确 Pages 回调。用两账套、四角色、一个外部样表和相同账户不同权限测试；对录入、篡改、删除、部分失效、并发、过账和迁移分别演练后才切换生产。</li>
+</ol>
+<p><strong>定时接口约定。</strong> 同一 GitHub run ID 使用同一 <code>request_key</code>。POST 小批执行或续跑，返回同一个 <code>sync_batches.id</code> 作为 <code>run_id</code>；单批含各连接 <code>sync_runs</code>，服务器锁定目标连接清单。返回 <code>queued</code> 或 <code>running</code> 时脚本继续调用，直到终态。后端在单次请求超时前返回，下一请求按检查点继续。成功要含 <code>stats: { read, new, success, anomalies }</code>；正常查出业务异常仍可标记同步成功，部分连接技术失败返回 <code>partial</code>。脚本重试临时错误并保持相同请求键，日志只输出编号和统计。交付的 SQL 和脚本可先用本地模拟验收，正式跑飞书或 Google 依赖尚待实现的 Edge 同步服务。</p>
+
+<h2>8. 开发顺序与确认点</h2>
+<ol><li>先做身份、账套隔离、期初迁移校验、凭证和锁期事务。在测试账套通过跨租户、越权、重复、关账竞争测试。</li><li>再做科目树、已记账余额表、标准报表、审计与流程中心，以现有 11 月演示账套的期末数验证迁移前后账表勾稽。</li><li>接飞书／Sheets，先验证一种再接另一种。验证只增不改、重复 ID、分页遗漏、权限缩小、篡改与删除、三单对照和告警收敛。</li><li>最后接首页偏好、待办提醒和增值税结转。先覆盖一般纳税人简化路径，再核定特殊税务情形。</li></ol>
+<p>请确认优先接飞书还是 Google Sheets，以及总监与会计是否由不同人员担任。方案默认飞书优先，制单人与终审人分开。若仅有一位财务人员，需另定授权复核方式再启用正式过账流程。</p>
+</html>

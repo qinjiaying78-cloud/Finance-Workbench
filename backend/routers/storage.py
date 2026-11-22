@@ -13,7 +13,7 @@ import re
 import sqlite3
 from typing import Any
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import Request, APIRouter, Body, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from ..database import get_connection, ensure_default_accounts
@@ -66,8 +66,14 @@ def _record_id(store: str, row: dict[str, Any]) -> str:
     return str(value)
 
 
+def _assert_not_retired(conn: sqlite3.Connection, account_set_id: str) -> None:
+    if conn.execute("SELECT 1 FROM retired_account_sets WHERE id=?", (account_set_id,)).fetchone():
+        raise HTTPException(410, "该账套已删除，不能由旧浏览器记录重新创建")
+
+
 def _ensure_account_set(conn: sqlite3.Connection, payload: BatchWrite) -> None:
     _validate_set_id(payload.account_set_id)
+    _assert_not_retired(conn, payload.account_set_id)
     name = (payload.account_set_name or payload.account_set_id).strip()[:120]
     conn.execute(
         """INSERT INTO account_sets(id,name,is_demo) VALUES(?,?,?)
@@ -132,9 +138,28 @@ def _apply_batch(conn: sqlite3.Connection, payload: BatchWrite) -> dict[str, int
 
 
 @router.get("/account-sets")
-def list_account_sets(conn: sqlite3.Connection = Depends(get_db)):
+def list_account_sets(request: Request, conn: sqlite3.Connection = Depends(get_db)):
     rows = conn.execute("SELECT * FROM account_sets ORDER BY name,id").fetchall()
-    return {"items": [{**dict(row), "is_demo": bool(row["is_demo"])} for row in rows]}
+    retired = [row[0] for row in conn.execute("SELECT id FROM retired_account_sets ORDER BY id")]
+    from ..collab_auth import session_actor
+    actor=session_actor(conn,request)
+    if actor:
+        permitted={r[0] for r in conn.execute('SELECT DISTINCT account_set_id FROM fw_book_roles WHERE user_name=? AND active=1',(actor['name'],))}
+        rows=[r for r in rows if r['id'] in permitted]
+    # The internal default tenant is needed for compatibility, but an empty
+    # placeholder should not displace the first-company setup screen.
+    if actor or request.query_params.get('real_books') == 'true':
+        rows = [row for row in rows if row["id"] != "default" or row["name"] != "默认账套" or conn.execute("""
+            SELECT 1 FROM vouchers WHERE account_set_id='default'
+            UNION ALL SELECT 1 FROM cashier_records WHERE account_set_id='default'
+            UNION ALL SELECT 1 FROM invoices WHERE account_set_id='default'
+            UNION ALL SELECT 1 FROM accounts WHERE account_set_id='default' AND (initial_debit<>0 OR initial_credit<>0)
+            UNION ALL SELECT 1 FROM app_records WHERE account_set_id='default' AND store_name<>'Settings'
+                AND record_id<>'meta:seeded_vouchers'
+            UNION ALL SELECT 1 FROM fw_ledger_items WHERE account_set_id='default'
+            LIMIT 1
+        """).fetchone()]
+    return {"items": [{**dict(row), "is_demo": bool(row["is_demo"])} for row in rows], "retired_ids": retired}
 
 
 @router.put("/account-sets/{account_set_id}")
@@ -144,6 +169,7 @@ def upsert_account_set(
     conn: sqlite3.Connection = Depends(get_db),
 ):
     _validate_set_id(account_set_id)
+    _assert_not_retired(conn, account_set_id)
     conn.execute(
         """INSERT INTO account_sets(id,name,is_demo) VALUES(?,?,?)
            ON CONFLICT(id) DO UPDATE SET name=excluded.name,is_demo=excluded.is_demo,

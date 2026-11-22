@@ -57,11 +57,32 @@ class CloseRequest(BaseModel):
  reason:str='期末结账'
 
 @router.put('/bank-matches')
-def save_bank_matches(items:list[BankMatch],account_set_id:str=Query('default'),conn=Depends(db)):
+def save_bank_matches(
+ items:list[BankMatch],account_set_id:str=Query('default'),conn=Depends(db),
+ replace_period:str|None=None,replace_account:str|None=None,
+):
  assert_account_set(conn,account_set_id)
  if len(items)>20000: raise HTTPException(413,'单次对账流水不得超过 20000 条')
+ replace_scope = replace_period is not None or replace_account is not None
+ if replace_scope:
+  if not replace_period or not replace_account:
+   raise HTTPException(422,'保存整批对账须指定期间和银行账户')
+  validate_period(replace_period)
+  if any((item.period,item.bank_account)!=(replace_period,replace_account) for item in items):
+   raise HTTPException(422,'对账记录的期间或银行账户不一致')
+  incoming_ids = {item.legacy_id for item in items}
+  if len(incoming_ids)!=len(items):
+   raise HTTPException(422,'对账结果中存在重复记录标识')
  try:
   conn.execute('BEGIN IMMEDIATE')
+  if replace_scope:
+   assert_period_unlocked(conn,replace_period+'-01',account_set_id)
+   previous = conn.execute(
+    'SELECT id,legacy_id FROM v11_bank_matches WHERE account_set_id=? AND period=? AND bank_account=?',
+    (account_set_id,replace_period,replace_account),
+   ).fetchall()
+   conn.executemany('DELETE FROM v11_bank_matches WHERE id=?',
+     [(row['id'],) for row in previous if row['legacy_id'] not in incoming_ids])
   for x in items:
    validate_period(x.period)
    conn.execute('''INSERT INTO v11_bank_matches(account_set_id,legacy_id,period,bank_account,bank_amount,book_amount,bank_date,company_date,bank_ref,book_ref,status,difference_type,resolution,evidence,voucher_no,raw_json,updated_at)

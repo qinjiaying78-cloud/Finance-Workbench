@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 import sqlite3
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -26,6 +27,8 @@ def list_accounts(active_only: bool = True, account_set_id: str = Query("default
 @router.post("/api/accounts", status_code=201)
 def create_account(payload: AccountCreate, account_set_id: str = Query("default"), conn: sqlite3.Connection = Depends(get_db)):
     assert_account_set(conn, account_set_id)
+    from .collaboration import validate_account
+    validate_account(conn,account_set_id,payload.model_dump())
     debit, credit = money_to_cents(payload.initial_debit), money_to_cents(payload.initial_credit)
     if debit and credit: raise HTTPException(422, "科目期初余额只能填写借方或贷方其中一方")
     if payload.parent_code and not conn.execute("SELECT 1 FROM accounts WHERE account_set_id=? AND code=?", (account_set_id,payload.parent_code)).fetchone():
@@ -72,12 +75,61 @@ def update_period_lock(period: str,payload: PeriodLockUpdate,account_set_id: str
             if pending or cash or totals["d"]!=totals["c"] or bank_open:
                 raise HTTPException(409,f"期末结账检查未通过：待审核/草稿凭证 {pending} 张，未过账出纳记录 {cash} 笔，试算借贷差额 {totals['d']-totals['c']} 分，银行未处理差异 {bank_open} 条")
             locked_at=datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00","Z")
-        else: locked_at=None
+        else:
+            official = conn.execute("SELECT 1 FROM app_records WHERE account_set_id=? AND store_name='Workpapers' AND record_id=? AND json_type(payload_json,'$.archive')='object'", (account_set_id,f"closed:{period}")).fetchone()
+            if official:
+                raise HTTPException(409,"正式结账期间不能通过手动锁接口解锁")
+            locked_at=None
         conn.execute("""INSERT INTO accounting_periods(account_set_id,period,is_locked,locked_at,lock_reason,updated_at) VALUES(?,?,?,?,?,strftime('%Y-%m-%dT%H:%M:%fZ','now')) ON CONFLICT(account_set_id,period) DO UPDATE SET is_locked=excluded.is_locked,locked_at=excluded.locked_at,lock_reason=excluded.lock_reason,updated_at=excluded.updated_at""",(account_set_id,period,int(payload.is_locked),locked_at,payload.lock_reason)); conn.commit()
     except HTTPException: conn.rollback(); raise
     except Exception: conn.rollback(); raise
     row=conn.execute("SELECT * FROM accounting_periods WHERE account_set_id=? AND period=?",(account_set_id,period)).fetchone()
     return {**dict(row),"is_locked":bool(row["is_locked"])}
+
+@router.post("/api/periods/{period}/close", status_code=201)
+def close_period_with_snapshot(period: str, snapshot: dict, account_set_id: str = Query("default"), conn: sqlite3.Connection = Depends(get_db)):
+    """Commit the period lock and the browser's approved snapshot together."""
+    assert_account_set(conn, account_set_id)
+    validate_period(period)
+    archive = snapshot.get("archive")
+    if snapshot.get("id") != f"closed:{period}" or snapshot.get("period") != period or not isinstance(archive, dict):
+        raise HTTPException(422, "结账快照与会计期间不一致")
+    vouchers = archive.get("vouchers")
+    if not isinstance(vouchers, list) or any(not isinstance(row, dict) for row in vouchers):
+        raise HTTPException(422, "结账快照缺少凭证清单")
+    reports = archive.get("reports")
+    checks = archive.get("checks")
+    if not isinstance(reports, dict) or any(not isinstance(reports.get(key), dict) for key in ("balanceSheet", "profitAndLoss", "cashFlow")):
+        raise HTTPException(422, "结账快照缺少三张报表")
+    if not isinstance(checks, dict) or not checks or not all(value is True for value in checks.values()):
+        raise HTTPException(422, "结账快照缺少通过的检查或三张报表")
+    reason = "正式结账"
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        locked = conn.execute("SELECT is_locked FROM accounting_periods WHERE account_set_id=? AND period=?", (account_set_id, period)).fetchone()
+        marker = conn.execute("SELECT 1 FROM app_records WHERE account_set_id=? AND store_name='Workpapers' AND record_id=?", (account_set_id, snapshot["id"])).fetchone()
+        if (locked and locked["is_locked"]) or marker:
+            raise HTTPException(409, "该期间已锁定或已有结账快照")
+        current = conn.execute("SELECT id,legacy_id,status,posted_at,reversed_by_id FROM vouchers WHERE account_set_id=? AND substr(voucher_date,1,7)=? AND status<>'VOIDED'", (account_set_id, period)).fetchall()
+        identities = {(row["legacy_id"] or f'db-voucher-{row["id"]}', row["posted_at"], row["reversed_by_id"]) for row in current}
+        expected = {(row.get("id"), row.get("postedAt"), row.get("reversedById")) for row in vouchers}
+        if any(row["status"] not in ("POSTED", "REVERSED") for row in current) or identities != expected or len(current) != len(vouchers):
+            raise HTTPException(409, "期间凭证已变化或仍有未记账凭证，请刷新复核")
+        cash = conn.execute("SELECT 1 FROM cashier_records WHERE account_set_id=? AND substr(record_date,1,7)=? AND status<>'POSTED' LIMIT 1", (account_set_id, period)).fetchone()
+        bank = conn.execute("SELECT 1 FROM v11_bank_matches WHERE account_set_id=? AND period=? AND status<>'MATCH' AND (resolution IS NULL OR trim(COALESCE(evidence,''))='') LIMIT 1", (account_set_id, period)).fetchone()
+        if cash or bank:
+            raise HTTPException(409, "期间还有未处理的出纳或银行对账记录")
+        now = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+        conn.execute("""INSERT INTO accounting_periods(account_set_id,period,is_locked,locked_at,lock_reason,updated_at)
+          VALUES(?,?,1,?,?,?) ON CONFLICT(account_set_id,period) DO UPDATE SET
+          is_locked=1,locked_at=excluded.locked_at,lock_reason=excluded.lock_reason,updated_at=excluded.updated_at""", (account_set_id, period, now, reason, now))
+        conn.execute("INSERT INTO app_records(account_set_id,store_name,record_id,payload_json) VALUES(?,'Workpapers',?,?)", (account_set_id, snapshot["id"], json.dumps(snapshot, ensure_ascii=False)))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    return {"period": period, "is_locked": True, "snapshot_id": snapshot["id"]}
+
 
 @router.put("/api/contact-opening-balances")
 def upsert_contact_opening_balance(payload: ContactOpeningBalanceUpdate,account_set_id: str=Query("default"),conn: sqlite3.Connection=Depends(get_db)):
@@ -103,6 +155,9 @@ def update_account_opening_balances(payload: AccountOpeningBalanceBatch, account
             debit,credit=money_to_cents(item.initial_debit),money_to_cents(item.initial_credit)
             if debit and credit: raise HTTPException(422,f"科目 {item.code} 期初余额只能填写借方或贷方其中一方")
             conn.execute("UPDATE accounts SET initial_debit=?,initial_credit=? WHERE account_set_id=? AND code=?",(debit,credit,account_set_id,item.code))
+        total = conn.execute("SELECT COALESCE(SUM(initial_debit-initial_credit),0) FROM accounts WHERE account_set_id=?", (account_set_id,)).fetchone()[0]
+        if total:
+            raise HTTPException(422, f"整套科目期初余额借贷不平，差额 {total} 分")
         conn.commit()
     except HTTPException: conn.rollback(); raise
     except Exception: conn.rollback(); raise
@@ -118,6 +173,7 @@ def update_account(code: str, payload: AccountUpdate, account_set_id: str = Quer
     if not current:
         raise HTTPException(404, "会计科目不存在")
     updates = payload.model_dump(exclude_unset=True)
+    if "parent_code" in updates and updates["parent_code"] != current["parent_code"]: raise HTTPException(422,"已有科目的层级不可移动")
     if not updates:
         raise HTTPException(422, "没有提供需要更新的字段")
     if "parent_code" in updates and updates["parent_code"]:

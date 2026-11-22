@@ -44,7 +44,14 @@ def _validate_entry_payload(conn: sqlite3.Connection, entries, account_set_id: s
             (account_set_id, entry.contact_id),
         ).fetchone():
             raise HTTPException(422, f"第 {i} 行往来单位不存在或不属于当前账套")
+        for dimension in conn.execute('SELECT kind,required FROM fw_account_dimensions WHERE account_set_id=? AND account_code=?',(account_set_id,entry.account_code)):
+            if dimension['required'] and dimension['kind'] not in entry.dimensions:
+                raise HTTPException(422,'缺少必填辅助核算：'+dimension['kind'])
+        for kind,ident in entry.dimensions.items():
+            if not conn.execute('SELECT 1 FROM fw_dimensions WHERE account_set_id=? AND id=? AND kind=? AND is_active=1',(account_set_id,ident,kind)).fetchone():
+                raise HTTPException(422,'辅助核算对象无效')
         normalized.append({
+            "dimensions": entry.dimensions,
             "account_code": entry.account_code,
             "contact_id": entry.contact_id,
             "aux_name": entry.aux_name,
@@ -77,6 +84,10 @@ def _insert_entries(conn: sqlite3.Connection, account_set_id: str, voucher_id: i
         ) for e in entries],
     )
 
+    inserted=conn.execute('SELECT id FROM voucher_entries WHERE account_set_id=? AND voucher_id=? ORDER BY id',(account_set_id,voucher_id)).fetchall()
+    for saved,entry in zip(inserted,entries):
+        for kind,dimension_id in entry.get('dimensions',{}).items():
+            conn.execute('INSERT INTO fw_entry_dimensions VALUES(?,?,?,?)',(account_set_id,saved['id'],kind,dimension_id))
 
 def _validate_postable(conn: sqlite3.Connection, account_set_id: str, voucher_id: int):
     entries = conn.execute(
@@ -97,6 +108,11 @@ def _validate_postable(conn: sqlite3.Connection, account_set_id: str, voucher_id
         ):
             raise HTTPException(422, "每行分录必须且只能填写借方或贷方金额")
         ensure_account(conn, row["account_code"], account_set_id)
+        missing=conn.execute('''SELECT d.kind FROM fw_account_dimensions d WHERE d.account_set_id=? AND d.account_code=? AND d.required=1
+          AND NOT EXISTS(SELECT 1 FROM fw_entry_dimensions e WHERE e.account_set_id=d.account_set_id AND e.entry_id=? AND e.kind=d.kind)''',(account_set_id,row['account_code'],row['id'])).fetchone()
+        if missing: raise HTTPException(422,'缺少必填辅助核算：'+missing['kind'])
+    from .collaboration import check_vat_posting
+    check_vat_posting(conn,account_set_id,voucher_id)
     return debit_total, credit_total
 
 
@@ -484,6 +500,13 @@ def reverse_voucher(
             raise HTTPException(409, "只有已过账且尚未冲销的凭证可以冲销")
         if original["reversed_by_id"] is not None:
             raise HTTPException(409, "该凭证已经存在冲销凭证")
+        from .returns_core import active_returns
+        legacy_id=original['legacy_id'] or ''
+        if legacy_id.startswith(('fw-return:','fw-refund:','fw-fx:')):
+            raise HTTPException(409,'该凭证关联退货、退款或调汇底稿，不能单独冲销')
+        source=conn.execute('SELECT legacy_id FROM business_documents WHERE account_set_id=? AND voucher_legacy_id=?',(account_set_id,legacy_id)).fetchone()
+        if source and any(row['sourceDocId']==source['legacy_id'] for row,_ in active_returns(conn,account_set_id)):
+            raise HTTPException(409,'该原单已有退货记录，不能单独冲销原凭证')
         assert_period_unlocked(conn, reverse_date_text, account_set_id)
         entries = conn.execute(
             "SELECT * FROM voucher_entries WHERE account_set_id=? AND voucher_id=? ORDER BY id",

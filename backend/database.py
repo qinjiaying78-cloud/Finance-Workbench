@@ -171,8 +171,12 @@ CREATE INDEX IF NOT EXISTS idx_invoices_date_no ON invoices(invoice_date, invoic
 def get_connection() -> sqlite3.Connection:
     """Return a configured SQLite connection. Caller must close it."""
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(DB_PATH), timeout=30, isolation_level="DEFERRED")
+    # FastAPI can enter and exit a per-request dependency on different worker threads.
+    conn = sqlite3.connect(str(DB_PATH), timeout=30, isolation_level="DEFERRED", check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    from .collab_db import actor_context,request_context
+    conn.create_function('fw_actor',0,actor_context.get)
+    conn.create_function('fw_request',0,request_context.get)
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA busy_timeout = 30000")
     return conn
@@ -649,6 +653,8 @@ def ensure_default_accounts(conn: sqlite3.Connection, account_set_id: str) -> in
         [(account_set_id, code, name, category, direction)
          for code, name, category, direction in CAS_FIRST_LEVEL_ACCOUNTS],
     )
+    from .collab_db import seed_details
+    seed_details(conn, account_set_id)
     return conn.execute(
         "SELECT COUNT(*) FROM accounts WHERE account_set_id=?", (account_set_id,)
     ).fetchone()[0]
@@ -669,8 +675,11 @@ def init_db() -> Path:
         _ensure_v9_normalized_columns(conn)
         _ensure_v10_business_schema(conn)
         _ensure_v11_schema(conn)
-        conn.execute("INSERT INTO account_sets(id,name,is_demo) VALUES('default','默认账套',0) ON CONFLICT(id) DO NOTHING")
-        ensure_default_accounts(conn, "default")
+        conn.execute("CREATE TABLE IF NOT EXISTS retired_account_sets(id TEXT PRIMARY KEY)")
+        retired_default = conn.execute("SELECT 1 FROM retired_account_sets WHERE id='default'").fetchone()
+        if not retired_default:
+            conn.execute("INSERT INTO account_sets(id,name,is_demo) VALUES('default','默认账套',0) ON CONFLICT(id) DO NOTHING")
+            ensure_default_accounts(conn, "default")
         conn.commit()
         violations = conn.execute("PRAGMA foreign_key_check").fetchall()
         if violations:

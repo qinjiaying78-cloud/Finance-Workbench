@@ -23,6 +23,7 @@ def _validate_money_precision(value: Decimal) -> Decimal:
 class VoucherEntryIn(StrictModel):
     account_code: str = Field(min_length=1, max_length=32)
     contact_id: int | None = None
+    dimensions: dict[str,str] = Field(default_factory=dict)
     summary: str = Field(default="", max_length=500)
     aux_name: str | None = Field(default=None, max_length=200)
     debit_amount: Decimal = Decimal("0.00")

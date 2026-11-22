@@ -52,6 +52,13 @@ async def upload_attachment(file: UploadFile = File(...)) -> dict[str, object]:
         destination = destination_dir / filename
         destination.write_bytes(content)
         relative_url = f"/uploads/{month_folder}/{filename}"
+        from ..database import get_connection
+        from ..collab_db import actor_context,book_context
+        conn=get_connection()
+        try:
+            if conn.execute("SELECT 1 FROM sqlite_master WHERE name='fw_upload_ownership'").fetchone():
+                with conn: conn.execute('INSERT INTO fw_upload_ownership(url,account_set_id,uploaded_by) VALUES(?,?,?)',(relative_url,book_context.get(),actor_context.get()))
+        finally: conn.close()
         return {
             "filename": filename,
             "url": relative_url,

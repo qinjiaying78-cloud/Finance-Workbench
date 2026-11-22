@@ -1,0 +1,37 @@
+INFO:     127.0.0.1:62774 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62777 - "GET /assets/collaboration.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62778 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51665 - "GET /app HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64381 - "GET /assets/collaboration.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64381 - "GET /assets/collaboration.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64381 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64381 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64381 - "GET /api/control/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64381 - "GET /api/control/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54695 - "POST /api/control/login HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:54959 - "POST /api/control/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54959 - "GET /app HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54959 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54959 - "GET /api/control/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54959 - "GET /api/storage/account-sets?real_books=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65275 - "POST /api/control/books HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59875 - "POST /api/control/books HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:61192 - "POST /api/control/books HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:61915 - "GET /api/v2/workflow/summary?account_set_id=aff3e38d-9ea8-4270-b566-5e173d54be97 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61915 - "GET /api/v2/workflow/summary?account_set_id=aff3e38d-9ea8-4270-b566-5e173d54be97 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54784 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62834 - "GET /app HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62834 - "GET /assets/collaboration.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62834 - "GET /assets/collaboration.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62834 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62834 - "GET /api/control/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62834 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:62834 - "GET /api/control/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50792 - "POST /api/control/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50792 - "GET /app HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50792 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50792 - "GET /api/control/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50792 - "GET /api/storage/account-sets?real_books=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59836 - "POST /api/control/books HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59836 - "POST /api/control/books HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59836 - "POST /api/control/books HTTP/1.1" 404 Not Found
