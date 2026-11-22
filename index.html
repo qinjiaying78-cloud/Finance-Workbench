@@ -1659,6 +1659,7 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
 @media print { .fw-file-control { display:none!important; } }
 
 </style>
+<link rel="stylesheet" href="assets/collaboration.css">
 </head>
 <body>
 <div id="toast">操作提示</div>
@@ -1682,7 +1683,7 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
     <span class="fw-header-status" id="backend-status-pill" role="status" aria-live="polite" data-state="loading"><span>连接中</span></span>
   </div>
   <div class="workbench-actions">
-    <button type="button" class="btn" id="fw-guide">新手导览</button>
+    <button type="button" class="btn" id="fw-guide">财务实操指南</button>
     <details class="fw-more" id="fw-more">
       <summary class="btn" id="fw-more-toggle">更多操作 <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></summary>
       <div class="fw-more-panel" aria-label="更多操作">
@@ -2005,7 +2006,7 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
       <p style="max-width:900px;">以合同编号贯通销售、采购及服务框架合同，自动汇总开票、收付款与履约节点；收付款记录进入出纳台账，发票记录回写合同进度。</p>
     </div>
     <div class="section-actions">
-      <button type="button" class="btn" id="contract-demo-load">载入演示合同</button>
+      
       <button type="button" class="btn btn-primary" id="contract-add">＋ 新增合同</button>
     </div>
   </div>
@@ -2744,7 +2745,7 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
   </div>
   <div class="panel audit-remediation-policy">
     <strong>流程与数据说明</strong>
-    <span>任务创建、分配、提交、复核、退回和关闭均记录操作人、时间及状态变化。浏览器演示模式保存于当前设备；SQLite 模式复用当前账套 Workpapers 通用记录接口。复扫快照及操作事件以独立追加记录保存在当前账套；浏览器和现有通用 Workpapers API 仅提供应用层追加约束，并非密码学防篡改。正式审计证据仍需服务端专用 append-only 审计表、数据库权限隔离、可信时间戳及备份策略。</span>
+    <span>任务创建、分配、提交、复核、退回和关闭均记录操作人、时间及状态变化。浏览器本地模式保存于当前设备；SQLite 模式复用当前账套 Workpapers 通用记录接口。复扫快照及操作事件以独立追加记录保存在当前账套；浏览器和现有通用 Workpapers API 仅提供应用层追加约束，并非密码学防篡改。正式审计证据仍需服务端专用 append-only 审计表、数据库权限隔离、可信时间戳及备份策略。</span>
   </div>
   <dialog id="audit-task-dialog" class="audit-task-dialog" aria-labelledby="audit-task-dialog-title">
     <div class="audit-task-dialog-head"><div><h2 id="audit-task-dialog-title">整改任务详情</h2><p id="audit-task-dialog-subtitle">风险与整改记录</p></div><button type="button" class="btn-mini" id="audit-task-dialog-close" aria-label="关闭整改任务详情">关闭</button></div>
@@ -2804,7 +2805,7 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
         <span>💡 提示：在任意科目行上点击<strong>鼠标右键</strong>（或双击），可穿透联查银行专项分类明细、单位往来余额表或三栏明细账</span>
         <div class="section-actions">
           <label>会计期间 <input type="month" id="live-report-period" value="2026-01"></label>
-          <button type="button" class="btn-mini" id="btn-reset-demo-vouchers">重置演示凭证</button>
+          
           <button type="button" class="btn-mini btn-mini-primary" id="btn-export-live-balance">导出余额表（CSV）</button>
         </div>
       </div>
@@ -3322,7 +3323,7 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
 </section>
 <section id="module-tax5-overview" class="module tax-suite"><div class="module-header"><div><h1 class="serif-title">税务总览仪表盘</h1><p>按当前账套和税期汇总已保存记录。</p></div><label class="no-print">税期 <input type="month" data-tax-month></label></div><div class="tax-phishing no-print" role="note">请务必通过官方网址访问电子税务局，谨防钓鱼网站。</div><div class="panel"><div class="toolbar">
 <button class="btn btn-primary" type="button" id="tax-sync">一键同步利润表 / 科目余额表数据到算税器</button>
-<button class="btn" type="button" id="tax-load-demo">填入演示数据</button>
+
 <button class="btn" type="button" onclick="openWorkspaceTab('tax-workpapers')">原税务底稿与申报归档</button>
 </div><h2>本期应缴税费合计</h2><strong class="tax-total" id="tax-overview-total"></strong>
 <p id="tax-overview-count" class="note-text"></p><svg id="tax-overview-chart" role="img" aria-label="各税种应缴金额对比图"></svg></div></section>
@@ -3577,7 +3578,7 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
  <div class="module-grid">
   <div class="card-block"><h3>采购入库</h3><form class="form-grid phase-form" id="inv-purchase-form">
    <label>采购单号 <input id="inv-purchase-no" maxlength="60" required></label><label>入库日期 <input id="inv-purchase-date" type="date" required></label><label>供应商 <input id="inv-purchase-supplier" maxlength="100" required></label><label>入库科目 <select id="inv-purchase-account"><option value="1405">1405 库存商品</option><option value="1401">1401 原材料</option></select></label><label>商品编码 <input id="inv-purchase-sku" maxlength="50" required></label><label>商品名称 <input id="inv-purchase-name" maxlength="100" required></label><label>仓库 <input id="inv-purchase-warehouse" maxlength="80" value="主仓库" required></label><label>入库数量 <input id="inv-purchase-qty" type="number" min="0.001" step="0.001" required></label><label>不含税单位成本（元） <input id="inv-purchase-unit-cost" type="number" min="0.01" step="0.01" required></label><label>增值税率 <select id="inv-purchase-rate"><option value="0">0%</option><option value="1">1%</option><option value="3">3%</option><option value="6">6%</option><option value="9">9%</option><option value="13" selected>13%</option></select></label><label><span>进项税可抵扣</span><input id="inv-purchase-deductible" type="checkbox" checked></label><button class="btn btn-primary" type="submit">登记入库并生成采购凭证</button>
-  </form><p class="note-text">按入库科目借记 1401 原材料或 1405 库存商品；可抵扣进项税另借记 2221，不可抵扣税额计入所选存货成本。应以真实发票类型及抵扣资格为准。</p></div>
+  </form><p class="note-text">按入库科目借记 1401 原材料或 1405 库存商品；可抵扣进项税另借记 22210101，不可抵扣税额计入所选存货成本。应以真实发票类型及抵扣资格为准。</p></div>
   <div class="card-block"><h3>销售出库</h3><form class="form-grid phase-form" id="inv-sale-form">
    <label>销售单号 <input id="inv-sale-no" maxlength="60" required></label><label>出库日期 <input id="inv-sale-date" type="date" required></label><label>客户 <input id="inv-sale-customer" maxlength="100" required></label><label>商品编码 <input id="inv-sale-sku" maxlength="50" required></label><label>商品名称 <input id="inv-sale-name" maxlength="100" required></label><label>仓库 <input id="inv-sale-warehouse" maxlength="80" value="主仓库" required></label><label>销售数量 <input id="inv-sale-qty" type="number" min="0.001" step="0.001" required></label><label>不含税销售单价（元） <input id="inv-sale-unit-price" type="number" min="0.01" step="0.01" required></label><label>销项税率 <select id="inv-sale-rate"><option value="0">0%</option><option value="1">1%</option><option value="3">3%</option><option value="6">6%</option><option value="9">9%</option><option value="13" selected>13%</option></select></label><label>已开票号码（可选） <input id="inv-sale-invoice" maxlength="80"></label><button class="btn btn-primary" type="submit">确认出库并生成销售及成本凭证</button>
   </form><p class="note-text">销售凭证同时确认收入、销项税、应收账款及移动加权平均销售成本。请勿对同一销售重复手工制证。</p></div>
@@ -3775,13 +3776,13 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
 </dialog>
 <footer class="suite-footer no-print">
 <p>本工具仅提供税额测算和办税流程指引，计算结果仅供参考，不构成税务、法律或财务建议，也不代替官方申报系统。具体税率及政策以国家税务总局及当地税务机关最新规定为准。</p>
-<p>隐私声明：浏览器演示模式下，账套数据仅保存在当前设备；连接本机 SQLite 时，数据保存在您自行启动的本地服务中。</p>
+<p>隐私声明：浏览器本地模式下，账套数据仅保存在当前设备；连接本机 SQLite 时，数据保存在您自行启动的本地服务中。</p>
 <p id="storage-mode-note" class="storage-mode-note" role="status" aria-live="polite">正在检测当前存储模式……</p>
 </footer>
 <dialog class="modal-card suite-dialog" id="suite-book-dialog">
 <h2>账套管理</h2><p class="note-text">新建账套独立保存。切换账套会重新载入页面。</p>
 <label>企业名称 / 账套名称 <input type="text" id="suite-book-name" maxlength="60"></label>
-<div class="toolbar"><button type="button" class="btn" id="fw-setup-book">建账向导</button><button type="button" class="btn" id="fw-demo">打开完整演示账套</button></div>
+<div class="toolbar"><button type="button" class="btn" id="fw-setup-book">建账向导</button></div>
 <div class="toolbar"><button type="button" class="btn btn-primary" id="suite-new">新建并切换</button><button type="button" class="btn" id="suite-rename">重命名当前账套</button><form method="dialog"><button class="btn">关闭</button></form></div>
 </dialog>
 <dialog class="modal-card suite-dialog" id="tax-official-dialog">
@@ -4157,8 +4158,26 @@ function suiteRead(key,def){
 function suiteWrite(key,value){
  try{localStorage.setItem('fw-suite:'+key,JSON.stringify(value));if(key==='books'&&storageMode==='API')void apiSyncAccountSets(value);}catch{throw Error('无法写入本地浏览器，请检查存储权限或空间');}
 }
-const SUITE_DEFAULT={id:'default',name:'演示账套',demo:true};
-function suiteBooks(){return suiteRead('books',[SUITE_DEFAULT]);}
+const SUITE_DEFAULT={id:'__new__',name:'尚未建账',demo:false};
+function isRetiredSample(book) {
+ return /^(?:完整演示账(?:套)?|星辰电子[ ·_・]*(?:导览练习|期初练习))(?:\s|$)/.test(book.name||'') ||
+   (book.demo===true && (book.id!=='default' || book.name==='演示账套'));
+}
+function cleanSampleCache() {
+ const books=suiteRead('books',[]);
+ if (!Array.isArray(books)) return;
+ const retired=books.filter(isRetiredSample);
+ if (!retired.length) return;
+ localStorage.setItem('fw-suite:books',JSON.stringify(books.filter(book=>!isRetiredSample(book))));
+ for (const book of retired) {
+   if (book.id==='default') continue; // Legacy default shared its namespace with real user data.
+   const prefix='fw-book:'+book.id+':';
+   for(const key of Object.keys(localStorage)) if(key.startsWith(prefix)||key==='fw-demo-shortcuts:'+book.id) localStorage.removeItem(key);
+   try { indexedDB.deleteDatabase('FinanceWorkbenchCleanBooks::'+book.id); } catch {}
+ }
+}
+try{cleanSampleCache();}catch{}
+function suiteBooks(){const books=suiteRead('books',[]);return Array.isArray(books)?books.filter(book=>!isRetiredSample(book)):[];}
 const SUITE_ACTIVE=suiteBooks().find(x=>x.id===suiteRead('active','default'))||suiteBooks()[0]||SUITE_DEFAULT;
 const activeSuiteBook=()=>suiteBooks().find(x=>x.id===SUITE_ACTIVE.id)||SUITE_ACTIVE;
 const suitePrefix=id=>id==='default'?'':'fw-book:'+id+':';
@@ -4377,7 +4396,7 @@ const LS_KEY_CASHIER = 'clean_finance_cashier_fallback';
 const LS_KEY_VOUCHER = 'clean_finance_voucher_fallback';
 const API_STORES = [STORE_WORK, STORE_NAME, STORE_CASHIER, STORE_VOUCHER, STORE_SETTINGS, STORE_ORIGINALS];
 const FW_API_BASE = (() => {
-  try { return String(localStorage.getItem('fw-api-base') || 'http://127.0.0.1:8000').replace(/\/+$/, ''); }
+  try { return String(localStorage.getItem('fw-api-base') || (['http:','https:'].includes(location.protocol)?location.origin:'http://127.0.0.1:8000')).replace(/\/+$/, ''); }
   catch { return 'http://127.0.0.1:8000'; }
 })();
 
@@ -4419,7 +4438,7 @@ function setBackendStatus(text, connected) {
   const note=document.getElementById('storage-mode-note');
   if(note){
     note.dataset.state=state;
-    note.textContent=connected?'当前已连接本机 SQLite 服务端存储。':state==='local'?'当前为浏览器本地演示模式（数据仅保存在您的设备中，安全不上传）；如需体验 SQLite 服务端存储，可下载项目包一键启动本地后端':'本地存储服务连接异常，请检查本机 SQLite 服务；当前数据仍按页面提示的存储模式处理。';
+    note.textContent=connected?'当前已连接本机 SQLite 服务端存储。':state==='local'?'当前为浏览器本地模式（数据仅保存在您的设备中，安全不上传）；如需体验 SQLite 服务端存储，可下载项目包一键启动本地后端':'本地存储服务连接异常，请检查本机 SQLite 服务；当前数据仍按页面提示的存储模式处理。';
   }
 }
 
@@ -4486,6 +4505,7 @@ function apiVoucherFromDb(row) {
     account: e.account_code,
     aux: e.contact_name || e.aux_name || '',
     contactId: e.contact_id ?? null,
+    dimensions: e.dimensions || {},
     summary: e.summary || '',
     debit: Number(e.debit_amount) || 0,
     credit: Number(e.credit_amount) || 0
@@ -4507,7 +4527,7 @@ function apiVoucherFromDb(row) {
     attachment: attachments[0] ? {name: row.attachment_name || '凭证附件', url: attachments[0]} : null,
     attachmentUrls: attachments, reviewedAt: row.reviewed_at || null,
     postedAt: row.posted_at || null, reversedById: row.reversed_by_id || null,
-    reverseOfId: row.reverse_of_id || null, createdAt: row.created_at,
+    reverseOfId: row.reverse_of_id || null, createdAt: row.created_at, version:row.version, createdBy:row.created_by, reviewedBy:row.reviewed_by,
     ...(financeMeta?{loanId:financeMeta[1],loanScheduleId:financeMeta[2]==='-'?null:financeMeta[2],voucherRole:financeMeta[3],cashItem:'筹资活动现金流量'}:{})
   };
 }
@@ -4667,7 +4687,7 @@ async function apiLoadNormalizedReferenceData() {
   const oldByCode=new Map(VOUCHER_ACCOUNTS.map(a=>[a.code,a]));
   const loaded=(accountResult.items||[]).map(a=>({...oldByCode.get(a.code),code:a.code,name:a.name,dir:a.direction,
     opening:Number(a.initial_debit||0)-Number(a.initial_credit||0),
-    category:a.category,parentCode:a.parent_code||null,isActive:Boolean(a.is_active)}));
+    category:a.category,parentCode:a.parent_code||null,isActive:Boolean(a.is_active),isCustom:Boolean(a.is_custom)}));
   if(loaded.length){VOUCHER_ACCOUNTS.splice(0,VOUCHER_ACCOUNTS.length,...loaded);}
   for(const key of Object.keys(SUBJ_MAP)) delete SUBJ_MAP[key];
   VOUCHER_ACCOUNTS.forEach(a=>SUBJ_MAP[a.code]=a);
@@ -4770,6 +4790,7 @@ async function apiVoucherPayload(record) {
       account_code: code,
       contact_id: entry.contactId ?? await apiContactIdForVoucherEntry(code, entry.aux),
       aux_name: entry.aux || null,
+      dimensions: entry.dimensions || {},
       summary: entry.summary || '',
       debit_amount: Number(entry.debit || 0).toFixed(2),
       credit_amount: Number(entry.credit || 0).toFixed(2)
@@ -4848,6 +4869,7 @@ function apiBookMeta(accountSetId = SUITE_ACTIVE.id, accountSetName = activeSuit
   return {account_set_id: accountSetId, account_set_name: accountSetName || accountSetId, is_demo: Boolean(isDemo)};
 }
 async function apiSyncAccountSets(books = suiteBooks()) {
+  if(fwActor&&!window.FW_V2_ACCESS?.capabilities.configure)return;
   for (const book of books) {
     await apiRequest('/api/storage/account-sets/' + encodeURIComponent(book.id), {
       method: 'PUT', body: JSON.stringify({name: book.name || book.id, is_demo: Boolean(book.demo)})
@@ -4864,7 +4886,7 @@ async function apiUploadDataUrl(dataUrl, fileName) {
   const safeName = String(fileName || ('attachment.' + extension)).replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').slice(0, 120);
   const form = new FormData();
   form.append('file', blob, safeName || ('attachment.' + extension));
-  const result = await apiRequest('/api/upload', {method: 'POST', body: form});
+  const result = await apiRequest('/api/upload'+apiBookParams(), {method: 'POST', body: form});
   apiUploadedFiles.set(dataUrl, result.url);
   return result.url;
 }
@@ -5054,23 +5076,32 @@ async function initStorage() {
     if (health?.status !== 'ok' || health?.db !== 'connected') throw Error('本地数据库健康检查未通过');
   } catch (error) {
     backendConnected = false;
+    if(fwSessionToken()){setBackendStatus('服务连接中断，请重启本地服务',false);fwControlDialog(true);return 'LOGIN_REQUIRED';}
     setBackendStatus('浏览器本地存储', false);
-    showToast('当前为浏览器本地演示模式，数据仅保存在您的设备中。','info');
+    if(!suiteBooks().length){window.FW_FIRST_BOOK=true;return localMode;}
     return localMode;
   }
 
   try {
     const control=await apiRequest('/api/control/status');
-    if(control.enabled&&!control.actor){fwControlDialog(true);return 'LOGIN_REQUIRED';}
+    if((control.enabled||control.required)&&!control.actor){fwControlDialog(true);return 'LOGIN_REQUIRED';}
     fwActor=control.actor;
-    const registry=await apiRequest('/api/storage/account-sets');
+    window.FW_CAN_CREATE_BOOK=control.can_create_book;
+    const registry=await apiRequest('/api/storage/account-sets?real_books=true');
     if(fwActor){
-      const books=(registry.items||[]).map(remote=>({id:remote.id,name:remote.name,demo:Boolean(remote.is_demo)}));
-      if(!books.length)throw Error('服务端暂无账套');
+      const books=(registry.items||[]).map(remote=>({id:remote.id,name:remote.name,demo:Boolean(remote.is_demo),standard:remote.standard})).filter(book=>!isRetiredSample(book));
+      if(!books.length){storageMode='API';backendConnected=true;window.FW_FIRST_BOOK=true;setBackendStatus('SQLite 已连接',true);return storageMode;}
       const next=books.some(row=>row.id===SUITE_ACTIVE.id)?SUITE_ACTIVE.id:books[0].id;
       localStorage.setItem('fw-suite:books',JSON.stringify(books));
       localStorage.setItem('fw-suite:active',JSON.stringify(next));
       if(next!==SUITE_ACTIVE.id){db?.close();location.reload();return 'LOGIN_REQUIRED';}
+      window.FW_V2_ACCESS=await apiRequest('/api/v2/access'+apiBookParams());
+      if(window.FW_V2_ACCESS&&!window.FW_V2_ACCESS.capabilities.financial_read){
+        window.FW_V2_RESTRICTED=true;
+        apiStoreCache=new Map(API_STORES.map(key=>[key,[]]));
+        storageMode='API';backendConnected=true;setBackendStatus('已连接授权业务台账',true);
+        return storageMode;
+      }
       const tables=await Promise.all(API_STORES.map(async key=>[key,(await apiRequest('/api/storage/'+encodeURIComponent(key)+apiBookParams())).items||[]]));
       apiStoreCache=new Map(tables);
       apiBusinessBootstrap=await apiRequest('/api/business/bootstrap'+apiBookParams());
@@ -5082,6 +5113,9 @@ async function initStorage() {
       storageMode='API';backendConnected=true;setBackendStatus('SQLite 已连接 · '+fwRoleLabels[fwActor.role],true);
       return storageMode;
     }
+    registry.items=(registry.items||[]).filter(book=>!isRetiredSample({...book,demo:Boolean(book.is_demo)}));
+    if(!suiteBooks().length&&!registry.items.length){storageMode='API';backendConnected=true;window.FW_FIRST_BOOK=true;return storageMode;}
+    if(!suiteBooks().length&&registry.items.length){suiteWrite('books',registry.items.map(book=>({...book,demo:false})));suiteWrite('active',registry.items[0].id);location.reload();return 'LOGIN_REQUIRED';}
     const retired=new Set(registry.retired_ids||[]);
     if(retired.size){
       const remoteById=new Map((registry.items||[]).map(book=>[book.id,book]));
@@ -5451,7 +5485,7 @@ function digitUppercase(n) {
   return head + s.replace(/(.)*零元/, '元').replace(/(零.)+/g, '零').replace(/^整$/, '零元整');
 }
 
-/* ================= 4. 统一科目体系、银行专项、往来单位与演示账套 ================= */
+/* ================= 4. 统一科目体系、银行专项与往来单位 ================= */
 const VOUCHER_ACCOUNTS = [
   { code: '1001', name: '库存现金',     dir: '借', opening: 8650,     aux: 'none' },
   { code: '1002', name: '银行存款',     dir: '借', opening: 1286400,  aux: 'bank' },
@@ -5496,20 +5530,9 @@ const VOUCHER_ACCOUNTS = [
 ];
 const SUBJ_MAP = Object.fromEntries(VOUCHER_ACCOUNTS.map(s => [s.code, s]));
 
-const BANK_SPECIAL_ACCOUNTS = [
-  { name: '工商银行基本户', bank: '中国工商银行', acct: '6222 0202 0000 1234 567', currency: 'CNY', opening: 800000 },
-  { name: '招商银行一般户', bank: '招商银行',     acct: '7559 1234 5678 901',     currency: 'CNY', opening: 386400 },
-  { name: '建设银行专用户', bank: '中国建设银行', acct: '3105 0000 8888 6666',    currency: 'CNY', opening: 100000 }
-];
-const AR_UNITS = ['华远科技有限公司', '蓝海贸易（上海）有限公司', '恒盛建设集团'];
-const AP_UNITS = ['江南材料供应有限公司', '中电装备制造有限公司', '星辰物流有限公司'];
-const AR_OPENING = { '华远科技有限公司': 210000, '蓝海贸易（上海）有限公司': 156200, '恒盛建设集团': 120000 };
-const AP_OPENING = { '江南材料供应有限公司': 180000, '中电装备制造有限公司': 128900, '星辰物流有限公司': 60000 };
-if(!SUITE_ACTIVE.demo) {
- for(const a of VOUCHER_ACCOUNTS) a.opening=0;
- for(const a of BANK_SPECIAL_ACCOUNTS) a.opening=0;
- for(const map of [AR_OPENING,AP_OPENING]) for(const key of Object.keys(map))map[key]=0;
-}
+const BANK_SPECIAL_ACCOUNTS = [];
+const AR_UNITS = [], AP_UNITS = [], AR_OPENING = {}, AP_OPENING = {};
+for (const account of VOUCHER_ACCOUNTS) account.opening = 0;
 
 function getAuxOptionsForAccount(code) {
   if (code === '1002') return (typeof ACCOUNTS!=='undefined'&&Array.isArray(ACCOUNTS)?ACCOUNTS.filter(a=>a.kind==='BANK').map(a=>a.name):BANK_SPECIAL_ACCOUNTS.map(b=>b.name));
@@ -5518,91 +5541,9 @@ function getAuxOptionsForAccount(code) {
   return [];
 }
 
-const SEED_VOUCHERS = [
-  { id: 'SEED-001', voucherNo: '记-202601-001', date: '2026-01-03', period: '2026-01', bizLabel: '银行往来', status: 'POSTED', source: '回单-0103', sourceType: '银行回单', totalDebit: 150000, totalCredit: 150000, entries: [
-    { account: '1002', aux: '工商银行基本户', summary: '收到华远科技有限公司货款', debit: 150000, credit: 0 },
-    { account: '1122', aux: '华远科技有限公司', summary: '收到华远科技有限公司货款', debit: 0, credit: 150000 }
-  ]},
-  { id: 'SEED-002', voucherNo: '记-202601-002', date: '2026-01-05', period: '2026-01', bizLabel: '采购成本', status: 'POSTED', source: '入库-0105', sourceType: '合同', totalDebit: 200000, totalCredit: 200000, entries: [
-    { account: '1401', aux: '', summary: '采购原材料（江南材料）', debit: 200000, credit: 0 },
-    { account: '2202', aux: '江南材料供应有限公司', summary: '采购原材料（江南材料）', debit: 0, credit: 200000 }
-  ]},
-  { id: 'SEED-003', voucherNo: '记-202601-003', date: '2026-01-06', period: '2026-01', bizLabel: '银行往来', status: 'POSTED', source: '付款-0106', sourceType: '银行回单', totalDebit: 120000, totalCredit: 120000, entries: [
-    { account: '2202', aux: '江南材料供应有限公司', summary: '支付江南材料货款', debit: 120000, credit: 0 },
-    { account: '1002', aux: '招商银行一般户', summary: '支付江南材料货款', debit: 0, credit: 120000 }
-  ]},
-  { id: 'SEED-004', voucherNo: '记-202601-004', date: '2026-01-08', period: '2026-01', bizLabel: '销售收入', status: 'POSTED', source: '发票-0108', sourceType: '发票', totalDebit: 113000, totalCredit: 113000, entries: [
-    { account: '1122', aux: '蓝海贸易（上海）有限公司', summary: '销售商品确认收入（蓝海贸易）', debit: 113000, credit: 0 },
-    { account: '6001', aux: '', summary: '销售商品确认收入（蓝海贸易）', debit: 0, credit: 100000 },
-    { account: '2221', aux: '', summary: '销售商品销项税额', debit: 0, credit: 13000 }
-  ]},
-  { id: 'SEED-005', voucherNo: '记-202601-005', date: '2026-01-10', period: '2026-01', bizLabel: '采购成本', status: 'POSTED', source: '出库-0110', sourceType: '其他', totalDebit: 68000, totalCredit: 68000, entries: [
-    { account: '6401', aux: '', summary: '结转销售成本', debit: 68000, credit: 0 },
-    { account: '1401', aux: '', summary: '结转销售成本', debit: 0, credit: 68000 }
-  ]},
-  { id: 'SEED-006', voucherNo: '记-202601-006', date: '2026-01-12', period: '2026-01', bizLabel: '费用报销', status: 'POSTED', source: '报销-0112', sourceType: '报销单', totalDebit: 15600, totalCredit: 15600, entries: [
-    { account: '6602', aux: '', summary: '支付办公及管理用费', debit: 15600, credit: 0 },
-    { account: '1002', aux: '工商银行基本户', summary: '支付办公及管理用费', debit: 0, credit: 15600 }
-  ]},
-  { id: 'SEED-007', voucherNo: '记-202601-007', date: '2026-01-15', period: '2026-01', bizLabel: '银行往来', status: 'POSTED', source: '回单-0115', sourceType: '银行回单', totalDebit: 113000, totalCredit: 113000, entries: [
-    { account: '1002', aux: '工商银行基本户', summary: '收回蓝海贸易货款', debit: 113000, credit: 0 },
-    { account: '1122', aux: '蓝海贸易（上海）有限公司', summary: '收回蓝海贸易货款', debit: 0, credit: 113000 }
-  ]},
-  { id: 'SEED-008', voucherNo: '记-202601-008', date: '2026-01-18', period: '2026-01', bizLabel: '费用报销', status: 'POSTED', source: '水电-0118', sourceType: '报销单', totalDebit: 8400, totalCredit: 8400, entries: [
-    { account: '6602', aux: '', summary: '支付水电费', debit: 8400, credit: 0 },
-    { account: '1002', aux: '建设银行专用户', summary: '支付水电费', debit: 0, credit: 8400 }
-  ]},
-  { id: 'SEED-009', voucherNo: '记-202601-009', date: '2026-01-20', period: '2026-01', bizLabel: '银行往来', status: 'POSTED', source: '回单-0120', sourceType: '银行回单', totalDebit: 60000, totalCredit: 60000, entries: [
-    { account: '1002', aux: '招商银行一般户', summary: '收到恒盛建设集团回款', debit: 60000, credit: 0 },
-    { account: '1122', aux: '恒盛建设集团', summary: '收到恒盛建设集团回款', debit: 0, credit: 60000 }
-  ]},
-  { id: 'SEED-010', voucherNo: '记-202601-010', date: '2026-01-22', period: '2026-01', bizLabel: '工资计提', status: 'POSTED', source: '工资-0122', sourceType: '工资表', totalDebit: 120000, totalCredit: 120000, entries: [
-    { account: '6602', aux: '', summary: '计提职工工资', debit: 120000, credit: 0 },
-    { account: '2211', aux: '', summary: '计提职工工资', debit: 0, credit: 120000 }
-  ]},
-  { id: 'SEED-011', voucherNo: '记-202601-011', date: '2026-01-25', period: '2026-01', bizLabel: '工资计提', status: 'POSTED', source: '代发-0125', sourceType: '银行回单', totalDebit: 120000, totalCredit: 120000, entries: [
-    { account: '2211', aux: '', summary: '发放职工工资', debit: 120000, credit: 0 },
-    { account: '1002', aux: '工商银行基本户', summary: '发放职工工资', debit: 0, credit: 120000 }
-  ]},
-  { id: 'SEED-012', voucherNo: '记-202601-012', date: '2026-01-26', period: '2026-01', bizLabel: '银行往来', status: 'POSTED', source: '支票-0126', sourceType: '银行回单', totalDebit: 20000, totalCredit: 20000, entries: [
-    { account: '1001', aux: '', summary: '提取备用金', debit: 20000, credit: 0 },
-    { account: '1002', aux: '工商银行基本户', summary: '提取备用金', debit: 0, credit: 20000 }
-  ]},
-  { id: 'SEED-013', voucherNo: '记-202601-013', date: '2026-01-28', period: '2026-01', bizLabel: '采购成本', status: 'POSTED', source: '入库-0128', sourceType: '合同', totalDebit: 128900, totalCredit: 128900, entries: [
-    { account: '1401', aux: '', summary: '采购原材料（中电装备）', debit: 128900, credit: 0 },
-    { account: '2202', aux: '中电装备制造有限公司', summary: '采购原材料（中电装备）', debit: 0, credit: 128900 }
-  ]},
-  { id: 'SEED-014', voucherNo: '记-202601-014', date: '2026-01-30', period: '2026-01', bizLabel: '费用报销', status: 'POSTED', source: '运费-0130', sourceType: '发票', totalDebit: 12000, totalCredit: 12000, entries: [
-    { account: '6602', aux: '', summary: '发生物流运费（星辰物流，未付）', debit: 12000, credit: 0 },
-    { account: '2202', aux: '星辰物流有限公司', summary: '发生物流运费（星辰物流，未付）', debit: 0, credit: 12000 }
-  ]},
-  ...[
-    ['015','2026-01-30','购入办公设备','1601','1002',40000],
-    ['016','2026-01-30','收到短期借款','1002','2001',100000],
-    ['017','2026-01-30','缴纳上期税费','2221','1002',10000]
-  ].map(([number,date,summary,debitAccount,creditAccount,amount]) => ({
-    id:'SEED-'+number,voucherNo:'记-202601-'+number,date,period:'2026-01',bizLabel:'银行往来',
-    status:'POSTED',source:'演示回单-'+number,sourceType:'银行回单',totalDebit:amount,totalCredit:amount,
-    entries:[debitAccount,creditAccount].map((account,i)=>({
-      account,aux:account==='1002'?'工商银行基本户':'',summary,debit:i?0:amount,credit:i?amount:0
-    }))
-  }))
-];
-
-async function ensureSeedVouchers() {
-  const existing = await getAllFromStore(STORE_VOUCHER);
-  const seededFlag = await work('meta:seeded_vouchers');
-  if (!existing.length && !seededFlag) {
-    await saveRecords(STORE_VOUCHER, SEED_VOUCHERS);
-    await saveToStore(STORE_WORK, { id: 'meta:seeded_vouchers', done: true });
-  }
-}
-
 const ACCOUNTS_INIT = [
   { id: 'CASH', name: '库存现金', kind: 'CASH' },
-  { id: 'ICBC', name: '工商银行基本户', kind: 'BANK' },
-  { id: 'CMB',  name: '招商银行一般户', kind: 'BANK' },
-  { id: 'CCB',  name: '建设银行专用户', kind: 'BANK' }
+
 ];
 let ACCOUNTS = (() => {
   try {
@@ -5703,7 +5644,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     for (const [element] of layoutRegions) observer.observe(element);
   }
   if(await initStorage()==='LOGIN_REQUIRED')return;
-  if(SUITE_ACTIVE.demo&&!fwActor) await ensureSeedVouchers();
+  if(window.FW_FIRST_BOOK){
+    if(fwActor&&!window.FW_CAN_CREATE_BOOK){showToast('当前账号尚未分配账套，请由财务总监授权，或切换账号。');fwControlDialog(true);}
+    else fwWizardDialog(true);
+    return;
+  }
+  byId('live-report-period').value=financialRead('period',localDay().slice(0,7));
+  window.fwLoadCustomAccounts?.();
+  await window.fwCollabInit?.();
+  if(window.FW_V2_RESTRICTED)return;
+
 
   activateWorkspaceTab('home');
   animation.fromTo('.home-header-text', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", delay: 0.05 });
@@ -6339,7 +6289,7 @@ async function initContractModule() {
     });
     if(!rows.length) {
       const tr=body.insertRow(),td=tr.insertCell();td.colSpan=10;td.className='contract-empty';
-      td.textContent=summaries.length?'没有符合当前筛选条件的合同':'暂无合同，请新增合同或载入演示合同数据。';return;
+      td.textContent=summaries.length?'没有符合当前筛选条件的合同':'暂无合同，请新增合同。';return;
     }
     rows.forEach(summary=>{
       const c=summary.contract,tr=body.insertRow();
@@ -6617,63 +6567,8 @@ async function initContractModule() {
   byId('contract-type-filter').addEventListener('change',renderTable);
   byId('contract-status-filter').addEventListener('change',renderTable);
   byId('contract-refresh').addEventListener('click',()=>runAction(refreshContractLedger,byId('contract-refresh')));
-  byId('contract-demo-load').addEventListener('click',()=>runAction(async()=>{
-    await seedDemoContracts();await refreshContractLedger();
-    if(window.refreshInvoiceLedger)await window.refreshInvoiceLedger();
-    if(window.refreshCashier)await window.refreshCashier();
-    showToast('演示合同及其发票、收付款关联数据已载入');
-  },byId('contract-demo-load')));
-
-  async function seedDemoContracts() {
-    const currentWork=await getAllFromStore(STORE_WORK);
-    const currentContracts=currentWork.filter(r=>String(r.id||'').startsWith('contract:'));
-    const demoContracts=[
-      {id:'contract:DEMO-SALES-2026-001',contractNo:'XS-2026-001',name:'智能仓储系统实施合同',kind:'SALES',side:'AR',counterparty:'华远科技有限公司',signedDate:'2026-08-01',total:1130000,taxRate:13,warrantyRate:5,warrantyDueDate:'2027-08-01',note:'演示：已开票一半，首期款已收，展示后续节点提醒。',nodes:[
-        {id:'XS-2026-001-N1',date:'2026-10-15',type:'收款',amount:339000,label:'合同预付款（30%）'},
-        {id:'XS-2026-001-N2',date:'2026-11-26',type:'收款',amount:565000,label:'系统上线验收款（50%）'},
-        {id:'XS-2026-001-N3',date:'2027-01-15',type:'收款',amount:169500,label:'质保期外尾款（15%）'},
-        {id:'XS-2026-001-N4',date:'2027-08-01',type:'质保金',amount:56500,label:'质保金（5%）'}]},
-      {id:'contract:DEMO-PURCHASE-2026-018',contractNo:'CG-2026-018',name:'自动化分拣设备采购合同',kind:'PURCHASE',side:'AP',counterparty:'江南材料供应有限公司',signedDate:'2026-09-10',total:565000,taxRate:13,warrantyRate:3,warrantyDueDate:'2027-09-10',note:'演示：已登记部分进项发票，预付款已办理。',nodes:[
-        {id:'CG-2026-018-N1',date:'2026-10-10',type:'付款',amount:169500,label:'设备预付款（30%）'},
-        {id:'CG-2026-018-N2',date:'2026-11-24',type:'付款',amount:282500,label:'设备到货款（50%）'},
-        {id:'CG-2026-018-N3',date:'2027-02-28',type:'付款',amount:96050,label:'验收尾款（17%）'},
-        {id:'CG-2026-018-N4',date:'2027-09-10',type:'质保金',amount:16950,label:'质保金（3%）'}]},
-      {id:'contract:DEMO-SERVICE-2026-006',contractNo:'FW-2026-006',name:'年度技术运维服务框架合同',kind:'SERVICE',side:'AR',counterparty:'恒盛建设集团',signedDate:'2026-07-01',total:360000,taxRate:6,warrantyRate:5,warrantyDueDate:'2026-12-15',note:'演示：已开票并收取首期服务费，质保金即将到期。',nodes:[
-        {id:'FW-2026-006-N1',date:'2026-10-30',type:'收款',amount:180000,label:'上半年运维服务费（50%）'},
-        {id:'FW-2026-006-N2',date:'2026-11-25',type:'收款',amount:162000,label:'下半年运维服务费（45%）'},
-        {id:'FW-2026-006-N3',date:'2026-12-15',type:'质保金',amount:18000,label:'服务质保金（5%）'}]}
-    ];
-    const addContracts=demoContracts.filter(c=>!currentContracts.some(x=>x.contractNo===c.contractNo));
-    if(addContracts.length)await saveRecords(STORE_WORK,addContracts,true);
-
-    const existingInvoices=await getAllFromStore(STORE_NAME),invoiceIds=new Set(existingInvoices.map(r=>String(r.invoiceNo)));
-    const demoInvoices=[
-      {invoiceNo:'DEMO-CONTRACT-INV-001',invoiceNumber:'DEMO-2026-001',date:'2026-10-15',seller:'本企业',buyer:'华远科技有限公司',sellerTax:'91310000DEMO00001',buyerTax:'91310000DEMO00002',total:565000,items:[{name:'智能仓储系统实施服务',qty:1,price:565000}],status:'已开票',source:'XS-2026-001',evidence:'演示发票回执',payment:'银行转账',attachments:[],stamp:null},
-      {invoiceNo:'DEMO-CONTRACT-INV-003',invoiceNumber:'DEMO-2026-003',date:'2026-10-30',seller:'本企业',buyer:'恒盛建设集团',sellerTax:'91310000DEMO00001',buyerTax:'91310000DEMO00003',total:180000,items:[{name:'年度技术运维服务',qty:1,price:180000}],status:'已开票',source:'FW-2026-006',evidence:'演示发票回执',payment:'银行转账',attachments:[],stamp:null}
-    ];
-    const addInvoices=demoInvoices.filter(r=>!invoiceIds.has(String(r.invoiceNo)));
-    if(addInvoices.length)await saveRecords(STORE_NAME,addInvoices,true);
-
-    const existingCash=await getAllFromStore(STORE_CASHIER),cashIds=new Set(existingCash.map(r=>String(r.id)));
-    const demoCash=[
-      {id:'contract-demo-cash-sales-001',date:'2026-10-15',type:'RECEIPT',amount:339000,account:'工商银行基本户',counterparty:'华远科技有限公司',sourceDoc:'XS-2026-001',sourceType:'合同',status:'DONE',receiptNo:'DEMO-R-XS001',receiptType:'BANK_RECEIPT',note:'演示销售合同首付款',memo:'合同预付款',contractNo:'XS-2026-001',contractNodeId:'XS-2026-001-N1',contractId:'contract:DEMO-SALES-2026-001'},
-      {id:'contract-demo-cash-purchase-001',date:'2026-10-10',type:'PAYMENT',amount:169500,account:'招商银行一般户',counterparty:'江南材料供应有限公司',sourceDoc:'CG-2026-018',sourceType:'合同',status:'DONE',receiptNo:'DEMO-P-CG018',receiptType:'BANK_RECEIPT',note:'演示采购合同预付款',memo:'设备预付款',contractNo:'CG-2026-018',contractNodeId:'CG-2026-018-N1',contractId:'contract:DEMO-PURCHASE-2026-018'},
-      {id:'contract-demo-cash-service-001',date:'2026-10-30',type:'RECEIPT',amount:180000,account:'工商银行基本户',counterparty:'恒盛建设集团',sourceDoc:'FW-2026-006',sourceType:'合同',status:'DONE',receiptNo:'DEMO-R-FW006',receiptType:'BANK_RECEIPT',note:'演示运维服务首期回款',memo:'服务费首期回款',contractNo:'FW-2026-006',contractNodeId:'FW-2026-006-N1',contractId:'contract:DEMO-SERVICE-2026-006'}
-    ];
-    const addCash=demoCash.filter(r=>!cashIds.has(String(r.id)));
-    if(addCash.length)await saveRecords(STORE_CASHIER,addCash,true);
-
-    const existingInputs=typeof inputInvoices==='function'?inputInvoices():[];
-    if(!existingInputs.some(r=>r.id==='contract-demo-input-inv-002')) {
-      const row={id:'contract-demo-input-inv-002',number:'26010000000000000018',date:'2026-10-22',seller:'江南材料供应有限公司',contractNo:'CG-2026-018',amount:25000000,rate:13,tax:3250000,status:'已勾选抵扣',period:'2026-10'};
-      comWrite('input-invoices',[...existingInputs,row]);
-    }
-    markFinanceDirty();
-  }
-
   const initialWork=await getAllFromStore(STORE_WORK);
   contractRows=initialWork.filter(r=>String(r.id||'').startsWith('contract:'));
-  if(SUITE_ACTIVE.demo&&contractRows.length===0)await seedDemoContracts();
   await refreshContractLedger();
   if(window.refreshCashier)await window.refreshCashier();
 }
@@ -6725,7 +6620,7 @@ function initVoucherModule() {
     document.getElementById('voucher-types').innerHTML = Object.keys(V_BIZ).map(k => `<div class="voucher-type-card ${k === vType ? 'active' : ''}" onclick="setVType('${k}')"><div class="voucher-type-icon" style="background:#FFF9F6;color:var(--primary);">📄</div><div><div class="voucher-type-title">${V_BIZ[k].label}</div></div></div>`).join('');
   }
   window.setVType = function(k) { vType = k; renderTypes(); resetVEntries(); };
-  function accOpts(sel) { return VOUCHER_ACCOUNTS.map(a => `<option value="${a.code}" ${sel === a.code ? 'selected' : ''}>${a.code} ${a.name}</option>`).join(''); }
+  function accOpts(sel) { return VOUCHER_ACCOUNTS.filter(a=>a.isActive!==false).map(a => `<option value="${a.code}" ${sel === a.code ? 'selected' : ''}>${escapeHtml(a.code)} ${escapeHtml(a.name)}</option>`).join(''); }
   function renderAuxSelectEl(selEl, code, currentVal = '') {
     const opts = getAuxOptionsForAccount(code);
     const allowsDept = !opts.length && budgetAuxEligible(code);
@@ -6775,7 +6670,8 @@ function initVoucherModule() {
       auxSel.prepend(new Option('请选择辅助核算',''));
       auxSel.value = '';
     }
-    accSel.addEventListener('change', () => renderAuxSelectEl(auxSel, accSel.value, ''));
+    accSel.addEventListener('change', () => {renderAuxSelectEl(auxSel, accSel.value, '');window.fwV2EntryDimensions?.(tr,{});});
+    window.fwV2EntryDimensions?.(tr,data?.dimensions||{});
     tr.querySelectorAll('input').forEach(i => i.addEventListener('input', recalcV)); recalcV();
   }
   function resetVEntries() {
@@ -6855,7 +6751,7 @@ function initVoucherModule() {
       if (auxEl && !auxEl.disabled && auxEl.dataset.budgetDept!=='true' && !aux) throw Error('请为银行或往来分录选择辅助核算对象');
       const debit = cents(read('debit') || '0'), credit = cents(read('credit') || '0');
       if (debit < 0 || credit < 0 || Boolean(debit) === Boolean(credit) || !read('summary').trim()) throw Error('每行须填写摘要，并只在借方或贷方录入正金额');
-      return {account:read('account'), aux, summary:read('summary'), debit:debit/100, credit:credit/100};
+      return {account:read('account'), aux, dimensions:JSON.parse(tr.dataset.dimensions||'{}'), summary:read('summary'), debit:debit/100, credit:credit/100};
     });
     const [d,c] = ['debit','credit'].map(key => entries.reduce((sum,row) => sum + Math.round(row[key]*100),0));
     if (!Number.isSafeInteger(d) || d <= 0 || d !== c) throw Error('借贷金额不平或无有效分录');
@@ -6870,7 +6766,7 @@ function initVoucherModule() {
     await saveRecords(STORE_VOUCHER, [voucher], true, 'voucher');
     await window.refreshAccounting?.(period);
     byId('voucher-no-badge').textContent = voucherNo;
-    resetVoucherForm(); await loadVList(); showToast('凭证已提交审核（审核记账后自动更新科目余额表）');
+    resetVoucherForm(); await loadVList(); showToast(fwActor?'凭证已保存，请到“凭证审批与过账”提交终审':'凭证已提交审核（审核记账后自动更新科目余额表）');
   });
   async function loadVList() {
     vRecords = await getAllFromStore(STORE_VOUCHER);
@@ -6890,7 +6786,7 @@ function initVoucherModule() {
         if(window.renderLiveBalance) await renderLiveBalance();
         showToast(v.status === 'POSTED' ? '已生成红字冲销凭证' : '凭证已删除，已保留删除记录');
       },'btn-mini phase-delete'));
-      if (v.status === 'PENDING') row.lastChild.append(action('审核通过', async () => {
+      if (!fwActor && v.status === 'PENDING') row.lastChild.append(action('审核通过', async () => {
         await changeVoucherStatus([v.id], 'PENDING', 'APPROVED'); await loadVList(); await window.refreshAccounting?.(); showToast('已审核，可前往「会计记账」入账');
       }));
     }
@@ -6900,7 +6796,7 @@ function initVoucherModule() {
   onAction('voucher-deleted-log',showDeletionHistory);
   window.refreshVouchers = loadVList;
   registerDraft('voucher', ['voucher-date','voucher-source-type','voucher-source-no','voucher-counterparty','voucher-memo'],
-    () => ({type:vType, entries:fieldRows(entriesBody,'.entry-',['account','aux','summary','debit','credit']), attachment}),
+    () => ({type:vType, entries:fieldRows(entriesBody,'.entry-',['account','aux','summary','debit','credit']).map((row,index)=>({...row,dimensions:JSON.parse([...entriesBody.rows][index].dataset.dimensions||'{}')})), attachment}),
     draft => {
       vType = draft.type; renderTypes(); entriesBody.replaceChildren();
       draft.entries.forEach(addVEntry); recalcV(); setVoucherPeriod(); restoreVoucherAttachment(draft.attachment);
@@ -6955,7 +6851,8 @@ function initAccountingModule() {
     for (const v of list) {
       const pending=v.status==='PENDING';
       const row = tableRow(tb,[v.voucherNo,v.date,v.bizLabel,v.entries[0]?.summary,money(v.totalDebit),money(v.totalCredit),pending?'待审核':'已审核','']);
-      if(pending)row.lastChild.append(action('审核通过',async()=>{
+      if(pending&&fwActor)row.lastChild.append(action('提交流程审批',()=>openWorkspaceTab('collab-vouchers')));
+      else if(pending)row.lastChild.append(action('审核通过',async()=>{
         if(!await uiConfirm('确认审核通过凭证 '+v.voucherNo+'？'))return;
         await changeVoucherStatus([v.id],'PENDING','APPROVED');await loadAcc();await refreshVouchers();
       }));
@@ -8346,7 +8243,7 @@ async function createInvoiceReceivable(invoice){
   const record=previous||{id,customer:live.buyer,source:live.invoiceNumber,date:live.date,period,type:'due',amount,allocations:[],invoiceRecordId:live.invoiceNo};
   const summary='确认服务收入 '+live.invoiceNumber;
   const entries=[{account:'1122',aux:live.buyer,summary,debit:amount/100,credit:0},{account:'6001',summary,debit:0,credit:(amount-tax)/100}];
-  if(tax)entries.push({account:'2221',summary:'确认销项税额 '+live.invoiceNumber,debit:0,credit:tax/100});
+  if(tax)entries.push({account:'22210102',summary:'确认销项税额 '+live.invoiceNumber,debit:0,credit:tax/100});
   const voucher={id:voucherId,voucherNo:'应收-'+live.invoiceNumber,date:live.date,period,bizLabel:'确认应收账款',source:live.invoiceNumber,sourceType:'应收管理',arRecordIds:[id],counterparty:live.buyer,entries,totalDebit:amount/100,totalCredit:amount/100,status:'PENDING'};
   await saveWorkVoucherPair(record,voucher,!previous,true);
   await refreshVouchers();
@@ -8384,7 +8281,7 @@ function initARModule() {
       const revenueCode=(await uiPrompt('不含税收入对应科目编码（例如 6001）','6001'))?.trim();
       if(!['6001','6051','6301'].includes(revenueCode))throw Error('收入科目请选择 6001、6051 或 6301');
       entries=[{account:'1122',aux:record.customer,summary,debit:amount/100,credit:0},{account:revenueCode,aux:'',summary,debit:0,credit:revenue/100}];
-      if(tax)entries.push({account:'2221',aux:'',summary:'确认销项税额',debit:0,credit:tax/100});
+      if(tax)entries.push({account:'22210102',aux:'',summary:'确认销项税额',debit:0,credit:tax/100});
     } else {
       const bankNames=ACCOUNTS.filter(a=>a.kind==='BANK').map(a=>a.name);
       const cashNames=ACCOUNTS.filter(a=>a.kind==='CASH').map(a=>a.name);
@@ -8651,7 +8548,7 @@ function inventoryVoucherMatches(doc,voucher) {
     const actual=totals(voucher.entries),expected=totals(fwReturnEntries(doc));
     return Object.keys(actual).length===Object.keys(expected).length&&Object.keys(expected).every(key=>actual[key]===expected[key]);
   }
-  const net=(account,side,aux='')=>(voucher.entries||[]).filter(e=>e.account===account&&(!aux||String(e.aux||'').trim()===aux))
+  const net=(account,side,aux='')=>(voucher.entries||[]).filter(e=>(e.account===account||(['1401','1405'].includes(account)&&e.account.startsWith(account))||(account==='2221'&&e.account.startsWith('222101')))&&(!aux||String(e.aux||'').trim()===aux))
     .reduce((n,e)=>n+Math.round((side==='D'?e.debit-e.credit:e.credit-e.debit)*100),0);
   if(doc.kind==='PURCHASE'){
     const payable=Number(doc.netCents)+Number(doc.taxCents),inventory=Number(doc.stockCostCents),vat=doc.deductible?Number(doc.taxCents):0;
@@ -8678,7 +8575,7 @@ function inventoryVoucherMatches(doc,voucher) {
 function payrollBatchMatches(batch,all) {
   const accrual=all.find(v=>v.id===batch.accrualVoucherId);if(!accrual||accrual.status!=='POSTED')return false;
   try{validateVoucherRecord(accrual);}catch{return false;}
-  const sum=(account,side)=> (accrual.entries||[]).filter(e=>e.account===account).reduce((n,e)=>n+Math.round((side==='D'?e.debit-e.credit:e.credit-e.debit)*100),0);
+  const sum=(account,side)=> (accrual.entries||[]).filter(e=>e.account===account||(['6601','6602','5001'].includes(account)&&e.account.startsWith(account))||(account==='2221'&&e.account==='222110')).reduce((n,e)=>n+Math.round((side==='D'?e.debit-e.credit:e.credit-e.debit)*100),0);
   const expense=sum('6601','D')+sum('6602','D')+sum('5001','D');
   if(expense!==batch.expenseCents||sum('2211','C')!==batch.netCents||sum('2221','C')!==batch.iitCents||sum('2241','C')!==batch.deductionsCents)return false;
   const rowSum=key=>(batch.rows||[]).reduce((n,r)=>n+Number(r[key]||0),0);
@@ -8694,7 +8591,7 @@ function payrollBatchMatches(batch,all) {
   if(batch.remittanceVoucherId){
     const remit=all.find(v=>v.id===batch.remittanceVoucherId);if(!remit||remit.status!=='POSTED')return false;
     try{validateVoucherRecord(remit);}catch{return false;}
-    const d2221=(remit.entries||[]).filter(e=>e.account==='2221').reduce((n,e)=>n+Math.round((e.debit-e.credit)*100),0);
+    const d2221=(remit.entries||[]).filter(e=>e.account==='2221'||e.account==='222110').reduce((n,e)=>n+Math.round((e.debit-e.credit)*100),0);
     const d2241=(remit.entries||[]).filter(e=>e.account==='2241').reduce((n,e)=>n+Math.round((e.debit-e.credit)*100),0);
     const c1002=(remit.entries||[]).filter(e=>e.account==='1002').reduce((n,e)=>n+Math.round((e.credit-e.debit)*100),0);
     if(d2221!==batch.iitCents||d2241!==batch.deductionsCents||c1002!==batch.iitCents+batch.deductionsCents)return false;
@@ -8704,10 +8601,10 @@ function payrollBatchMatches(batch,all) {
 
 async function inventoryClosingStatus(period,all,workpapers,periodRows) {
   const opening=workpapers.find(r=>r.id==='inventory-opening'),docs=workpapers.filter(r=>fwStockDocument(r)&&r.date?.slice(0,7)<=period);
-  if(!opening&&!docs.length)return {ready:true,active:false,pending:0,errors:[],stockValue:0,ledgerValue:periodRows.find(r=>r.code==='1405')?.end||0};
-  if(!opening)return {ready:false,active:true,pending:docs.length,errors:['尚未建立期初库存明细'],stockValue:0,ledgerValue:periodRows.find(r=>r.code==='1405')?.end||0};
-  if(period<opening.period)return {ready:true,active:false,pending:0,errors:[],stockValue:0,ledgerValue:periodRows.find(r=>r.code==='1405')?.end||0};
-  const openingBalances=await openingFor(all,opening.period),expectedOpening1405=openingBalances['1405']||0,expectedOpening1401=openingBalances['1401']||0;
+  if(!opening&&!docs.length)return {ready:true,active:false,pending:0,errors:[],stockValue:0,ledgerValue:periodRows.filter(r=>r.code.startsWith('1405')).reduce((n,r)=>n+r.end,0)};
+  if(!opening)return {ready:false,active:true,pending:docs.length,errors:['尚未建立期初库存明细'],stockValue:0,ledgerValue:periodRows.filter(r=>r.code.startsWith('1405')).reduce((n,r)=>n+r.end,0)};
+  if(period<opening.period)return {ready:true,active:false,pending:0,errors:[],stockValue:0,ledgerValue:periodRows.filter(r=>r.code.startsWith('1405')).reduce((n,r)=>n+r.end,0)};
+  const openingBalances=await openingFor(all,opening.period),expectedOpening1405=sumAccountPrefixes(openingBalances,['1405']),expectedOpening1401=sumAccountPrefixes(openingBalances,['1401']);
   const actualOpeningBy={1401:0,1405:0};for(const r of opening.rows||[])actualOpeningBy[r.account==='1401'?'1401':'1405']+=Number(r.stockCostCents||0);
   const tracks1401=expectedOpening1401!==0||(opening.rows||[]).some(r=>r.account==='1401')||docs.some(d=>inventoryAccountOfDoc(d)==='1401');
   const errors=[];
@@ -8721,7 +8618,7 @@ async function inventoryClosingStatus(period,all,workpapers,periodRows) {
   const stock=inventoryState(opening,relevant,all,lastDay(period));
   const stockErrors=stock.flatMap(x=>x.errors.map(e=>x.sku+'：'+e));errors.push(...stockErrors);
   const stockByAccount={1401:0,1405:0};for(const row of stock)stockByAccount[row.account]+=row.valueCents;
-  const ledgerByAccount={1401:periodRows.find(r=>r.code==='1401')?.end||0,1405:periodRows.find(r=>r.code==='1405')?.end||0};
+  const ledgerByAccount={1401:periodRows.filter(r=>r.code.startsWith('1401')).reduce((n,r)=>n+r.end,0),1405:periodRows.filter(r=>r.code.startsWith('1405')).reduce((n,r)=>n+r.end,0)};
   if(stockByAccount['1405']!==ledgerByAccount['1405'])errors.push('库存商品明细 '+fromCents(stockByAccount['1405'])+' 与 1405 总账 '+fromCents(ledgerByAccount['1405'])+' 不一致');
   if(tracks1401&&stockByAccount['1401']!==ledgerByAccount['1401'])errors.push('原材料明细 '+fromCents(stockByAccount['1401'])+' 与 1401 总账 '+fromCents(ledgerByAccount['1401'])+' 不一致');
   const stockValue=stockByAccount['1401']+stockByAccount['1405'],ledgerValue=ledgerByAccount['1401']+ledgerByAccount['1405'];
@@ -8783,7 +8680,7 @@ async function productionClosingStatus(period,all,workpapers) {
 function payrollRowFrom(data) {
   const code=String(data.code||'').trim(),name=String(data.name||'').trim(),dept=String(data.dept||'').trim(),expenseAccount=String(data.expenseAccount||'6602');
   if(!code||!name||!dept)throw Error('员工编号、姓名和部门不能为空');
-  if(!['6601','6602','5001'].includes(expenseAccount))throw Error('工资费用科目只能选择 6601、6602 或 5001 生产成本');
+  if(!SUBJ_MAP[expenseAccount]||!['6601','6602','5001'].some(code=>expenseAccount.startsWith(code)))throw Error('请选择销售费用、管理费用或生产成本及其明细科目');
   const gross=positiveAmount(data.gross),employeeSocial=Math.max(0,cents(data.employeeSocial||'0')),iit=Math.max(0,cents(data.iit||'0')),
     other=Math.max(0,cents(data.other||'0')),employerSocial=Math.max(0,cents(data.employerSocial||'0'));
   const net=gross-employeeSocial-iit-other;
@@ -9267,19 +9164,6 @@ function initDrilldownModule() {
     showToast('科目余额表已导出');
   }));
 
-  byId('btn-reset-demo-vouchers').addEventListener('click', () => runAction(async () => {
-    if (!(await uiConfirm('确认将凭证库重置为初始演示账套？当前新录入的凭证将被清除。'))) return;
-    if((await getAllFromStore(STORE_WORK)).some(r=>r.id.startsWith('closed:'))||Object.keys(importedBooks()).length) throw Error('账套存在关闭期间或外部余额表，不能重置凭证');
-    const current=await getAllFromStore(STORE_VOUCHER);
-    if(current.length) await removeStored(STORE_VOUCHER,current,'会计凭证','重置演示凭证',SEED_VOUCHERS);
-    else await saveRecords(STORE_VOUCHER,SEED_VOUCHERS);
-    await renderLiveBalance();
-    if (window.refreshVouchers) await refreshVouchers();
-    if (window.refreshAccounting) await refreshAccounting();
-    if (window.renderARSubledgerModule) await renderARSubledgerModule();
-    showToast('已重置为演示账套数据');
-  }));
-
   let balances=[], journal=[], selectedAccount=null, ledgerRows=[], reportType='profit', currentReport=[];
   const norm=s=>String(s??'').replace(/[\s\u3000\r\n]/g,'').replace(/[（）]/g,m=>m==='（'?'(' : ')').toLowerCase();
   const aliases={
@@ -9443,8 +9327,9 @@ document.addEventListener('click', (e) => {
 }, true);
 const reportTitles = {bs:'资产负债表', pl:'利润表', cf:'现金流量表'};
 const reportMoney = ['1001','1002','1012'];
-const reportPeriod = () => val('live-report-period') || '2026-01';
-const isProfitAccount = code => /^6/.test(code)&&code!=='6901';
+const sumAccountPrefixes=(balances,codes)=>Object.entries(balances).filter(([code])=>codes.some(prefix=>code.startsWith(prefix))).reduce((sum,[,value])=>sum+value,0);
+const reportPeriod = () => val('live-report-period') || financialRead('period',localDay().slice(0,7));
+const isProfitAccount = code => /^6/.test(code)&&!code.startsWith('6901');
 const reportEntryNet = e => Math.round(e.debit * 100) - Math.round(e.credit * 100);
 
 async function financialBook(period, voucherSnapshot = null) {
@@ -9504,7 +9389,7 @@ function balanceStatement(book) {
         subtotal = [0,0];
         return [name,...values];
       }
-      const raw = balances.map(b=>sign*codes.reduce((sum,code)=>sum+(b[code]||0),0));
+      const raw = balances.map(b=>sign*sumAccountPrefixes(b,codes));
       if (!displayOnly) subtotal=subtotal.map((amount,i)=>amount+raw[i]);
       return [name,...raw.map(amount=>amount*multiplier || 0)];
     });
@@ -9515,7 +9400,7 @@ function balanceStatement(book) {
   const gaps=assetTotal.slice(1).map((amount,i)=>amount-liabilities.at(-1)[i+1]);
   const mapped=new Set([...assets,...right].flatMap(([,codes])=>codes||[]));
   const unmapped=[...new Set([...Object.keys(book.yearOpening),...book.rows.map(row=>row.code)])]
-    .filter(code=>!mapped.has(code)&&(book.yearOpening[code]||book.rows.find(row=>row.code===code)?.end));
+    .filter(code=>![...mapped].some(prefix=>code.startsWith(prefix))&&(book.yearOpening[code]||book.rows.find(row=>row.code===code)?.end));
   const accountsByLine={};
   for(const definitions of [assets,right]){
     let section=[],total=[];
@@ -9540,7 +9425,7 @@ function profitStatement(book, period) {
   }
   function item(label,codes,sign=1) {
     accountsByLine[label]=codes;
-    const values=sums.map(s=>sign*codes.reduce((sum,code)=>sum+(s[code]||0),0)||0);
+    const values=sums.map(s=>sign*sumAccountPrefixes(s,codes)||0);
     rows.push([rows.length+1,label,...values]); return values;
   }
   const revenue=item('一、营业收入',['6001','6051'],-1);
@@ -9580,7 +9465,7 @@ function cashCategory(code, direction) {
   if (direction>0) return /^(1122|2203|6001|6051)$/.test(code)?'sales':'opIn';
   if (/^(1123|1401|1405|2202|6401|6402)$/.test(code)) return 'purchase';
   if (code==='2211') return 'salary';
-  if (code==='2221') return 'tax';
+  if (code.startsWith('2221')) return 'tax';
   return 'opOut';
 }
 function cashStatement(book,period,adjustments) {
@@ -9591,11 +9476,11 @@ function cashStatement(book,period,adjustments) {
   };
   let fxEffect=0;
   for (const v of book.vouchers.filter(v=>v.period===period)) {
-    const cash=v.entries.filter(e=>reportMoney.includes(e.account));
+    const cash=v.entries.filter(e=>reportMoney.some(prefix=>e.account.startsWith(prefix)));
     if (!cash.length) continue;
     const net=cash.reduce((sum,e)=>sum+reportEntryNet(e),0);
     if(v.sourceType==='期末调汇'){fxEffect+=net;continue;}
-    const counterparts=v.entries.filter(e=>!reportMoney.includes(e.account) && reportEntryNet(e));
+    const counterparts=v.entries.filter(e=>!reportMoney.some(prefix=>e.account.startsWith(prefix)) && reportEntryNet(e));
     if(v.id.startsWith('imported:')) {
       review.push(v.voucherNo+'（缺少凭证现金流分类）');
       if(net) {
@@ -9636,8 +9521,8 @@ function cashStatement(book,period,adjustments) {
     }
     add(totalLabel,subtotal); movement+=subtotal;
   }
-  const opening=reportMoney.reduce((sum,code)=>sum+(book.opening[code]||0),0);
-  const closing=book.rows.filter(r=>reportMoney.includes(r.code)).reduce((sum,r)=>sum+r.end,0);
+  const opening=sumAccountPrefixes(book.opening,reportMoney);
+  const closing=book.rows.filter(r=>reportMoney.some(prefix=>r.code.startsWith(prefix))).reduce((sum,r)=>sum+r.end,0);
   if(fxEffect){add('汇率变动对现金及现金等价物的影响',fxEffect);movement+=fxEffect;}
   add('四、现金及现金等价物净增加额',movement);
   add('加：期初现金及现金等价物余额',opening);
@@ -9814,16 +9699,9 @@ function phaseSet(key,value) {
   if(storageMode==='API'&&(key==='assets'||key.startsWith('asset-depr:')||key.startsWith('payroll-draft:'))){apiQueueBusinessPhase(key,value);return;}
   if (!financialWrite('operations:'+key,value)) showToast('本机存储不可用，本次变更仅保留在当前页面');
 }
-const demoInternal=[{id:'INT-001',name:'研发项目资金户',dept:'技术部',date:'2026-01-01',limit:10000000,state:'启用'}];
-const demoLoans=[
-  {id:'LOAN-001',type:'员工备用金',party:'李明',date:'2026-01-06',due:'2026-02-28',reason:'项目差旅备用金',amount:800000,internal:'INT-001',payments:[{amount:200000,date:'2026-01-15'}]},
-  {id:'LOAN-002',type:'外部短期借款',party:'合作银行',date:'2026-01-30',due:'2026-12-31',reason:'经营周转',amount:10000000,internal:'',payments:[]}
-];
-const demoAssets=[
-  {code:'FA-001',name:'办公电脑',type:'电子设备',cost:2400000,residual:5,years:3,start:'2025-12-15',dept:'行政部',place:'综合办公室',keeper:'演示保管人',qty:1,active:true},
-  {code:'FA-002',name:'配送车辆',type:'运输设备',cost:18000000,residual:5,years:5,start:'2025-10-01',dept:'行政部',place:'地下车库',keeper:'演示保管人',qty:1,active:true},
-  {code:'FA-003',name:'显示器',type:'电子设备',cost:180000,residual:5,years:5,start:'2025-07-01',dept:'行政部',place:'综合办公室',keeper:'演示保管人',qty:1,active:true}
-];
+const demoInternal=[];
+const demoLoans=[];
+const demoAssets=[];
 const phaseRefresh = {};
 const sum = values => values.reduce((a,b)=>a+b,0);
 const remainingLoan = loan => loan.amount-sum(loan.payments.map(p=>p.amount));
@@ -9864,8 +9742,8 @@ function refreshOperations(key) {
   if(phaseRefresh[key]) runAction(phaseRefresh[key]);
 }
 
-const demoFinancingFacilities=[{id:'FIN-CREDIT-DEMO',facilityNo:'授信-演示-001',bank:'中国工商银行',limitCents:50000000,startDate:'2026-01-01',endDate:'2026-12-31',note:'流动资金综合授信（演示）'}];
-const demoFinancingLoans=[{id:'FIN-LOAN-DEMO',loanNo:'借款-演示-001',kind:'SHORT',bank:'中国工商银行',bankAccount:'工商银行基本户',principalCents:20000000,annualRate:3.6,startDate:'2026-01-01',endDate:'2026-12-31',method:'INTEREST_ONLY',facilityId:'FIN-CREDIT-DEMO'}];
+const demoFinancingFacilities=[];
+const demoFinancingLoans=[];
 function fwAddMonths(date,months){const d=new Date(date+'T00:00:00'),day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+months);const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(day,last));return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
 function fwFinancingPlan(loan){
  const principal=Number(loan.principalCents)||0,rate=Math.max(0,Number(loan.annualRate)||0)/1200,start=loan.startDate,end=loan.endDate;
@@ -10745,6 +10623,7 @@ function initMetrics() {
 }
 
 async function deleteWorkbenchVoucher(voucher) {
+  if(fwActor&&voucher.status==='POSTED'){window.fwV2ReversalDialog(voucher);return false;}
   const posted=voucher.status==='POSTED';
   if (posted && storageMode === 'API') {
     if (voucher.normalizedStatus === 'REVERSED') throw Error('该凭证已经冲销，不能再次冲销');
@@ -11009,14 +10888,6 @@ function taxDefaults(key,r,period){
  other:{item:'消费税',base:0,rate:0,relief:0}
  })[key];
 }
-function taxDemo(period){
- const r=taxSettings().rates, drafts=Object.fromEntries(Object.keys(TAX_NAMES).map(k=>[k,taxDefaults(k,r,period)]));
- Object.assign(drafts.vat,{sales:180000,input:9800});drafts.stamp.rows[0].base=180000;
- Object.assign(drafts.iit.rows[0],{name:'演示职员',income:18000,insurance:1700,deduct:1500});
- Object.assign(drafts.cit,{revenue:180000,cost:100000,expense:25000});Object.assign(drafts.social,{base:6000,head:3});
- Object.assign(drafts.disability,{payroll:4100000,head:41,disabled:0.25});Object.assign(drafts.other,{item:'车辆购置税',base:42000,rate:10});
- return drafts;
-}
 const txNode=(tag,text='',className='')=>{const e=document.createElement(tag);e.textContent=text;if(className)e.className=className;return e;};
 function txInput(parent,label,value,change,options=null,type='number'){
  const wrap=txNode('label',label+' ','tax-field');
@@ -11137,8 +11008,8 @@ function taxBurdenPayments(vouchers,period,accountName=code=>SUBJ_MAP[code]?.nam
  const add=(key,value)=>{amounts[key]=(amounts[key]??0)+value;};
  for(const voucher of vouchers) {
   if(voucher.period!==period||voucher.status!=='POSTED'||voucher.id.startsWith('imported:'))continue;
-  const cash=voucher.entries.filter(line=>reportMoney.includes(line.account));
-  const others=voucher.entries.filter(line=>!reportMoney.includes(line.account)&&reportEntryNet(line));
+  const cash=voucher.entries.filter(line=>reportMoney.some(prefix=>line.account.startsWith(prefix)));
+  const others=voucher.entries.filter(line=>!reportMoney.some(prefix=>line.account.startsWith(prefix))&&reportEntryNet(line));
   const net=cash.reduce((total,line)=>total+reportEntryNet(line),0);
   const sign=net<0?1:voucher.reverseOfId&&net>0?-1:0;
   if(!sign||!others.length||others.some(line=>Math.sign(reportEntryNet(line))!==sign)||
@@ -11404,10 +11275,6 @@ function initTaxSuite(){
   byId('tax-overview-count').textContent='已保存 '+saved.length+' / 7 个税种 · 包括单位缴费与代扣款';
   taxBars(byId('tax-overview-chart'),Object.entries(TAX_NAMES).map(([key,label])=>[label,saved.find(r=>r.key===key)?.total||0]));
  }
- byId('tax-load-demo').onclick=()=>runAction(async()=>{
-  if(!await uiConfirm('将七张计算表单填入演示数据？已保存记录仍保留，演示数据请勿用于申报。'))return;
-  drafts=taxDemo(period);taxWrite('drafts:'+period,drafts);openWorkspaceTab('tax-calc');
- });
  async function syncBook(){
   const month=period, book=await financialBook(month), pl=profitStatement(book,month);
   if(month!==period)return;
@@ -11719,15 +11586,6 @@ function countCanvasDemo(code,label,time,damage){
  countWatermark(c,g,code,time);
  return c.toDataURL('image/jpeg',COUNT_PHOTO_JPEG_QUALITY);
 }
-function countDemo(){
- const date='2026-11-18';
- const make=(code,name,type,cost,net,actual,state,note,photo)=>({id:recordId(),code,name,type,dept:'行政部',place:'综合办公室',keeper:'演示保管人',qty:1,cost,net,actual,state,note,gainValue:null,photos:photo?[{id:recordId(),name:code+'-演示.jpg',time:date+' 10:00:00',data:countCanvasDemo(code,photo,date+' 10:00:00',state!=='正常在用'),original:false}]:[]});
- return [{id:'count-demo',no:'PD-202611-01',date,scope:'行政部',person:'演示盘点员',demo:true,rows:[
-  make('FA-001','办公电脑','电子设备',2400000,1766667,1,'正常在用','','实物示意'),
-  make('FA-002','配送车辆','运输设备',18000000,14295000,0,'盘亏缺失','演示：现场未找到，待核实调拨记录',''),
-  make('FA-003','显示器','电子设备',180000,125000,1,'损坏待修','演示：屏幕破损','损坏示意')
- ]}];
-}
 function countSave(expected,next){
  const current=localStorageSnapshot();
  if(current!==expected)throw Error('其他窗口更新了盘点单，请刷新后再试');
@@ -11843,7 +11701,7 @@ function initBusinessInventory(){
   let state=[];
   if(opening&&p>=opening.period){state=inventoryState(opening,docs,all,lastDay(p));for(const r of state){const errors=r.errors.length;tableRow(body,[r.account+' · '+r.sku,r.name,r.warehouse,r.qty,fromCents(r.valueCents),r.qty?fromCents(Math.round(r.valueCents/r.qty)):'—',errors?'异常':'正常']);}}
   if(!body.rows.length){const tr=body.insertRow();const td=tr.insertCell();td.colSpan=7;td.textContent='当前期间暂无库存结存明细。';}
-  const currentRows=bookRows(all,p,await openingFor(all,p)),gl1401=currentRows.find(r=>r.code==='1401')?.end||0,gl1405=currentRows.find(r=>r.code==='1405')?.end||0;
+  const currentRows=bookRows(all,p,await openingFor(all,p)),gl1401=currentRows.filter(r=>r.code.startsWith('1401')).reduce((n,r)=>n+r.end,0),gl1405=currentRows.filter(r=>r.code.startsWith('1405')).reduce((n,r)=>n+r.end,0);
   const sub1401=state.filter(r=>r.account==='1401').reduce((n,r)=>n+r.valueCents,0),sub1405=state.filter(r=>r.account==='1405').reduce((n,r)=>n+r.valueCents,0);
   const relevant=docs.filter(d=>d.date?.slice(0,7)<=p),pending=relevant.filter(d=>all.find(v=>v.id===d.voucherId)?.status!=='POSTED');
   const status=by('inv-reconcile-status'),rawTracked=(opening?.rows||[]).some(r=>r.account==='1401')||relevant.some(d=>inventoryAccountOfDoc(d)==='1401');
@@ -11881,7 +11739,7 @@ function initBusinessInventory(){
   const p=openingPeriod.value;if(!/^\d{4}-\d{2}$/.test(p))throw Error('请选择有效启用期间');await ensureOpen(p);
   const workpapers=await getAllFromStore(STORE_WORK);if(workpapers.some(r=>r.id?.startsWith('inventory-doc:')))throw Error('已有采购或销售单据，不能再设置期初库存');
   const all=await getAllFromStore(STORE_VOUCHER),balances=await openingFor(all,p),rows=openingRows(),actualBy={1401:0,1405:0};for(const r of rows)actualBy[r.account==='1401'?'1401':'1405']+=r.stockCostCents;
-  for(const code of ['1401','1405'])if(actualBy[code]!==Number(balances[code]||0))throw Error(code+' 期初明细金额 '+fromCents(actualBy[code])+' 与 '+p+' 总账期初余额 '+fromCents(balances[code]||0)+' 不一致，差额 '+fromCents(actualBy[code]-Number(balances[code]||0)));
+  for(const code of ['1401','1405'])if(actualBy[code]!==sumAccountPrefixes(balances,[code]))throw Error(code+' 期初明细金额 '+fromCents(actualBy[code])+' 与 '+p+' 总账期初余额 '+fromCents(balances[code]||0)+' 不一致，差额 '+fromCents(actualBy[code]-sumAccountPrefixes(balances,[code])));
   const actual=actualBy['1401']+actualBy['1405'];
   const record={id:'inventory-opening',period:p,rows:structuredClone(rows),totalCents:actual,totalByAccount:actualBy,verified:true,createdAt:new Date().toISOString()};
   await saveRecords(STORE_WORK,[record],true);phaseSet('inventory-opening-draft',[]);drawOpening();await draw();showToast('期初库存已核对启用');
@@ -11913,11 +11771,11 @@ function initBusinessInventory(){
   return {workpapers,opening,docs,all};
  }
  purchaseForm.onsubmit=e=>{e.preventDefault();runAction(async()=>{
-  const docNo=val('inv-purchase-no'),date=val('inv-purchase-date'),supplier=val('inv-purchase-supplier'),inventoryAccount=val('inv-purchase-account'),sku=val('inv-purchase-sku'),name=val('inv-purchase-name'),warehouse=val('inv-purchase-warehouse'),qty=inventoryQty(val('inv-purchase-qty')),unitCostCents=positiveAmount(val('inv-purchase-unit-cost')),rate=Number(val('inv-purchase-rate')),deductible=by('inv-purchase-deductible').checked;
-  if(!docNo||!supplier||!sku||!name||!['1401','1405'].includes(inventoryAccount)||!phaseDate(date)||!Number.isFinite(rate)||rate<0||rate>100)throw Error('请填写有效采购单号、日期、供应商、存货科目及商品信息');
+  const docNo=val('inv-purchase-no'),date=val('inv-purchase-date'),supplier=val('inv-purchase-supplier'),postingAccount=val('inv-purchase-account'),inventoryAccount=postingAccount.slice(0,4),sku=val('inv-purchase-sku'),name=val('inv-purchase-name'),warehouse=val('inv-purchase-warehouse'),qty=inventoryQty(val('inv-purchase-qty')),unitCostCents=positiveAmount(val('inv-purchase-unit-cost')),rate=Number(val('inv-purchase-rate')),deductible=by('inv-purchase-deductible').checked;
+  if(!docNo||!supplier||!sku||!name||(!['1401','1405'].includes(inventoryAccount)||!SUBJ_MAP[postingAccount])||!phaseDate(date)||!Number.isFinite(rate)||rate<0||rate>100)throw Error('请填写有效采购单号、日期、供应商、存货科目及商品信息');
   const p=date.slice(0,7);await ensureOpen(p);const ctx=await ensureInventoryReady(date,sku,inventoryAccount,warehouse);if(ctx.docs.some(d=>d.docNo.toUpperCase()===docNo.toUpperCase()))throw Error('采购/销售单号已存在');
   const netCents=Math.round(qty*unitCostCents),taxCents=Math.round(netCents*rate/100),stockCostCents=netCents+(deductible?0:taxCents),payableCents=netCents+taxCents;
-  const entries=[{account:inventoryAccount,summary:'采购入库 '+docNo,debit:stockCostCents/100,credit:0}];if(deductible&&taxCents)entries.push({account:'2221',summary:'采购进项税额 '+docNo,debit:taxCents/100,credit:0});entries.push({account:'2202',aux:supplier,summary:'应付供应商 '+supplier,debit:0,credit:payableCents/100});
+  const entries=[{account:postingAccount,summary:'采购入库 '+docNo,debit:stockCostCents/100,credit:0}];if(deductible&&taxCents)entries.push({account:'22210101',summary:'采购进项税额 '+docNo,debit:taxCents/100,credit:0});entries.push({account:'2202',aux:supplier,summary:'应付供应商 '+supplier,debit:0,credit:payableCents/100});
   const id='inventory-voucher:'+docNo,voucher={id,voucherNo:'采购-'+date.replaceAll('-','')+'-'+recordId().slice(0,6),period:p,date,bizLabel:'采购入库',source:docNo,sourceType:'采购入库',status:'PENDING',totalDebit:payableCents/100,totalCredit:payableCents/100,entries};
   const doc={id:'inventory-doc:'+docNo,kind:'PURCHASE',docNo,date,period:p,supplier,inventoryAccount,sku,name,warehouse,qty,unitCostCents,netCents,taxCents,stockCostCents,deductible,vatRate:rate,voucherId:id,createdAt:new Date().toISOString()};
   await saveWorkVoucherPair(doc,voucher,true,true);purchaseForm.reset();period.value=p;by('inv-purchase-date').value=localDay();by('inv-purchase-warehouse').value='主仓库';by('inv-purchase-account').value='1405';by('inv-purchase-rate').value='13';by('inv-purchase-deductible').checked=true;await refreshVouchers();await draw();showToast('采购入库单已保存，凭证待审核及记账');
@@ -11935,7 +11793,7 @@ function initBusinessInventory(){
   }if(ctx.docs.some(d=>d.docNo.toUpperCase()===docNo.toUpperCase()))throw Error('采购/销售单号已存在');
   const stock=inventoryState(ctx.opening,ctx.docs,ctx.all,date).find(x=>inventoryLocationKey(x.account,x.sku,x.warehouse)===inventoryLocationKey('1405',sku,warehouse));if(!stock||stock.qty<qty||stock.errors.length)throw Error(warehouse+' 可用库存不足或有异常：当前 '+(stock?.qty||0)+'，本次出库 '+qty);
   const latestCost=Math.round(stock.valueCents/stock.qty),costCents=Math.round(qty*stock.valueCents/stock.qty),netCents=Math.round(qty*unitPriceCents),taxCents=Math.round(netCents*rate/100),grossCents=netCents+taxCents;
-  const entries=[{account:'1122',aux:customer,summary:'确认销售应收 '+docNo,debit:grossCents/100,credit:0},{account:'6001',summary:'确认销售收入 '+docNo,debit:0,credit:netCents/100}];if(taxCents)entries.push({account:'2221',summary:'计提销项税额 '+docNo,debit:0,credit:taxCents/100});entries.push({account:'6401',summary:'结转销售成本 '+docNo,debit:costCents/100,credit:0},{account:'1405',summary:'销售商品出库 '+docNo,debit:0,credit:costCents/100});
+  const entries=[{account:'1122',aux:customer,summary:'确认销售应收 '+docNo,debit:grossCents/100,credit:0},{account:'6001',summary:'确认销售收入 '+docNo,debit:0,credit:netCents/100}];if(taxCents)entries.push({account:'22210102',summary:'计提销项税额 '+docNo,debit:0,credit:taxCents/100});entries.push({account:'6401',summary:'结转销售成本 '+docNo,debit:costCents/100,credit:0},{account:'1405',summary:'销售商品出库 '+docNo,debit:0,credit:costCents/100});
   const id='inventory-voucher:'+docNo,total=(grossCents+costCents)/100,voucher={id,voucherNo:'销售-'+date.replaceAll('-','')+'-'+recordId().slice(0,6),period:p,date,bizLabel:'商品销售及成本结转',source:docNo,sourceType:'销售出库',status:'PENDING',totalDebit:total,totalCredit:total,entries};
   const doc={id:'inventory-doc:'+docNo,kind:'SALE',docNo,date,period:p,customer,sku,name,warehouse,qty,unitPriceCents,netCents,taxCents,grossCents,costUnitCents:latestCost,costCents,invoiceRecordId:invoiceNo||'',voucherId:id,createdAt:new Date().toISOString()};
   await saveWorkVoucherPair(doc,voucher,true,true);saleForm.reset();period.value=p;by('inv-sale-date').value=localDay();by('inv-sale-warehouse').value='主仓库';by('inv-sale-rate').value='13';await refreshVouchers();if(window.refreshInvoiceLedger)await refreshInvoiceLedger();await draw();showToast('销售出库及销售成本凭证已生成，待审核及记账');
@@ -11943,8 +11801,8 @@ function initBusinessInventory(){
  by('inv-refresh').onclick=draw;by('inv-period').onchange=draw;
  by('inv-export').onclick=()=>runAction(async()=>{const docs=await allDocs(),all=await getAllFromStore(STORE_VOUCHER);const rows=docs.filter(d=>d.date?.slice(0,7)<=period.value).map(d=>{const v=all.find(x=>x.id===d.voucherId);return [d.date,({PURCHASE:'采购入库',SALE:'销售出库',PROD_ISSUE:'生产领料',PROD_RECEIPT:'生产完工入库'})[d.kind]||'库存业务',d.docNo,d.sku,d.name,d.warehouse,d.qty,(d.kind==='PURCHASE'||d.kind==='PROD_RECEIPT'?d.stockCostCents:d.costCents)/100,d.voucherId,v?.status||'缺失'];});exportRows('库存流水_'+period.value,['日期','业务类型','单据号','商品编码','商品名称','仓库','数量','库存成本/销售成本','凭证编号','凭证状态'],rows);});
  phaseRefresh.inventory=draw;
- by('inv-purchase-sku').addEventListener('change',()=>{const d=openingRows().find(x=>x.sku===val('inv-purchase-sku')&&(x.account==='1401'?'1401':'1405')===val('inv-purchase-account'));if(d)by('inv-purchase-name').value=d.name;});
- by('inv-purchase-account').addEventListener('change',()=>{const d=openingRows().find(x=>x.sku===val('inv-purchase-sku')&&(x.account==='1401'?'1401':'1405')===val('inv-purchase-account'));if(d)by('inv-purchase-name').value=d.name;});
+ by('inv-purchase-sku').addEventListener('change',()=>{const d=openingRows().find(x=>x.sku===val('inv-purchase-sku')&&(x.account==='1401'?'1401':'1405')===val('inv-purchase-account').slice(0,4));if(d)by('inv-purchase-name').value=d.name;});
+ by('inv-purchase-account').addEventListener('change',()=>{const d=openingRows().find(x=>x.sku===val('inv-purchase-sku')&&(x.account==='1401'?'1401':'1405')===val('inv-purchase-account').slice(0,4));if(d)by('inv-purchase-name').value=d.name;});
  by('inv-sale-sku').addEventListener('change',()=>{const d=openingRows().find(x=>x.sku===val('inv-sale-sku'));if(d)by('inv-sale-name').value=d.name;});
  drawOpening();draw();
 }
@@ -12093,7 +11951,7 @@ function initPayrollModule(){
  function renderDraft(){
   const body=by('payroll-draft-rows');body.replaceChildren();const rows=draft();
   for(const [i,r] of rows.entries()){
-   const tr=tableRow(body,[r.code,r.name,r.dept,moneyField(r.gross),moneyField(r.employeeSocial),moneyField(r.iit),moneyField(r.other),moneyField(r.employerSocial),moneyField(r.net),r.expenseAccount==='6601'?'销售费用':r.expenseAccount==='5001'?'生产成本':'管理费用','']);
+   const tr=tableRow(body,[r.code,r.name,r.dept,moneyField(r.gross),moneyField(r.employeeSocial),moneyField(r.iit),moneyField(r.other),moneyField(r.employerSocial),moneyField(r.net),SUBJ_MAP[r.expenseAccount]?.name||r.expenseAccount,'']);
    tr.lastChild.append(action('移除',()=>{saveDraft(rows.filter((_,j)=>j!==i));renderDraft();}));
   }
   const total=key=>rows.reduce((n,r)=>n+Number(r[key]||0),0);
@@ -12118,7 +11976,7 @@ function initPayrollModule(){
    if(accrual?.status==='POSTED'&&remittance>0&&!batch.remittanceVoucherId)actions.append(action('生成个税社保缴纳凭证',async()=>{
     const p=batch.period;await ensureOpen(p);const latest=(await getAllFromStore(STORE_WORK)).find(x=>x.id===batch.id);if(!latest||latest.remittanceVoucherId)throw Error('工资批次已变化或已生成缴纳凭证');
     const bank=val('payroll-bank');if(!ACCOUNTS.some(a=>a.kind==='BANK'&&a.name===bank))throw Error('请选择有效银行账户');
-    const id='payroll-remit:'+p,entries=[];if(batch.iitCents)entries.push({account:'2221',summary:'缴纳工资薪金个人所得税',debit:batch.iitCents/100,credit:0});if(batch.deductionsCents)entries.push({account:'2241',summary:'缴纳社保及其他代扣款',debit:batch.deductionsCents/100,credit:0});entries.push({account:'1002',aux:bank,summary:'支付代扣代缴款项',debit:0,credit:remittance/100});
+    const id='payroll-remit:'+p,entries=[];if(batch.iitCents)entries.push({account:'222110',summary:'缴纳工资薪金个人所得税',debit:batch.iitCents/100,credit:0});if(batch.deductionsCents)entries.push({account:'2241',summary:'缴纳社保及其他代扣款',debit:batch.deductionsCents/100,credit:0});entries.push({account:'1002',aux:bank,summary:'支付代扣代缴款项',debit:0,credit:remittance/100});
     const v={id,voucherNo:'工资代扣代缴-'+p,period:p,date:lastDay(p),bizLabel:'工资代扣代缴',source:p+' 工资批次',sourceType:'工资代扣代缴',status:'PENDING',totalDebit:remittance/100,totalCredit:remittance/100,entries};
     await saveWorkVoucherPair({...latest,remittanceVoucherId:id},v,false,true);await refreshVouchers();await drawBatches();showToast('代扣代缴凭证已生成，待审核及记账');
    }));
@@ -12146,7 +12004,7 @@ function initPayrollModule(){
   const grossCents=rows.reduce((n,r)=>n+r.gross,0),netCents=rows.reduce((n,r)=>n+r.net,0),iitCents=rows.reduce((n,r)=>n+r.iit,0),employeeSocialCents=rows.reduce((n,r)=>n+r.employeeSocial,0),otherCents=rows.reduce((n,r)=>n+r.other,0),employerSocialCents=rows.reduce((n,r)=>n+r.employerSocial,0),deductionsCents=employeeSocialCents+otherCents+employerSocialCents,expenseCents=grossCents+employerSocialCents;
   const byExpense=new Map();for(const r of rows)byExpense.set(r.expenseAccount,(byExpense.get(r.expenseAccount)||0)+r.gross+r.employerSocial);
   const entries=[...byExpense].filter(([,v])=>v>0).map(([account,v])=>({account,summary:'计提 '+p+' 工资及单位社保',debit:v/100,credit:0}));
-  if(netCents)entries.push({account:'2211',summary:'应付职工净工资',debit:0,credit:netCents/100});if(iitCents)entries.push({account:'2221',summary:'代扣个人所得税',debit:0,credit:iitCents/100});if(deductionsCents)entries.push({account:'2241',summary:'代扣社保、其他扣款及单位社保',debit:0,credit:deductionsCents/100});
+  if(netCents)entries.push({account:'2211',summary:'应付职工净工资',debit:0,credit:netCents/100});if(iitCents)entries.push({account:'222110',summary:'代扣个人所得税',debit:0,credit:iitCents/100});if(deductionsCents)entries.push({account:'2241',summary:'代扣社保、其他扣款及单位社保',debit:0,credit:deductionsCents/100});
   const total=expenseCents/100,id='payroll-accrual:'+p,voucher={id,voucherNo:'工资计提-'+p,period:p,date:lastDay(p),bizLabel:'工资及社保计提',source:p+' 工资批次',sourceType:'工资表',status:'PENDING',totalDebit:total,totalCredit:total,entries};
   const batch={id:'payroll-batch:'+p,period:p,rows:structuredClone(rows),grossCents,netCents,iitCents,employeeSocialCents,otherCents,employerSocialCents,deductionsCents,expenseCents,accrualVoucherId:id,createdAt:new Date().toISOString()};
   await saveWorkVoucherPair(batch,voucher,true,true);saveDraft([]);renderDraft();await refreshVouchers();await drawBatches();showToast('工资计提凭证已生成，待审核及记账');
@@ -12160,7 +12018,7 @@ function initAssetCount(){
  const root=byId('module-ops-count'), picker=byId('count-task'), filter=byId('count-filter'), body=byId('count-rows');
  const edit=byId('count-gain-form'), newForm=byId('count-new-form');
  let selected='', demo=null, light=null, linked=null, revision=0, queued=false;
- const tasks=()=>countData()??(SUITE_ACTIVE.demo?(demo??=countDemo()):[]);
+ const tasks=()=>countData()??[];
  const task=()=>tasks().find(x=>x.id===selected);
  function change(mutator){
   if(linked)throw Error('已生成凭证，请先处理关联凭证后再编辑盘点单');
@@ -12655,7 +12513,6 @@ const COM_EXPENSES=['差旅费','业务招待费','办公费','交通通讯费']
 const COM_INPUT_STATES=['待认证','已勾选抵扣'];
 const COM_INPUT_COLUMNS=['发票号码','开票日期','销售方名称','关联合同编号','不含税金额','税率（%）','进项税额','认证状态','抵扣所属期'];
 const COM_ARCHIVES=['进项发票索引','销项发票及附件','出纳银行回单','记账凭证附件','完税证明附件','固定资产盘点照片','费用报销附件'];
-const COM_DEMO_PERIOD='2026-01';
 function comMonth(value){
  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(value))throw Error('请选择有效的会计期间');
  return value;
@@ -12666,15 +12523,9 @@ function comWrite(key,value){
  phaseCache.set(key,value);markFinanceDirty();
  if(key==='input-invoices'&&window.refreshContractLedger&&byId('module-contract-ledger')?.classList.contains('active'))void window.refreshContractLedger();
 }
-const demoInputs=[
- {id:'com-inv-a',number:'26010000000000000001',date:'2026-01-13',seller:'演示设备供应商',amount:2000000,rate:13,tax:260000,status:'已勾选抵扣',period:'2026-01'},
- {id:'com-inv-b',number:'26010000000000000002',date:'2026-01-16',seller:'演示物流供应商',amount:1000000,rate:9,tax:90000,status:'待认证',period:''}
-];
-const demoBudget={'2026-01':{'管理部':500000,'销售部':300000,'技术部':600000}};
-const demoExpenses=[
- {id:'com-exp-a',no:'BX-202601-01',employee:'演示员工甲',dept:'销售部',kind:'差旅费',date:'2026-01-18',amount:350000,reason:'客户现场拜访',status:'PENDING',credit:'1002',bank:'工商银行基本户'},
- {id:'com-exp-b',no:'BX-202601-02',employee:'演示员工乙',dept:'管理部',kind:'办公费',date:'2026-01-19',amount:120000,reason:'办公耗材',status:'APPROVED',credit:'1221',bank:''}
-];
+const demoInputs=[];
+const demoBudget={};
+const demoExpenses=[];
 const inputInvoices=()=>comRead('input-invoices',demoInputs);
 const expenseRecords=()=>comRead('expense-records',demoExpenses);
 function comInputRecord(data){
@@ -12919,8 +12770,6 @@ function initExpenses(){
 }
 const COM_MIME_EXT={'image/jpeg':'jpg','image/png':'png','image/gif':'gif','image/webp':'webp','image/bmp':'bmp','image/avif':'avif','application/pdf':'pdf','application/json':'json','text/plain':'txt'};
 const COM_IMG=new Set(Object.keys(COM_MIME_EXT).filter(k=>k.startsWith('image/')));
-const COM_DEMO_PHOTO={name:'演示报销凭证.png',data:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jJwcAAAAASUVORK5CYII='};
-demoExpenses[1].attachment=COM_DEMO_PHOTO;
 function comDecodeAttachment(file){
  const str=typeof file==='string'?file:(file?.data||file?.dataUrl||'');
  const match=/^data:([a-z0-9.+\-/]+)?;base64,([A-Za-z0-9+/=]+)$/i.exec(str);
@@ -13056,7 +12905,7 @@ async function archiveRows(period){
    add('薪酬单据',r.period,r.id,'工资批次与计提明细',comJsonAttachment('工资批次.json',r));
   for(const r of papers.filter(r=>r.period===period&&r.id?.startsWith('recon:')))
    add('银行余额调节表',lastDay(period),r.account||r.id,'银行存款余额调节表',comJsonAttachment('银行余额调节表.json',r));
-  const counts=countData()??(SUITE_ACTIVE.demo&&period==='2026-11'?countDemo():[]);
+  const counts=countData()??[];
  for(const task of counts.filter(t=>t.date?.slice(0,7)===period))
   for(const row of task.rows||[])for(const photo of row.photos||[])
    add('固定资产盘点照片',task.date,task.no,row.code+' '+row.name+' · '+photo.time,photo);
@@ -13164,59 +13013,6 @@ async function fwRestoreCurrent(tables,prefs,book){
  try{setPrefs(prefs);await writeTables(next);committed=true;suiteWrite('books',suiteBooks().map(b=>b.id===SUITE_ACTIVE.id?{...b,demo:Boolean(book.demo)}:b));}
  catch(error){try{setPrefs(oldPrefs);if(committed||storageMode==='LOCALSTORAGE')await writeTables(oldTables,oldPrefs);}catch{throw Error('恢复失败且回滚受阻，请保留备份文件并重新导入');}throw error;}
  financeBackupDirty=false;location.reload();
-}
-
-function fwDemoData(){
- const period='2026-11',customer=AR_UNITS[0],supplier=AP_UNITS[0],bank='工商银行基本户';
- const vouchers=[];
- const voucher=(id,date,summary,entries)=>{
-  const v={id:'FW-DEMO-'+id,voucherNo:'演示-'+id,date,period:date.slice(0,7),bizLabel:summary,status:'POSTED',source:'演示单据-'+id,sourceType:'演示账套',reviewedAt:date,postedAt:date,
-   entries:entries.map(([account,debit,credit,aux=''])=>({account,debit,credit,aux,summary})),totalDebit:entries.reduce((n,e)=>n+e[1],0),totalCredit:entries.reduce((n,e)=>n+e[2],0)};
-  validateVoucherRecord(v);vouchers.push(v);return v;
- };
- voucher('001','2026-01-01','股东投入资本',[['1002',300000,0,bank],['4001',0,300000]]);
- for(const [id,date,amount] of [['002','2026-07-10',10000],['003','2026-09-10',20000],['004','2026-10-10',30000]])voucher(id,date,'赊销服务（账龄示例）',[['1122',amount,0,customer],['6001',0,amount]]);
- voucher('005','2026-11-05','本月销售开票',[['1122',56500,0,customer],['6001',0,50000],['2221',0,6500]]);
- voucher('006','2026-11-08','赊购原材料',[['1401',40000,0],['2202',0,40000,supplier]]);
- voucher('007','2026-11-12','客户部分回款',[['1002',25000,0,bank],['1122',0,25000,customer]]);
- voucher('008','2026-11-15','支付供应商货款',[['2202',15000,0,supplier],['1002',0,15000,bank]]);
- voucher('009','2026-11-18','结转本月销售成本',[['6401',18000,0],['1401',0,18000]]);
- voucher('010','2026-11-20','支付办公费用',[['6602',3000,0],['1002',0,3000,bank]]);
- const cash=[['007','2026-11-12','RECEIPT',25000,customer],['008','2026-11-15','PAYMENT',15000,supplier],['010','2026-11-20','PAYMENT',3000,'办公用品供应商']].map(([id,date,type,amount,counterparty])=>({id:'FW-CASH-'+id,date,type,amount,account:'ICBC',counterparty,sourceDoc:'演示单据-'+id,receiptNo:'演示回单-'+id,status:'POSTED',voucherId:'FW-DEMO-'+id,note:'已关联审核记账凭证'}));
- const flows=cash.map(r=>({id:r.sourceDoc,amount:Math.round(r.amount*100),line:1}));
- const results=flows.map((r,i)=>({id:r.id,status:'MATCH',bank:[{...r,line:i+2}],company:[{...r,line:i+2}],resolution:'',evidence:'演示银行回单',note:''}));
- const opening=Object.fromEntries(VOUCHER_ACCOUNTS.map(a=>[a.code,0]));
- const workpapers=[{id:'meta:seeded_vouchers',done:true},{id:'opening:2026-01',period:'2026-01',balances:opening},
-  {id:'fw-demo:bank-flows',period,account:bank,rows:cash.map(r=>({date:r.date,source:r.sourceDoc,debit:r.type==='RECEIPT'?r.amount:0,credit:r.type==='PAYMENT'?r.amount:0}))},
-  {id:'recon:'+period+':'+bank,period,account:bank,results,verified:false,validationVersion:2,adjustment:{bank:30700000,opening:30000000,book:30700000,bankAdj:0,bookAdj:0,gap:0,evidence:'演示银行回单与已记账凭证一致'}}];
- const invoices=[{invoiceNo:'FW-INVOICE-005',invoiceNumber:'DEMO202611005',date:'2026-11-05',seller:'示例企业',buyer:customer,sellerTax:'DEMO',buyerTax:'DEMO',items:[{name:'服务费',spec:'',unit:'项',qty:1,price:50000,rate:13,amount:50000,tax:6500}],total:56500,taxAmount:6500,status:'ISSUED',source:'演示单据-005',payment:'赊销',voucherId:'FW-DEMO-005'}];
- return {format:'finance-workbench-v5',book:{name:'完整演示账套',demo:false},tables:{[STORE_WORK]:workpapers,[STORE_NAME]:invoices,[STORE_CASHIER]:cash,[STORE_VOUCHER]:vouchers,[STORE_ORIGINALS]:[]},prefs:[['clean_cashier_accounts',JSON.stringify(ACCOUNTS_INIT)],['finance-standard:period',JSON.stringify(period)]]};
-}
-function fwFindDemoBook(books=suiteBooks()){
- return books.find(book=>book.name==='完整演示账套')||books.find(book=>/^完整演示账套(?:\s|$)/.test(book.name));
-}
-let fwDemoOpening=null;
-async function fwLoadDemo(){
- if(fwDemoOpening)return fwDemoOpening;
- fwDemoOpening=(async()=>{
-  if(financeBackupDirty&&!await uiConfirm('当前账套有改动。是否切换到完整演示账套？','切换演示账套'))return;
-  // The registry is authoritative when connected; retired browser copies stay retired.
-  let books=suiteBooks();
-  if(storageMode==='API'){
-   const registry=await apiRequest('/api/storage/account-sets');
-   books=(registry.items||[]).map(book=>({id:book.id,name:book.name,demo:Boolean(book.is_demo)}));
-  }
-  const existing=fwFindDemoBook(books);
-  if(existing){
-   if(existing.id===SUITE_ACTIVE.id){showToast('当前已是完整演示账套');return;}
-   suiteWrite('books',books);suiteWrite('active',existing.id);
-   financeBackupDirty=false;location.reload();return;
-  }
-  if(fwActor&&fwActor.role!=='admin')throw Error('请让管理员创建完整演示账套');
-  const data=fwDemoData();
-  await suiteImport(new File([JSON.stringify(data)],'演示账套.json',{type:'application/json'}),{name:'完整演示账套'});
- })();
- try{return await fwDemoOpening;}finally{fwDemoOpening=null;}
 }
 
 /* Manual matching pairs two opposite posted entries; never posts a second payment. */
@@ -13456,149 +13252,21 @@ function fwInitAR(){
  fwSetARTab(0);
 }
 
-const fwTourSample = {"book":{"format":"finance-workbench-v5","book":{"name":"星辰电子_期初练习","demo":false},"tables":{"Workpapers":[{"id":"meta:seeded_vouchers","done":true},{"id":"opening:2026-10","period":"2026-10","balances":{"1001":0,"1002":0,"1122":0,"1405":0,"1601":0,"1602":0,"2202":0,"4001":0,"4104":0}},{"id":"inventory-opening","period":"2026-11","rows":[{"account":"1405","sku":"SKU-001","name":"电子配件套装","warehouse":"主仓库","qty":120,"unitCostCents":15000,"stockCostCents":1800000}],"totalCents":1800000,"totalByAccount":{"1401":0,"1405":1800000},"verified":true}],"Invoices":[],"CashierRecords":[],"VoucherRecords":[{"id":"XC-OPEN","voucherNo":"期初迁入","date":"2026-10-31","period":"2026-10","bizLabel":"期初迁入（仅为辅助账分配，11月不得重复录入）","source":"期初迁入","sourceType":"教学案例","status":"POSTED","entries":[{"account":"1001","debit":5000,"credit":0,"aux":"","summary":"期初迁入（仅为辅助账分配，11月不得重复录入）"},{"account":"1002","debit":100000,"credit":0,"aux":"工商银行基本户","summary":"期初迁入（仅为辅助账分配，11月不得重复录入）"},{"account":"1122","debit":12000,"credit":0,"aux":"华远科技有限公司","summary":"期初迁入（仅为辅助账分配，11月不得重复录入）"},{"account":"1405","debit":18000,"credit":0,"aux":"","summary":"期初迁入（仅为辅助账分配，11月不得重复录入）"},{"account":"1601","debit":30000,"credit":0,"aux":"","summary":"期初迁入（仅为辅助账分配，11月不得重复录入）"},{"account":"1602","debit":0,"credit":10000,"aux":"","summary":"期初迁入（仅为辅助账分配，11月不得重复录入）"},{"account":"2202","debit":0,"credit":10000,"aux":"江南材料供应有限公司","summary":"期初迁入（仅为辅助账分配，11月不得重复录入）"},{"account":"4001","debit":0,"credit":100000,"aux":"","summary":"期初迁入（仅为辅助账分配，11月不得重复录入）"},{"account":"4104","debit":0,"credit":45000,"aux":"","summary":"期初迁入（仅为辅助账分配，11月不得重复录入）"}],"totalDebit":165000,"totalCredit":165000}],"AssetCountOriginals":[]},"prefs":[["clean_cashier_accounts","[{\"id\": \"CASH\", \"name\": \"库存现金\", \"kind\": \"CASH\"}, {\"id\": \"ICBC\", \"name\": \"工商银行基本户\", \"kind\": \"BANK\"}]"],["finance-standard:period","\"2026-11\""],["finance-standard:operations:assets","[{\"code\": \"FA-001\", \"name\": \"办公电脑组合\", \"type\": \"电子设备\", \"cost\": 1800000, \"residual\": 0, \"years\": 5, \"start\": \"2025-02-01\", \"dept\": \"行政部\", \"place\": \"办公室A\", \"keeper\": \"李会计\", \"qty\": 1, \"active\": true}, {\"code\": \"FA-002\", \"name\": \"激光打印机\", \"type\": \"电子设备\", \"cost\": 1200000, \"residual\": 0, \"years\": 5, \"start\": \"2025-02-01\", \"dept\": \"行政部\", \"place\": \"办公室B\", \"keeper\": \"王助理\", \"qty\": 1, \"active\": true}]"],["finance-standard:meta","{\"company\": \"星辰电子商贸有限公司\", \"preparer\": \"李会计\", \"reviewer\": \"张复核\"}"]]},"bank":"单号,日期,金额,对方户名,摘要\nFK-001,2026-11-03,-16000,江南材料供应有限公司,支付采购款\nOLD-AR,2026-11-06,12000,华远科技有限公司,收回期初欠款\nSK-001,2026-11-06,18000,华远科技有限公司,收到本期销售回款\nRENT-001,2026-11-10,-3000,办公室出租方,11月租金\nBX-001,2026-11-12,-500,李会计,办公耗材报销\nFEE-001,2026-11-30,-20,工商银行,银行手续费\n","company":"单号,日期,金额,对方户名,摘要\nFK-001,2026-11-03,-16000,江南材料供应有限公司,支付采购款\nOLD-AR,2026-11-06,12000,华远科技有限公司,收回期初欠款\nSK-001,2026-11-06,17990,华远科技有限公司,收到本期销售回款\nRENT-001,2026-11-10,-3000,办公室出租方,11月租金\nBX-001,2026-11-12,-500,李会计,办公耗材报销\nPAY-001,2026-11-30,-8000,工资代发账户,11月工资\n","payroll":"员工编号,员工姓名,部门,应发工资（元）,个人社保（元）,个人所得税（元）,其他扣款（元）,单位社保（元）,费用科目\nE001,李会计,管理部,4000,0,0,0,0,6602\nE002,王助理,管理部,4000,0,0,0,0,6602\n"};
-
-const fwTourStages = [
- ['建账与期初',[
-  ['开始练习',null,'#suite-book-manage','推荐先开一个独立练习账套。点击「建立示例账套」会带入星辰电子的期初余额、库存和两张资产卡片，后面的业务由你亲手操作。已有练习账套时，可切换到它再继续。','期初借方和贷方各 165,000 元，银行存款 100,000 元。','seed'],
-  ['检查常用账户','fund-bank','#module-cashier .entry-head button','点「管理常用账户」，核对库存现金和工商银行基本户。每个在册银行账户都要单独对账。','本案例只有工商银行基本户需要做银行对账。'],
-  ['核对期初库存','biz-inventory','#inv-opening-verify','将「库存启用期间」设为 2026-11。示例账套已经启用 SKU-001 电子配件套装，主仓库 120 套，单位成本 150 元。手工建账时先录期初数据，再在此核对总账并启用库存。','库存期初 18,000 元，与科目 1405 一致。']
- ]],
- ['日常业务',[
-  ['登记采购入库','biz-inventory','#inv-purchase-no','输入 CG-001，2026-11-02，江南材料供应有限公司。选 1405 库存商品，填写 SKU-001、电子配件套装、主仓库、120 套、不含税单价 200 元、税率 13%，勾选进项税可抵扣，再登记入库生成凭证。','货款 24,000 元，进项税 3,120 元，应付 27,120 元。'],
-  ['审核与记账','gl-query','#acc-panel-pending','会计期间选 2026-11。找到采购凭证，先点「审核通过」，再点「记账」。下文每次生成凭证后都按此办理。','记账后库存共 240 套，成本 42,000 元。'],
-  ['部分支付货款','biz-settlement','#biz-ap-settle-no','在「供应商付款核销」选 CG-001。填写 FK-001、11 月 3 日、工商银行基本户、16,000 元。点「生成供应商付款凭证」，审核并记账。','本笔采购还欠 11,120 元，含期初的应付余额为 21,120 元。'],
-  ['登记销项发票','invoice','#inv-input-date','销售方填星辰电子商贸有限公司，购买方填华远科技有限公司。日期 11 月 5 日，来源编号 XS-001，发票号 202611050001。填电子配件套装 80 套、单价 300 元、税率 13%。在练习账套模拟「已开票」时，双方税号填 DEMO-XC-001、DEMO-HY-001，依据填「教学模拟」。随后到销售出库关联此发票号。','不含税 24,000 元，销项税 3,120 元，价税合计 27,120 元。'],
-  ['销售出库与成本','biz-inventory','#inv-sale-no','录入 XS-001、11 月 5 日、华远科技有限公司、SKU-001、电子配件套装、主仓库、80 套、不含税单价 300 元、销项税率 13%。填已开票号码 202611050001，生成销售及成本凭证后审核记账。','平均成本 175 元，结转成本 14,000 元，期末库存 28,000 元。同一销售收入只记一次。'],
-  ['收回期初应收','fund-bank','#cash-amount','选「收款登记」。11 月 6 日收款 12,000 元，付款方华远科技有限公司，收款账户工商银行基本户，来源单号与回单号均为 OLD-AR。在列表确认办理、确认入账后，点「生成总账凭证」，对方科目选 1122 并核对辅助名称，再审核记账。','借 1002，贷 1122，期初欠款收回。'],
-  ['核销本期部分回款','biz-settlement','#biz-ar-settle-no','选择 XS-001，填 SK-001、11 月 6 日、工商银行基本户、本次收款 17,990 元。生成收款核销凭证并审核记账。案例故意少记 10 元，留到银行对账查出。','补记前应收余额 9,130 元。'],
-  ['查询往来余额','ar-balance',null,'会计期间选 2026-11，按客户与供应商分开核对余额。需要查看分录时进入「往来明细与核销」。','华远应收 9,130 元，江南材料应付 21,120 元。'],
-  ['登记办公室租金','fund-bank','#cash-amount','选「付款登记」。录入 11 月 10 日，工商银行基本户，租金 3,000 元，收款方办公室出租方，来源单号和回单号 RENT-001。确认办理、确认入账后生成总账凭证，对方科目选 6602，审核记账。','借 6602、贷 1002，各 3,000 元。'],
-  ['处理费用报销','fund-expense','#expense-person','11 月 12 日录入李会计、管理部、办公费、500 元，支付科目选 1002、工商银行基本户。说明写办公耗材，提交审批，审批通过后生成凭证，审核记账。','借 6602、贷 1002，各 500 元。'],
-  ['计提并发放工资','biz-payroll','#payroll-period','选 2026-11，导入本步示例工资或手录两名员工，各 4,000 元，教学扣款与社保列为 0。生成计提凭证并记账，再选工商银行基本户生成发放凭证并记账。','借 6602、贷 2211 各 8,000 元。发放借 2211、贷 1002 各 8,000 元。','payroll'],
-  ['练习手工制证和冲销','gl-voucher','#voucher-btn-submit','手工凭证逐行填科目、辅助核算、摘要和借贷，再提交审核。想练红字冲销时，在另一个练习账套记一张 100 元费用凭证，回凭证列表点「红字冲销」，选开放日期并审核记账。','本地冲销使用反向借贷。冲销完成后两张凭证的银行净额为 0。']
- ]],
- ['银行对账',[
-  ['导入两侧流水','fund-loan','#recon-drop-bank','点击「载入示例流水」，或通过两个上传区选择实际流水。对账期间选 2026-11，银行账户为工商银行基本户。银行期末填 110,480；账面期初填 100,000；调整前账面期末填 102,490。说明中记录 10 月 31 日期初迁入凭证。','两张表各 6 笔，收入为正、支出为负，表内没有期初行。','bank'],
-  ['切换两种匹配模式','fund-loan','#recon-btn-reconcile','核对表头映射，选「单号精确匹配」，点「开始对账」。再选「无单号智能匹配」，日期窗口 ±3 天并启用户名、摘要，再点一次开始。','两种模式均应得到 4 笔完全匹配、1 笔金额不符、1 笔企业漏记和 1 笔银行缺失。'],
-  ['补记两笔差异','gl-voucher','#voucher-btn-submit','分别录两张 11 月 30 日凭证。回款差额借 1002、贷 1122 各 10 元，往来辅助为华远科技有限公司。手续费借 6603、贷 1002 各 20 元。1002 辅助均为工商银行基本户。审核、记账并记下两张实际凭证号。','补记后 1002 为 102,480 元，1122 为 9,120 元。'],
-  ['逐笔处理与保存','fund-loan','#recon-result-area .tabs','SK-001 选「已更正账面并正式记账」，关联 10 元凭证。FEE-001 选「已补记账面并正式记账」，关联 20 元凭证。PAY-001 选「企业未达项（银行待清算）」，关联工资付款凭证。分别填处理依据，然后点「保存对账结果」。','银行调整 -8,000 元，账面调整归零，两侧均为 102,480 元，差额 0。保存后应通过校验。']
- ]],
- ['固定资产与审计',[
-  ['核对固定资产卡片','fa-card','#assets-import-pick','练习账套已有 FA-001 办公电脑组合 18,000 元、FA-002 激光打印机 12,000 元。两张卡均自 2025-02-01 开始使用，年限 5 年，残值率 0%。自行建账可先下载 Excel 导入模板。','固定资产原值 30,000 元，期初累计折旧 10,000 元。'],
-  ['计提本月折旧','fa-depr','#depr-run','选 2026-11，点「一键计提本月折旧」，再点「生成待审核折旧凭证」，审核、记账。','电脑 300 元，打印机 200 元，管理费用和累计折旧各增加 500 元。'],
-  ['发起实物盘点','fa-count','#count-show-new','点「发起新盘点任务」，填 PD-202611-01、2026-11-30、全部部门、李会计。电脑实盘 1 件，打印机实盘 0 件并选「盘亏缺失」，填写差异原因和审批依据。可用「上传/拍照」或「选照片」，再导出盘点表或打印清册。','账实相符 1 件，打印机盘亏净值 7,800 元。'],
-  ['生成盘亏处理凭证','fa-count','#count-preview','点「生成盘点盈亏处理凭证预览」，核对借 1901 7,800 元、借 1602 4,200 元、贷 1601 12,000 元，再「写入总账待审核」。批准转销后另做借 6711、贷 1901 各 7,800 元，两张凭证都审核记账。','待处理损溢归零，固定资产期末净值为 11,700 元。'],
-  ['扫描并导出审计底稿','gl-risk-audit','#risk-run','截止日选 2026-11-30，点「开始全面扫描」。查看命中事项的业务来源，记录核查依据，按需导出自查底稿 CSV 或打印为 PDF。','异常先联查原始凭证、回单或盘点记录，再判断如何处理。']
- ]],
- ['税务、结账与归档',[
-  ['登记进项发票','tax-input-inv','#input-inv-form','登记发票 202611020001、11 月 2 日、江南材料供应有限公司，不含税 24,000 元，税率 13%，进项税 3,120 元，认证状态选「已勾选抵扣」，抵扣所属期 2026-11。','台账进项 3,120 元应与采购凭证一致。'],
-  ['实时测算税额','tax-calc','#tax-sync-calc','税期选 2026-11。可同步账簿参考数据，核对一般纳税人货物销售口径。示例销项和进项各 3,120 元，应纳增值税为 0。','测算历史和期末结账所用的税务底稿需分别保存。'],
-  ['查税负和申报安排','tax-burden','#tb-period','核对分析税期、收入和实际税额，再看行业参考。使用下一步打开申报日历。','示例只用于练习，申报安排按实际企业情况核对。'],
-  ['核对征期与办理流程','tax-calendar','#tax-export-ics','查看税款所属期和实际申报月份，必要时导出提醒。也可打开「八大业务申报流程向导」查看办理步骤。','导览不会提交申报。'],
-  ['保存期末税务底稿','tax-workpapers','#tax-entry-vat','税期选 2026-11，增值税和附加税费确认金额均填 0，取数资料填采购和销售单据依据。点「预览测算底稿」，再点「复核并保存结果」。','应看到测算底稿已保存。'],
-  ['查看余额表和明细','gl-balance',null,'统一选 2026-11，核对银行、存货、应收和应付的期初、本期发生与期末。可通过科目联查或打开「三栏明细账」核对分录。','银行 102,480 元，存货 28,000 元，应收 9,120 元，应付 21,120 元。'],
-  ['核对试算平衡','fin-trial','#acc-panel-trial','复核期初、本期发生和期末借贷是否各自相等。期末结转后，再回来检查最终数字。','结账后本期发生额借贷各 187,880 元，期末余额借贷各 172,420 元。'],
-  ['核对资产负债表','fin-bs','#module-standard-bs [data-rerun]','确认期间为 2026-11，点「一键从科目余额表重算」，核对资产与负债及权益合计。','资产 156,300 元 = 负债 21,120 元 + 权益 135,180 元。'],
-  ['核对利润表','fin-pl','#module-standard-pl [data-rerun]','同样选 2026-11 并重算报表。核对营业收入、成本、费用与盘亏损失。','收入 24,000、成本 14,000、管理费用 12,000、财务费用 20、营业外支出 7,800，净亏损 9,820 元。'],
-  ['执行期末结转','fin-closing','#closing-period','选 2026-11，点「重新检查」。处理所有阻断项后点「执行期末结转」，生成结转凭证。到「待记账凭证」审核并记账后，再回来。','本年利润借方 9,820 元；11 月不转入利润分配。'],
-  ['正式结账','fin-closing','#closing-actions','回到「期末结转与结账」重新检查。全部通过后，亲自点击「正式结账并归档」并确认。完成后可下载本期归档。','期间锁定后，仍可查询账表和导出归档。'],
-  ['归集档案并备份','fin-archive','#archive-zip','选 2026-11，刷新归集并打包导出 ZIP 与档案索引。再到顶栏「更多操作 → 导出账套备份 (.json)」，保存一份可恢复的完整账套。','看到下载完成后，点「完成导览」。']
- ]]
-];
-
-function fwInitTour(){
- const steps=fwTourStages.flatMap(([stage,items])=>items.map(([title,tab,selector,task,check,extra])=>({stage,title,tab,selector,task,check,extra})));
- const guide=byId('fw-guide'),overlay=txNode('div'),key='fw-full-tour-v1';
- overlay.id='fw-tour';overlay.hidden=true;
- overlay.innerHTML=`<div class="fw-spot" aria-hidden="true" hidden></div><section class="fw-bubble" role="region" aria-label="全流程导览">
- <div class="fw-tour-top"><small id="fw-tour-progress" aria-live="polite"></small><button type="button" id="fw-tour-min" class="btn" aria-expanded="true">收起</button></div>
- <div id="fw-tour-body"><h2 id="fw-tour-title" tabindex="-1"></h2><p id="fw-tour-text"></p><p id="fw-tour-check"></p><button type="button" class="btn" id="fw-tour-extra" hidden></button></div>
- <div class="fw-tour-controls"><button type="button" class="btn" id="fw-tour-prev">上一步</button><button type="button" class="btn btn-primary" id="fw-tour-next">下一步</button><button type="button" class="btn" id="fw-tour-exit">暂停</button></div>
- <details id="fw-tour-jump"><summary>跳到步骤</summary><label class="visually-hidden" for="fw-tour-select">选择导览步骤</label><select id="fw-tour-select"></select></details></section>`;
- document.body.append(overlay);
- const bubble=overlay.querySelector('.fw-bubble'),spot=overlay.querySelector('.fw-spot'),select=byId('fw-tour-select');
- let index=0,queued=0,minimized=false;
- let saved=null;try{saved=JSON.parse(sessionStorage.getItem(key));}catch{}
- if(Number.isInteger(saved?.index))index=Math.max(0,Math.min(steps.length-1,saved.index));
- steps.forEach((step,i)=>select.add(new Option(`${i+1}. ${step.stage} · ${step.title}`,String(i))));
- function save(active){try{sessionStorage.setItem(key,JSON.stringify({index,active}));}catch{}}
- const visible=node=>node&&node.getClientRects().length;
- function findTarget(){
-  const step=steps[index],node=step.selector&&document.querySelector(step.selector);
-  const active=document.querySelector('.module.active');
-  return visible(node)&&(!node.closest('.module')||active?.contains(node))?node:active?.querySelector('.module-header h1, h1');
- }
- function position(){
-  if(overlay.hidden)return;
-  const target=findTarget(),rect=target?.getBoundingClientRect(),width=document.documentElement.clientWidth,height=innerHeight;
-  if(!rect||rect.bottom<0||rect.top>height||rect.right<0||rect.left>width){spot.hidden=true;return;}
-  const left=Math.max(3,rect.left-4),top=Math.max(3,rect.top-4),right=Math.min(width-3,rect.right+4),bottom=Math.min(height-3,rect.bottom+4);
-  spot.hidden=false;Object.assign(spot.style,{left:`${left}px`,top:`${top}px`,width:`${right-left}px`,height:`${bottom-top}px`});
-  const panel=bubble.getBoundingClientRect(),fitsBelow=bottom+panel.height+20<=height;
-  bubble.classList.toggle('fw-tour-dock-top',!fitsBelow&&top>=panel.height+20&&rect.left<panel.right&&rect.right>panel.left);
- }
- function schedule(){cancelAnimationFrame(queued);queued=requestAnimationFrame(position);}
- function show(focus=true){
-  const step=steps[index];if(step.tab)openWorkspaceTab(step.tab);
-  closeMobileSidebar();overlay.hidden=false;save(true);
-  byId('fw-tour-progress').textContent=`${index+1} / ${steps.length} · ${step.stage}`;
-  byId('fw-tour-title').textContent=step.title;byId('fw-tour-text').textContent=step.task;
-  byId('fw-tour-check').textContent='核对：'+step.check;
-  byId('fw-tour-prev').disabled=index===0;byId('fw-tour-next').textContent=index===steps.length-1?'完成导览':'下一步';
-  byId('fw-tour-jump').open=false;select.value=String(index);bubble.classList.remove('fw-tour-dock-top');
-  const extra=byId('fw-tour-extra');extra.hidden=!step.extra;
-  extra.textContent={seed:'建立示例账套',bank:'载入示例流水',payroll:'选择示例工资'}[step.extra]||'';
-  requestAnimationFrame(()=>{const target=findTarget();if(target&&!target.closest('.app-header'))target.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});schedule();});
-  if(focus)(minimized?byId('fw-tour-min'):byId('fw-tour-title')).focus({preventScroll:true});
- }
- function pause(){overlay.hidden=true;save(false);guide.focus({preventScroll:true});}
- function sampleFile(id,name,content){
-  const input=byId(id),transfer=new DataTransfer();transfer.items.add(new File([content],name,{type:'text/csv'}));
-  input.files=transfer.files;input.dispatchEvent(new Event('change',{bubbles:true}));
- }
- byId('fw-tour-extra').onclick=()=>runAction(async()=>{
-  if(steps[index].extra==='seed'){
-   if(!await uiConfirm('创建并切换到独立的星辰电子导览练习账套？'))return;
-   const name='星辰电子 · 导览练习 '+localDay()+' '+new Date().toLocaleTimeString('zh-CN',{hour12:false});
-   try{await suiteImport(new File([JSON.stringify(fwTourSample.book)],'导览期初.json',{type:'application/json'}),{name});}catch(error){save(true);throw error;}
-  }else if(steps[index].extra==='bank'){
-   const period=byId('recon-period');if(period.value!=='2026-11'){period.value='2026-11';period.dispatchEvent(new Event('change',{bubbles:true}));}
-   sampleFile('recon-file-bank','银行流水示例.csv',fwTourSample.bank);
-   sampleFile('recon-file-company','账面流水示例.csv',fwTourSample.company);
-  }else if(steps[index].extra==='payroll'){
-   sampleFile('payroll-file','示例工资.csv',fwTourSample.payroll);showToast('已选择示例工资，请点击「导入工资明细」');
-  }
- });
- byId('fw-tour-min').onclick=()=>{
-  minimized=!minimized;byId('fw-tour-body').hidden=minimized;
-  byId('fw-tour-min').textContent=minimized?'展开':'收起';byId('fw-tour-min').setAttribute('aria-expanded',String(!minimized));schedule();
- };
- byId('fw-tour-prev').onclick=()=>{if(index>0){index--;show();}};
- byId('fw-tour-next').onclick=()=>{if(index===steps.length-1){index=0;pause();showToast('已走完全流程导览');}else{index++;show();}};
- byId('fw-tour-exit').onclick=pause;
- select.onchange=()=>{index=Number(select.value);show();};
- guide.onclick=()=>show();
- window.addEventListener('resize',schedule);document.addEventListener('scroll',schedule,true);
- overlay.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();pause();}});
- if(saved?.active)show(false);
-}
-
 function initWorkbenchEnhancements(){
- fwInitAR();fwInitTour();
+ fwInitAR();
  const more=byId('fw-more'),toggle=byId('fw-more-toggle');
  more.addEventListener('click',event=>{if(event.target.closest('.fw-more-panel button'))more.open=false;});
  document.addEventListener('click',event=>{if(more.open&&!more.contains(event.target))more.open=false;});
  document.addEventListener('focusin',event=>{if(more.open&&!more.contains(event.target))more.open=false;});
  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&more.open){event.preventDefault();more.open=false;toggle.focus();}});
- onAction('fw-demo',()=>{byId('suite-book-dialog').close();return fwLoadDemo();});onAction('fw-restore',()=>byId('fw-restore-file').click());
+ onAction('fw-restore',()=>byId('fw-restore-file').click());
  byId('fw-restore-file').onchange=()=>runAction(async()=>{const input=byId('fw-restore-file'),file=input.files[0];input.value='';if(file)await suiteImport(file,{overwrite:true});});
 
 }
 
 </script>
 <script>
-const fwRoleLabels={admin:'管理员',reviewer:'复核人',clerk:'制单人',viewer:'只读'};
+const fwRoleLabels={admin:'财务总监',reviewer:'财务总监',clerk:'会计',viewer:'只读',director:'财务总监',accountant:'会计',cashier:'出纳',reporter:'仓管／填报员'};
 let fwActor=null;
 function fwSessionToken(){try{return sessionStorage.getItem('fw-control-token')||'';}catch{return '';}}
 function fwAuthHeaders(){const token=fwSessionToken();return token?{Authorization:'Bearer '+token}:{};}
@@ -13663,8 +13331,8 @@ function fwProportional(total,previous,qty,original){
 }
 function fwReturnEntries(record){
  const sale=record.kind==='SALE_RETURN',amount=record.grossCents,net=record.netCents,tax=record.taxCents,cost=record.stockCostCents;
- const signed=sale?[['6001',net],['2221',tax],['1122',-amount,record.party],[record.inventoryAccount,cost],['6401',-cost]]:
-  [['2202',amount,record.party],[record.inventoryAccount,-cost],['2221',record.deductible?-tax:0]];
+ const signed=sale?[['6001',net],['22210102',tax],['1122',-amount,record.party],[record.inventoryAccount,cost],['6401',-cost]]:
+  [['2202',amount,record.party],[record.inventoryAccount,-cost],['22210101',record.deductible?-tax:0]];
  return fwSignedEntries(signed,'退货 '+record.docNo+' / 原单 '+record.sourceDocNo);
 }
 function fwSignedEntries(lines,summary){
@@ -13747,22 +13415,25 @@ async function fwReturnRefund(row){
  });
 }
 
-function fwWizardDialog(){
- if(fwActor&&fwActor.role!=='admin')throw Error('建账需要管理员权限');
- const dialog=fwModal('建账向导',`<p id="fw-wizard-step" class="note-text" aria-live="polite">1 / 3 · 企业与期间</p><div id="fw-wizard-1" class="form-grid"><label>企业名称<input id="fw-wizard-name" maxlength="60"></label><label>启用期间<input type="month" id="fw-wizard-month"></label></div><div id="fw-wizard-2" hidden><div class="form-grid"><label>模板<select id="fw-wizard-template"><option value="trade">贸易企业 · 人民币</option><option value="service">服务企业 · 人民币</option></select></label><label>期初来源<select id="fw-wizard-mode"><option value="zero">从零建账</option><option value="migrate">迁入期初余额</option></select></label></div><label id="fw-wizard-opening-label" hidden>期初余额 CSV（科目编码,借方,贷方）<input id="fw-wizard-opening" type="file" accept=".csv"></label></div><div id="fw-wizard-3" hidden><p id="fw-wizard-summary"></p></div><div class="toolbar"><button class="btn" id="fw-wizard-back">上一步</button><button class="btn btn-primary" id="fw-wizard-next">下一步</button></div>`);
+function fwWizardDialog(first=false){
+ if(fwActor&&!window.FW_CAN_CREATE_BOOK)throw Error('建账需要财务总监权限');
+ const dialog=fwModal('建账向导',`<p id="fw-wizard-step" class="note-text" aria-live="polite">1 / 3 · 企业与期间</p><div id="fw-wizard-1" class="form-grid"><label>企业名称<input id="fw-wizard-name" maxlength="60"></label><label>会计准则<select id="fw-wizard-standard"><option value="small_enterprise">小企业会计准则</option><option value="enterprise">企业会计准则</option></select></label><label>启用年月<input type="month" id="fw-wizard-month"></label></div><div id="fw-wizard-2" hidden><div class="form-grid"><label>模板<select id="fw-wizard-template"><option value="trade">贸易企业 · 人民币</option><option value="service">服务企业 · 人民币</option></select></label><label>期初来源<select id="fw-wizard-mode"><option value="zero">从零建账</option><option value="migrate">迁入期初余额</option></select></label></div><label id="fw-wizard-opening-label" hidden>期初余额 CSV（科目编码,借方,贷方）<input id="fw-wizard-opening" type="file" accept=".csv"></label></div><div id="fw-wizard-3" hidden><p id="fw-wizard-summary"></p></div><div class="toolbar"><button class="btn" id="fw-wizard-back">上一步</button><button class="btn btn-primary" id="fw-wizard-next">下一步</button></div>`);
  byId('fw-wizard-month').value=localDay().slice(0,7);
+ if(first){dialog.querySelector('form[method=dialog]').hidden=true;dialog.addEventListener('cancel',event=>event.preventDefault());byId('fw-wizard-next').textContent='创建账套';}
+ const standard=()=>val('fw-wizard-standard');
  const zero=()=>val('fw-wizard-mode')==='zero';
  byId('fw-wizard-mode').onchange=()=>{byId('fw-wizard-opening-label').hidden=zero();};
  let step=1,settings=null;
  function draw(){
   for(let i=1;i<=3;i++)byId('fw-wizard-'+i).hidden=i!==step;
   byId('fw-wizard-step').textContent=step+' / 3 · '+['企业与期间','期初设置','检查与启用'][step-1];
-  byId('fw-wizard-back').disabled=step===1;byId('fw-wizard-next').textContent=step===3?'创建并启用':'下一步';
+  byId('fw-wizard-back').hidden=first;byId('fw-wizard-back').disabled=step===1;byId('fw-wizard-next').textContent=first?'创建账套':step===3?'创建并启用':'下一步';
  }
  fwButton(dialog,'fw-wizard-back',()=>{if(step>1)step--;draw();});
  fwButton(dialog,'fw-wizard-next',async()=>{
   const name=val('fw-wizard-name'),period=val('fw-wizard-month');
   if(!name||name.length>60||!/^\d{4}-\d{2}$/.test(period)||suiteBooks().some(book=>book.name===name))throw Error('请填写唯一企业名称及有效启用期间');
+  if(step===1&&first){await fwCreateBook({name,period,standard:standard(),balances:{},trade:true});return;}
   if(step===1){step++;draw();return;}
   if(step===2){
    const balances={};
@@ -13779,7 +13450,7 @@ function fwWizardDialog(){
    }
    const gap=sum(Object.values(balances));if(gap)throw Error('期初借贷未平，差额 '+fromCents(gap));
    const trade=val('fw-wizard-template')==='trade';
-   settings={name,period,balances,trade};
+   settings={name,period,balances,trade,standard:standard()};
    byId('fw-wizard-summary').textContent=name+' · '+period+' · '+(trade?'贸易':'服务')+' · 人民币。期初借贷差额 0.00。'+(!zero()?'如包含非零存货、银行或往来期初，请在对应模块核对并补录辅助明细。':'将建立零期初，贸易模板同时启用零库存。');
    step++;draw();return;
   }
@@ -13787,13 +13458,13 @@ function fwWizardDialog(){
  });
  draw();
 }
-async function fwCreateBook({name,period,balances,trade}){
+async function fwCreateBook({name,period,balances,trade,standard}){
  const books=suiteBooks();if(books.some(b=>b.name===name))throw Error('账套名称已经存在');
- const id=recordId(),book={id,name,demo:false},prefix=suitePrefix(id),rows=[{id:'meta:seeded_vouchers',done:true},{id:'opening:'+period,period,balances}];
+ const id=recordId(),book={id,name,demo:false,standard},prefix=suitePrefix(id),rows=[{id:'opening:'+period,period,balances}];
  const zeroStock=!balances['1401']&&!balances['1405'];
  const inventory={id:'inventory-opening',period,rows:[],totalCents:0,totalByAccount:{'1401':0,'1405':0},verified:true};
  if(storageMode==='API'){
-  await apiRequest('/api/control/books',{method:'POST',body:JSON.stringify({id,name,period,balances,trade})});
+  await apiRequest('/api/control/books',{method:'POST',body:JSON.stringify({id,name,period,balances,trade,standard})});
  }else{
   if(storageMode==='MEMORY')throw Error('浏览器存储不可用，不能启用账套');
   if(trade&&zeroStock)rows.push(inventory);
@@ -13803,7 +13474,8 @@ async function fwCreateBook({name,period,balances,trade}){
   }else localStorage.setItem(prefix+lsKeyFor(STORE_WORK),JSON.stringify(rows));
  }
  localStorage.setItem(prefix+'finance-standard:period',JSON.stringify(period));
- suiteWrite('books',[...books,book]);suiteWrite('active',id);financeBackupDirty=false;location.reload();
+ localStorage.setItem(prefix+'finance-standard:accounting-standard',JSON.stringify(standard));
+ localStorage.setItem('fw-suite:books',JSON.stringify([...books,book]));suiteWrite('active',id);financeBackupDirty=false;location.reload();
 }
 
 function fwFxDiff(foreign,rate,carrying){
@@ -13860,7 +13532,7 @@ function fwInitAdvanced(){
  onAction('fw-stock-returns',fwShowReturns);
  onAction('fw-fx-revaluation',fwFxDialog);
  onAction('fw-period-reopen',fwReopenDialog);
- if(fwActor&&fwActor.role!=='admin')byId('fw-setup-book').hidden=true;
+ if(fwActor&&!window.FW_CAN_CREATE_BOOK)byId('fw-setup-book').hidden=true;
 }
 
 </script>
@@ -15544,5 +15216,6 @@ function initFinanceDataGovernance(){
 })();
 
 </script>
+<script src="assets/collaboration.js"></script>
 </body>
 </html>
