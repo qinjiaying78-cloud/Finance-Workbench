@@ -1914,7 +1914,7 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
       <div class="home-card" data-open-group="fund">
         <div class="home-card-content">
           <h3 class="serif-title">出纳与资金</h3>
-          <p>日常收付、费用报销、银行流水对账及借还款管理。</p>
+          <p>日常收付、费用报销及借还款管理。</p>
           <button type="button" class="btn-enter">进入出纳与资金 →</button>
         </div>
         <svg class="card-svg-bg" viewBox="0 0 120 100" fill="none" aria-hidden="true" focusable="false">
@@ -1953,7 +1953,7 @@ input[type=file]::file-selector-button { border-radius:999px; border:1px solid v
       <div class="home-card" data-open-group="fa">
         <div class="home-card-content">
           <h3 class="serif-title">固定资产</h3>
-          <p>资产卡片、月度折旧计提与盘点。</p>
+          <p>资产卡片与月度折旧计提。</p>
           <button type="button" class="btn-enter">进入固定资产 →</button>
         </div>
         <svg class="card-svg-bg" viewBox="0 0 120 100" fill="none" aria-hidden="true" focusable="false">
@@ -4071,7 +4071,7 @@ const EXTRA_TABS = {
   'gl-review': {key:'gl-review',label:'凭证审核与汇总',moduleId:'module-voucher',groupTitle:'总账管理'},
   'tax-workpapers': {key:'tax-workpapers',label:'原税务底稿和申报归档',moduleId:'module-tax',groupTitle:'税务管理'},
   'home': {key:'home',label:'工作台首页',moduleId:'module-home',pinned:true},
-  'recon': {key:'recon',label:'数据对账',moduleId:'module-recon',groupTitle:'出纳与资金'}
+  'recon': {key:'recon',label:'数据对账',moduleId:'module-recon',groupTitle:'业务助手'}
 };
 
 
@@ -15482,6 +15482,125 @@ function initFinanceDataGovernance(){
 })();
 
 </script>
+<style id="fw-smart-tools-style">
+/* Smart tools: scoped to new modules, dialog and print document. */
+.fw-smart{font-family:var(--font-sans);padding-bottom:calc(var(--suite-footer-height,80px) + 24px)!important;min-width:0}
+.fw-smart h1{font-size:28px;margin:0 0 6px}.fw-smart h2{font-size:21px;margin:0 0 12px}.fw-smart h3{font-size:16px;margin:12px 0 8px}
+.fw-smart .st-head{margin-bottom:24px}.fw-smart .st-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}.fw-smart .st-stack{display:grid;gap:16px;min-width:0}.fw-smart .st-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:0 4px 24px rgba(0,0,0,.035);min-width:0}.fw-smart .st-actions,.fw-smart-dialog .st-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}.fw-smart .st-actions .btn,.fw-smart-dialog .btn{padding:8px 13px;font-size:13px}.fw-smart .st-label,.fw-smart-dialog .st-label{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--text-main);min-width:0}.fw-smart .st-fields,.fw-smart-dialog .st-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.fw-smart .st-wide,.fw-smart-dialog .st-wide{grid-column:1/-1}.fw-smart input:not([type=checkbox]),.fw-smart select,.fw-smart textarea,.fw-smart-dialog input{min-width:0;width:100%;padding:9px 11px;border-radius:var(--radius-md);font:inherit;font-size:13px;box-sizing:border-box}.fw-smart textarea{min-height:105px;resize:vertical}.fw-smart .st-short{min-height:66px}.fw-smart .st-note,.fw-smart-dialog .st-note{font-size:12px;color:var(--text-muted);margin:8px 0;line-height:1.7;overflow-wrap:anywhere}.fw-smart .st-status,.fw-smart-dialog .st-status{font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere;min-height:20px;margin-top:10px}.fw-smart .st-status[data-error=true],.fw-smart-dialog .st-status[data-error=true]{color:var(--diff)}.fw-smart .st-empty{padding:22px 12px;text-align:center;background:var(--bg);border:1px dashed var(--border);border-radius:var(--radius-md);color:var(--text-muted);font-size:13px}.fw-smart details{margin-top:14px;border-top:1px solid var(--border);padding-top:12px}.fw-smart summary{cursor:pointer;font-weight:600;font-size:14px}.fw-smart .st-record{padding:12px 0;border-bottom:1px solid var(--border);overflow-wrap:anywhere}.fw-smart .st-record:last-child{border-bottom:0}.fw-smart .st-check{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-muted);margin:9px 0}.fw-smart .st-check input{width:auto;accent-color:var(--primary)}.fw-smart .st-invalid{border:1.5px solid var(--bank-only,var(--primary))!important;background:var(--bank-only-bg,var(--input-bg))!important}.fw-smart .st-danger{color:var(--diff)}.fw-smart .st-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-md);margin-top:12px}.fw-smart table{width:100%;border-collapse:collapse;font-size:13px}.fw-smart th,.fw-smart td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle}.fw-smart th{background:var(--surface);white-space:nowrap;font-weight:600}.fw-smart td input{min-width:64px!important;padding:7px!important}.fw-smart td:first-child input{min-width:140px!important}.fw-smart td .btn{padding:5px 9px;white-space:nowrap;font-size:12px}.fw-smart .st-money{white-space:nowrap;font-variant-numeric:tabular-nums;text-align:right}.fw-smart .st-quote-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}.fw-smart .st-total{margin:16px 0 12px;display:grid;gap:8px;justify-content:end;text-align:right;font-variant-numeric:tabular-nums}.fw-smart .st-total strong{font-size:22px;color:var(--primary)}.fw-smart .st-quote-title{text-align:center;padding:10px 0 18px;border-bottom:1px solid var(--border);margin-bottom:18px}.fw-smart-dialog{width:min(560px,calc(100vw - 28px));max-height:88dvh;overflow:auto;margin:auto;padding:24px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-main);box-shadow:0 20px 48px rgba(0,0,0,.14);font-family:var(--font-sans)}.fw-smart-dialog::backdrop{background:rgba(0,0,0,.35)}.fw-smart-dialog h2{margin-bottom:12px}.fw-smart-dialog .st-fields{grid-template-columns:1fr}.fw-smart .st-scroll{max-height:340px;overflow:auto}.fw-smart .st-form-editor{display:grid;grid-template-columns:minmax(0,1fr) minmax(80px,.7fr);gap:8px}.fw-smart .st-form-editor .st-wide{grid-column:1/-1}.fw-smart .st-form-editor .st-actions{margin-top:0}.fw-smart .st-quote-meta{margin-bottom:12px}
+@media(max-width:1100px){.fw-smart .st-grid{grid-template-columns:1fr}}@media(max-width:600px){.fw-smart .st-card{padding:14px}.fw-smart .st-fields{grid-template-columns:1fr}.fw-smart h1{font-size:24px}.fw-smart .st-actions .btn{min-height:38px}}
+#fw-smart-print-root{display:none}
+@media print{body.fw-smart-print{display:block!important;min-height:0!important;margin:0!important;padding:0!important;background:white!important}body.fw-smart-print>*{display:none!important}body.fw-smart-print>#fw-smart-print-root{display:block!important;position:static!important;visibility:visible!important;width:100%!important;max-width:none!important;margin:0!important;padding:0!important;color:#222!important;background:white!important;font:11pt/1.5 var(--font-sans)}#fw-smart-print-root *{visibility:visible!important;overflow-wrap:anywhere}#fw-smart-print-root h1{text-align:center;font-size:23pt;margin:0 0 18px}#fw-smart-print-root h2{font-size:13pt;margin:12px 0 5px}#fw-smart-print-root p{color:#222!important;white-space:pre-wrap;margin:3px 0}#fw-smart-print-root table{width:100%!important;min-width:0!important;border-collapse:collapse!important;table-layout:auto;font-size:9pt;margin:14px 0}#fw-smart-print-root th,#fw-smart-print-root td{border:1px solid #bbb!important;padding:5px!important;text-align:left;white-space:normal!important}#fw-smart-print-root thead{display:table-header-group}#fw-smart-print-root tr{break-inside:avoid}#fw-smart-print-root .st-print-totals{text-align:right;break-inside:avoid}#fw-smart-print-root .st-print-terms{break-inside:avoid}}
+@media print{
+ @page fwSmartQuotation{size:A4 portrait;margin:15mm 13mm 16mm}
+ body.fw-smart-print>#fw-smart-print-root{page:fwSmartQuotation;font-family:Arial,"Microsoft YaHei","PingFang SC",sans-serif!important;font-size:9pt!important;line-height:1.45!important;color:#000!important;background:#fff!important}
+ #fw-smart-print-root *{box-sizing:border-box;color:#000!important;background:transparent!important;box-shadow:none!important;text-shadow:none!important}
+ #fw-smart-print-root h1,#fw-smart-print-root h2{font-family:inherit!important;font-weight:600;letter-spacing:0;margin:0!important}
+ #fw-smart-print-root p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.45;margin:3px 0!important}
+ #fw-smart-print-root .st-p-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;border-bottom:2px solid #000;padding:0 0 12px;break-inside:avoid}
+ #fw-smart-print-root .st-p-brand{min-width:0;max-width:58%}#fw-smart-print-root .st-p-company{font-size:14pt;font-weight:700;white-space:pre-wrap;overflow-wrap:anywhere}
+ #fw-smart-print-root .st-p-heading{text-align:right;flex:none}#fw-smart-print-root .st-p-heading h1{font-size:23pt!important;line-height:1.15;text-align:right;letter-spacing:1px}#fw-smart-print-root .st-p-heading .st-p-cn{font-size:14pt;margin-top:3px}
+ #fw-smart-print-root .st-p-label{font-size:8pt;font-weight:600;line-height:1.35}#fw-smart-print-root .st-p-en{display:block;font-size:7.2pt;font-weight:400;line-height:1.3;margin-top:2px}
+ #fw-smart-print-root .st-p-meta{display:grid;grid-template-columns:1.65fr 1fr 1fr .65fr;gap:10px;padding:12px 0;border-bottom:1px solid #999;break-inside:avoid}#fw-smart-print-root .st-p-value{font-size:9pt;font-weight:500;margin-top:5px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+ #fw-smart-print-root .st-p-parties{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:15px 0;break-inside:avoid}#fw-smart-print-root .st-p-parties h2{font-size:12pt!important;margin:5px 0!important;white-space:pre-wrap}
+ #fw-smart-print-root .st-p-section{display:flex;gap:10px;align-items:baseline;margin:7px 0;break-after:avoid}#fw-smart-print-root .st-p-section h2{font-size:11pt!important}#fw-smart-print-root .st-p-section span{font-size:8pt}
+ #fw-smart-print-root table{table-layout:fixed!important;font-size:8pt!important;margin:0 0 10px!important;border-collapse:collapse!important;border-top:1px solid #000;border-bottom:1px solid #000}
+ #fw-smart-print-root th,#fw-smart-print-root td{border:0!important;border-bottom:1px solid #aaa!important;padding:7px 3px!important;text-align:right;vertical-align:top;font-variant-numeric:tabular-nums;white-space:pre-wrap!important;overflow-wrap:anywhere}
+ #fw-smart-print-root th{font-size:8pt;line-height:1.3;font-weight:600;border-bottom:1px solid #000!important;vertical-align:bottom}#fw-smart-print-root th .st-p-en{font-size:6.6pt;line-height:1.2}#fw-smart-print-root tbody tr:last-child td{border-bottom:0!important}
+ #fw-smart-print-root :is(th,td):nth-child(1){text-align:center}#fw-smart-print-root :is(th,td):nth-child(2),#fw-smart-print-root :is(th,td):nth-child(3){text-align:left}#fw-smart-print-root td:last-child{font-weight:600}
+ #fw-smart-print-root .st-p-summary{display:grid;grid-template-columns:1fr 1.1fr;gap:22px;align-items:start;break-inside:avoid;margin:12px 0 20px}#fw-smart-print-root .st-p-summary-note p{font-size:8pt!important}
+ #fw-smart-print-root .st-p-total-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:5px 0;border-bottom:1px solid #aaa;font-size:8.5pt}#fw-smart-print-root .st-p-total-row strong{font-size:10pt;font-variant-numeric:tabular-nums;text-align:right}
+ #fw-smart-print-root .st-p-grand{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-top:2px solid #000;border-bottom:1px solid #000;padding:9px 0;margin-top:5px}#fw-smart-print-root .st-p-grand strong{font-size:15pt;line-height:1.3;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;overflow-wrap:anywhere}
+ #fw-smart-print-root .st-p-terms{border-top:1px solid #000;padding-top:11px;break-inside:avoid}#fw-smart-print-root .st-p-terms h2{font-size:11pt!important}#fw-smart-print-root .st-p-term-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:10px}
+ #fw-smart-print-root .st-p-footer{border-top:1px solid #aaa;margin-top:22px;padding-top:6px;display:flex;justify-content:space-between;gap:10px;font-size:7.5pt;break-inside:avoid}
+}
+
+</style>
+<script id="fw-smart-tools-script">
+/* Finance Workbench: local-first quotation and business tools. No third-party dependencies. */
+(() => {
+'use strict';
+const QUOTE='smart-quote',PREFIX='fw-smart:v1:';
+const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!=null)n.textContent=text;if(cls)n.className=cls;return n;};
+const clone=v=>JSON.parse(JSON.stringify(v));
+const uid=()=>globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12);
+const day=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+const plusDays=n=>{const d=new Date();d.setDate(d.getDate()+n);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+const text=v=>typeof v==='string'?v:typeof v==='number'&&Number.isFinite(v)?String(v):'';
+const actor=()=>encodeURIComponent(window.FW_V2_ACCESS?.name|| (typeof fwActor!=='undefined'?fwActor?.name:'') || 'browser-local');
+const key=(name,global=false)=> (global?'':scopedKey(''))+PREFIX+actor()+':'+name;
+function read(name,fallback,global=false){let raw;try{raw=localStorage.getItem(key(name,global));}catch{throw Error('无法读取浏览器本地存储，请检查浏览器权限。');}if(raw===null)return clone(fallback);try{const v=JSON.parse(raw);if(Array.isArray(fallback)?!Array.isArray(v):!v||typeof v!=='object'||Array.isArray(v))throw Error();return v;}catch{throw Error('本地数据格式异常（'+name+'），为避免覆盖原记录，请先备份浏览器数据。');}}
+function write(name,v,global=false){try{localStorage.setItem(key(name,global),JSON.stringify(v));}catch{throw Error('无法保存到浏览器：存储权限不足或空间已满。请先导出备份。');}}
+function status(n,msg='',error=false){n.textContent=msg;n.dataset.error=String(error);}
+function statusNode(parent){const n=el('p','','st-status');n.setAttribute('role','status');n.setAttribute('aria-live','polite');parent.append(n);return n;}
+function button(parent,label,fn,notice,primary=false){const b=el('button',label,'btn'+(primary?' btn-primary':''));b.type='button';b.onclick=async()=>{try{await fn(b);}catch(e){if(notice)status(notice,e.message||'操作失败',true);else showToast(e.message||'操作失败');}};parent.append(b);return b;}
+function actions(parent){const n=el('div',null,'st-actions');parent.append(n);return n;}
+function card(parent,title){const n=el('section',null,'st-card');if(title)n.append(el('h2',title));parent.append(n);return n;}
+function note(parent,msg){parent.append(el('p',msg,'st-note'));}
+function empty(parent,msg){parent.append(el('div',msg,'st-empty'));}
+function fields(parent){const n=el('div',null,'st-fields');parent.append(n);return n;}
+function control(type,value='',options=[]){let n;if(type==='select'){n=el('select');for(const [v,label] of options)n.add(new Option(label,v));}else if(type==='textarea')n=el('textarea');else {n=el('input');n.type=type;if(type==='number')n.step='any';}n.value=value??'';return n;}
+function label(parent,title,n,wide=false){const l=el('label',null,'st-label'+(wide?' st-wide':''));n.setAttribute('aria-label',title);l.append(el('span',title),n);parent.append(l);return n;}
+function field(parent,title,type,value='',wide=false,options=[]){return label(parent,title,control(type,value,options),wide);}
+function table(parent,headers){const wrap=el('div',null,'st-table-wrap table-scroll-wrap'),t=el('table'),head=t.createTHead(),row=head.insertRow();for(const h of headers)row.append(el('th',h));const body=t.createTBody();wrap.append(t);parent.append(wrap);return body;}
+function row(body,values){const tr=body.insertRow();for(const v of values){const td=tr.insertCell();if(v instanceof Node)td.append(v);else td.textContent=v??'';}return tr;}
+function saveFile(name,content,mime){const url=URL.createObjectURL(new Blob([content],{type:mime})),a=el('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function jsonExport(name,v){saveFile(name+'.json',JSON.stringify(v,null,2),'application/json;charset=utf-8');}
+function csvExport(name,rows){const cell=v=>{let s=String(v??'');if(/^[\s\uFEFF]*[=+\-@]/.test(s)&&!/^[-+]?\d+(\.\d+)?$/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';};saveFile(name+'.csv','\uFEFF'+rows.map(r=>r.map(cell).join(',')).join('\r\n'),'text/csv;charset=utf-8');}
+async function copy(value){if(navigator.clipboard?.writeText){try{await navigator.clipboard.writeText(value);return;}catch{}}const a=el('textarea');a.value=value;a.style.position='fixed';a.style.left='-9999px';document.body.append(a);a.select();let ok=false;try{ok=document.execCommand('copy');}finally{a.remove();}if(!ok)throw Error('浏览器拒绝访问剪贴板，请手动复制。');}
+function validDate(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(v))return false;const d=new Date(v+'T00:00:00Z');return Number.isFinite(+d)&&d.toISOString().slice(0,10)===v;}
+// Money calculations: exact scaled integers, round half-up by line, then sum.
+function scaled(v,d,positive=false){const s=text(v).trim();if(!/^\d+(?:\.\d+)?$/.test(s))return null;const [a,b='']=s.split('.');if(a.length>10||b.length>d)return null;const n=BigInt(a)*10n**BigInt(d)+BigInt((b+'0'.repeat(d)).slice(0,d)||'0');return positive&&n===0n?null:n;}
+const half=(n,d)=>(n+d/2n)/d;
+const money=n=>n===null?'待确认':`${n/100n}.${String(n%100n).padStart(2,'0')}`;
+function calc(r){const q=scaled(r.qty,6,true),p=scaled(r.price,2),d=scaled(r.discount,2),t=scaled(r.tax,2),base=q===null||p===null||d===null||d>10000n?null:half(q*p*(10000n-d),10000000000n),tax=base===null||t===null||t>10000n?null:half(base*t,10000n);return {base,tax,total:tax===null?null:base+tax};}
+function totals(rows){const cs=rows.map(calc),sum=k=>!cs.length||cs.some(c=>c[k]===null)?null:cs.reduce((a,c)=>a+c[k],0n);return {base:sum('base'),tax:sum('tax'),total:sum('total')};}
+const quoteNo=()=> 'QT-'+day().replace(/-/g,'')+'-'+uid().replace(/-/g,'').slice(-10).toUpperCase();
+const newQuote=()=>({id:uid(),number:quoteNo(),date:day(),validUntil:plusDays(30),currency:'CNY',seller:'',customer:'',contact:'',project:'',payment:'',delivery:'',items:[]});
+const blankLine=()=>({name:'',unit:'',qty:'',price:'',discount:'0',tax:'',source:'手动填写'});
+const metaDefs=[['number','报价单编号 / Quotation No.','text'],['date','报价日期 / Issue Date','date'],['validUntil','有效期至 / Valid Until','date'],['currency','币种 / Currency (CNY / MYR / USD)','text'],['seller','报价方名称 / Supplier','text'],['customer','客户名称 / Customer *','text'],['contact','客户联系方式及地址 / Contact & Address','textarea'],['project','项目及需求说明 / Project & Scope','textarea'],['payment','付款条款 / Payment Terms','textarea'],['delivery','交付条款 / Delivery Terms','textarea']];
+const itemKeys=['name','unit','qty','price','discount','tax'];
+const itemLabels=['服务 / 商品 · Description','单位 / Unit','数量 / Qty','单价（税前） / Unit Price','折扣减免 % / Disc. %','税率 % / Tax %'];
+function validLine(r){return !!(r.name.trim()&&r.unit.trim()&&calc(r).total!==null);}
+function validQuote(q){if(!q.number.trim()||!validDate(q.date)||!validDate(q.validUntil)||q.validUntil<q.date||!/^\s*[A-Z]{3}\s*$/.test(q.currency)||!q.customer.trim())throw Error('请填写报价编号、客户、有效日期及三位大写币种代码。有效期不能早于报价日期。');if(!q.items.length)throw Error('请至少添加一条明细。');const bad=q.items.findIndex(r=>!validLine(r));if(bad>=0)throw Error('请补充或修正第 '+(bad+1)+' 行：名称、单位、正数数量、非负单价及 0–100% 的折扣/税率。');}
+function quoteRows(q){return q.items.map((r,i)=>{const c=calc(r);return [i+1,...itemKeys.map(k=>r[k]),money(c.base),money(c.tax),money(c.total)];});}
+function quotationText(q){const t=totals(q.items);return ['商业报价单 / QUOTATION',...metaDefs.map(([k,label])=>label.replace(' *','')+'：'+(q[k]||'待确认 / To be agreed')),'', ['序号 / No.',...itemLabels,'税前小计 / Net Amount','税额 / Tax','含税小计 / Gross Amount'].join('\t'),...quoteRows(q).map(r=>r.join('\t')),'','税前小计 / Subtotal：'+q.currency+' '+money(t.base),'税额合计 / Total Tax：'+q.currency+' '+money(t.tax),'含税总价 / Total incl. Tax：'+q.currency+' '+money(t.total)].join('\n');}
+function printQuote(q){
+ validQuote(q);document.getElementById('fw-smart-print-root')?.remove();const p=el('article');p.id='fw-smart-print-root';
+ const bilingual=(cn,en,cls='st-p-label',tag='div')=>{const n=el(tag,cn,cls);n.append(el('span',en,'st-p-en'));return n;};
+ const hero=el('header',null,'st-p-hero'),brand=el('div',null,'st-p-brand');brand.append(bilingual('报价方','SUPPLIER'),el('div',q.seller||'—','st-p-company'));const title=el('div',null,'st-p-heading');title.append(el('h1','QUOTATION'),el('div','商业报价单','st-p-cn'));hero.append(brand,title);p.append(hero);
+ const info=el('section',null,'st-p-meta');for(const [k,cn,en] of [['number','报价编号','Quotation No.'],['date','报价日期','Issue Date'],['validUntil','有效期至','Valid Until'],['currency','币种','Currency']]){const cell=el('div');cell.append(bilingual(cn,en),el('div',q[k],'st-p-value'));info.append(cell);}p.append(info);
+ const parties=el('section',null,'st-p-parties'),client=el('div'),project=el('div');client.append(bilingual('客户名称','PREPARED FOR'),el('h2',q.customer),bilingual('联系方式 / 地址','Contact / Address'),el('p',q.contact||'—'));project.append(bilingual('项目 / 需求说明','PROJECT / SCOPE'),el('p',q.project||'—'));parties.append(client,project);p.append(parties);
+ const sec=el('div',null,'st-p-section');sec.append(el('h2','报价明细'),el('span','ITEMIZED PRICING'));p.append(sec);const tb=el('table'),cols=el('colgroup');for(const w of [4,21,7,7,11,7,7,12,10,14]){const c=el('col');c.style.width=w+'%';cols.append(c);}tb.append(cols);const head=tb.createTHead().insertRow();for(const [cn,en] of [['序号','No.'],['商品 / 服务','Description'],['单位','Unit'],['数量','Qty'],['税前单价','Unit Price'],['折扣 %','Disc. %'],['税率 %','Tax %'],['税前小计','Net Amount'],['税额','Tax'],['含税小计','Gross Amount']])head.append(bilingual(cn,en,'','th'));const body=tb.createTBody();quoteRows(q).forEach(r=>row(body,r));p.append(tb);
+ const t=totals(q.items),sum=el('section',null,'st-p-summary'),left=el('div',null,'st-p-summary-note'),right=el('div',null,'st-p-totals');left.append(bilingual('计价说明','PRICING NOTES'),el('p','所有金额以 '+q.currency+' 计价。税额按明细行计算。'),el('p','All amounts in '+q.currency+'. Tax is calculated per line.'));for(const [cn,en,v] of [['税前小计','Subtotal (excl. tax)',t.base],['税额合计','Total Tax',t.tax]]){const r=el('div',null,'st-p-total-row');r.append(bilingual(cn,en),el('strong',q.currency+' '+money(v)));right.append(r);}const grand=el('div',null,'st-p-grand');grand.append(bilingual('含税总价','TOTAL (INCL. TAX)'),el('strong',q.currency+' '+money(t.total)));right.append(grand);sum.append(left,right);p.append(sum);
+ const terms=el('section',null,'st-p-terms');terms.append(bilingual('付款与交付条款','TERMS & CONDITIONS','','h2'));const termGrid=el('div',null,'st-p-term-grid');for(const [cn,en,v] of [['付款方式','Payment Terms',q.payment],['交付安排','Delivery Terms',q.delivery]]){const cell=el('div');cell.append(bilingual(cn,en),el('p',v||'待双方确认 / To be agreed'));termGrid.append(cell);}terms.append(termGrid);p.append(terms);const footer=el('footer',null,'st-p-footer');footer.append(el('span',q.seller||'商业报价单 / QUOTATION'),el('span',q.number));p.append(footer);
+ document.body.append(p);document.body.classList.add('fw-smart-print');const cleanup=()=>{document.body.classList.remove('fw-smart-print');p.remove();window.removeEventListener('afterprint',cleanup);};window.addEventListener('afterprint',cleanup);try{window.print();}catch(e){cleanup();throw e;}
+}
+function quotePage(root){root.replaceChildren();const head=el('header',null,'st-head');head.append(el('h1','商业报价单'),el('p','手动填写客户、商品、数量、税前单价、折扣和税率。金额实时计算，核对后保存或导出专业 PDF。'));root.append(head);const msg=statusNode(root),layout=el('div',null,'st-quote-grid');root.append(layout);let q=newQuote(),history=read('quotes',[]);q.items.push(blankLine());
+const top=card(layout,'报价单管理');note(top,'所有明细价格由你填写，不调用 AI、不自动匹配价格库。打印请选择 A4，关闭浏览器的“页眉和页脚”；黑白版式无需启用背景图形。');const topBar=actions(top);button(topBar,'新建空白报价单',()=>{if(q.items.length&&!confirm('清空当前编辑内容并新建报价单？已保存历史不受影响。'))return;q=newQuote();q.items.push(blankLine());drawQuote();status(msg,'已新建空白报价单。');},msg);
+const sheet=card(layout),title=el('div',null,'st-quote-title');title.append(el('h2','商业报价单'),el('p','QUOTATION'));sheet.append(title);const meta=fields(sheet);meta.classList.add('st-quote-meta');const lines=el('div');sheet.append(lines);const lineBar=actions(sheet);const summary=el('div',null,'st-total');sheet.append(summary);const terms=fields(sheet),outputBar=actions(sheet);button(lineBar,'+ 手动添加明细',()=>{q.items.push(blankLine());drawLines();},msg);
+function drawQuote(){meta.replaceChildren();terms.replaceChildren();for(const [k,l,type] of metaDefs){const target=['payment','delivery'].includes(k)?terms:meta,n=field(target,l,type,q[k],type==='textarea');n.oninput=()=>{q[k]=n.value;if(k==='currency')updateTotals();};}drawLines();}
+function updateTotals(){const t=totals(q.items);summary.replaceChildren(el('span','税前小计 / Subtotal：'+q.currency+' '+money(t.base)),el('span','税额合计 / Total Tax：'+q.currency+' '+money(t.tax)),el('strong','含税总价 / Total incl. Tax：'+q.currency+' '+money(t.total)));}
+function drawLines(){lines.replaceChildren();note(lines,'税前单价 × 数量 × (1 − 折扣减免%)；税额按行计算并四舍五入到分。税率和折扣输入百分数，如 13 表示 13%，9 折填 10。');if(!q.items.length){empty(lines,'尚无报价明细。点击手动添加明细。');updateTotals();return;}const body=table(lines,[...itemLabels,'税前小计 / Net Amount','税额 / Tax','含税小计 / Gross Amount','操作 / Actions']);q.items.forEach((r,i)=>{const cs=itemKeys.map((k,j)=>{const n=control(j<2?'text':'number',r[k]);n.setAttribute('aria-label',`第 ${i+1} 行 ${itemLabels[j]}`);if(j>=2){n.min='0';n.step=j===2?'0.000001':'0.01';if(j>=4)n.max='100';}return n;});const base=el('span',null,'st-money'),tax=el('span',null,'st-money'),total=el('span',null,'st-money'),op=el('div');button(op,'删除',()=>{q.items.splice(i,1);drawLines();},msg);const tr=row(body,[...cs,base,tax,total,op]);tr.title='数据来源：'+r.source;function update(){const c=calc(r);base.textContent=money(c.base);tax.textContent=money(c.tax);total.textContent=money(c.total);cs.forEach((n,j)=>{const v=r[itemKeys[j]],s=j<2?!!v.trim():scaled(v,j===2?6:2,j===2)!==null&&(j<4||scaled(v,2)<=10000n);n.classList.toggle('st-invalid',!s||n.validity.badInput);n.setAttribute('aria-invalid',String(!s||n.validity.badInput));});updateTotals();}cs.forEach((n,j)=>n.oninput=()=>{r[itemKeys[j]]=n.value;update();});update();});}
+button(outputBar,'保存报价单历史',()=>{validQuote(q);const record={...clone(q),savedAt:new Date().toISOString()};const next=[record,...history.filter(h=>h.id!==q.id)];write('quotes',next);history=next;drawHistory();status(msg,'报价单已保存至本地历史。');},msg,true);button(outputBar,'导出 PDF / 打印',()=>printQuote(q),msg);button(outputBar,'复制报价单文本',async()=>{validQuote(q);await copy(quotationText(q));status(msg,'报价单文本已复制。');},msg);button(outputBar,'导出当前 JSON',()=>{validQuote(q);jsonExport(q.number,q);},msg);button(outputBar,'导出当前 CSV',()=>{validQuote(q);exportQuotes([q],q.number);},msg);
+const hc=card(layout,'报价单历史'),ha=actions(hc),hl=el('div',null,'st-scroll');hc.append(hl);function exportQuotes(records,name){csvExport(name,[['保存时间',...metaDefs.map(x=>x[1]),'序号 / No.',...itemLabels,'税前小计 / Net Amount','税额 / Tax','含税小计 / Gross Amount','报价税前合计','报价税额合计','报价含税总价'],...records.flatMap(h=>{const t=totals(h.items);return quoteRows(h).map(r=>[h.savedAt||'',...metaDefs.map(([k])=>h[k]),...r,money(t.base),money(t.tax),money(t.total)]);})]);}button(ha,'导出历史 JSON',()=>jsonExport('报价历史-'+day(),history),msg);button(ha,'导出历史 CSV',()=>exportQuotes(history,'报价历史-'+day()),msg);button(ha,'清空历史',()=>{if(!confirm('清空当前账号与账套的报价历史？'))return;write('quotes',[]);history=[];drawHistory();status(msg,'报价历史已清空。');},msg).classList.add('st-danger');
+function drawHistory(){hl.replaceChildren();if(!history.length){empty(hl,'尚无报价历史。完成报价并点击保存后会显示在这里。');return;}for(const h of history){const r=el('div',null,'st-record'),t=totals(h.items);r.append(el('strong',h.number+' · '+h.customer),el('p',h.date+' · '+h.currency+' '+money(t.total),'st-note'));const a=actions(r);button(a,'打开编辑',()=>{if(q.items.length&&!confirm('打开历史将替换当前编辑内容。继续？'))return;q=clone(h);drawQuote();sheet.scrollIntoView({block:'start',behavior:'smooth'});status(msg,'已打开历史报价。保存将更新此记录。');},msg);button(a,'另存为新报价',()=>{if(q.items.length&&!confirm('另存为新报价将替换当前编辑内容。继续？'))return;q={...clone(h),id:uid(),number:quoteNo(),date:day(),validUntil:plusDays(30)};delete q.savedAt;drawQuote();status(msg,'已创建副本，请确认后保存。');},msg);button(a,'删除',()=>{if(!confirm('删除该条报价历史？'))return;const next=history.filter(x=>x.id!==h.id);write('quotes',next);history=next;drawHistory();status(msg,'已删除。');},msg);hl.append(r);}}
+drawQuote();drawHistory();}
+// Called before collaboration takes its allNav snapshot. Existing permissions remain in force.
+window.fwSmartRegister=function(){
+ if(NAV_TREE.some(g=>g.id==='smart-tools'))return;
+ // Move existing navigation entries, retaining keys, modules, and permissions.
+ const moved=[];
+ for(const [groupId,route] of [['fund','fund-loan'],['fa','fa-count']]){
+   const group=NAV_TREE.find(g=>g.id===groupId),index=group.children.findIndex(n=>n.key===route);
+   if(index<0)throw Error('业务助手导航缺少原模块：'+route);
+   const [entry]=group.children.splice(index,1);const {section,...item}=entry;moved.push(item);
+ }
+ NAV_TREE.push({id:'smart-tools',num:String(NAV_TREE.length+1),title:'业务助手',children:[...moved,{key:QUOTE,label:'商业报价单',moduleId:'module-smart-quote'}]});
+ const workspace=document.querySelector('.workspace-content'),n=el('section',null,'module fw-smart');n.id='module-smart-quote';n.style.display='none';workspace.append(n);
+ const old=switchModule;switchModule=function(id){if(id==='module-smart-quote'){const root=document.getElementById(id);if(!root.dataset.stReady){try{quotePage(root);root.dataset.stReady='true';}catch(e){root.replaceChildren(el('h1','商业报价单'),el('p',e.message,'st-status'));}}}return old(id);};
+};
+})();
+</script>
 <script id="fw-collaboration-inline">
 /* Finance Workbench collaboration surfaces. All authorization is enforced again by the API. */
 (() => {
@@ -15650,6 +15769,7 @@ for(const [group,key,label,moduleId,section] of definitions)addDynamicNav(group,
 EXTRA_TABS['finance-guide']={key:'finance-guide',label:'财务实操指南',moduleId:'module-finance-guide',groupTitle:'系统帮助'};
 EXTRA_TABS['workflow-center']={key:'workflow-center',label:'流程中心',moduleId:'module-collab-workflow'};
 for(const id of [...definitions.map(d=>d[3]),'module-collab-workflow','module-collab-balance','module-finance-guide']){const n=E('section','','module');n.id=id;n.style.display='none';document.querySelector('.workspace-content').append(n);}
+window.fwSmartRegister();
 const allNav=NAV_TREE.map(g=>({...g,children:[...g.children]}));
 function allowed(key){
  if(!state.access)return true;
