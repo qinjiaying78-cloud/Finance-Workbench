@@ -4544,9 +4544,18 @@ const LS_KEY_CASHIER = 'clean_finance_cashier_fallback';
 const LS_KEY_VOUCHER = 'clean_finance_voucher_fallback';
 const API_STORES = [STORE_WORK, STORE_NAME, STORE_CASHIER, STORE_VOUCHER, STORE_SETTINGS, STORE_ORIGINALS];
 const FW_API_BASE = (() => {
-  try { return String(localStorage.getItem('fw-api-base') || (['http:','https:'].includes(location.protocol)?location.origin:'http://127.0.0.1:8000')).replace(/\/+$/, ''); }
-  catch { return 'http://127.0.0.1:8000'; }
+  try {
+    const configured = String(localStorage.getItem('fw-api-base') || '').trim();
+    if (configured) return configured.replace(/\/+$/, '');
+    // A static deployment must never treat its HTML origin as the API server.
+    // Same-origin API is only a safe default on local development hosts.
+    const host = String(location.hostname || '').toLowerCase();
+    const isGithubPages = host.endsWith('.github.io') || host === 'github.io';
+    const isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+    return isLocalHost && ['http:','https:'].includes(location.protocol) ? location.origin : (isGithubPages ? '' : '');
+  } catch { return ''; }
 })();
+const FW_API_CONFIGURED = Boolean(FW_API_BASE);
 
 let storageMode = 'MEMORY';
 let db = null;
@@ -4591,6 +4600,7 @@ function setBackendStatus(text, connected) {
 }
 
 async function apiRequest(path, options = {}) {
+  if (!FW_API_CONFIGURED) throw new Error('当前为浏览器本地模式，未配置后端服务');
   const headers = new Headers(options.headers || {});
   const token=fwSessionToken();if(token)headers.set('Authorization','Bearer '+token);
   if (options.body && !(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
@@ -4607,7 +4617,9 @@ async function apiRequest(path, options = {}) {
   if (!response.ok) {
     const detail = payload?.detail;
     const message = typeof detail === 'string' ? detail : detail ? JSON.stringify(detail) : (typeof payload === 'string' ? payload : response.statusText);
-    throw new Error(message || ('HTTP ' + response.status));
+    const safeMessage = /<\/?[a-z][\s\S]*>/i.test(String(message || '')) ? '' : String(message || '').replace(/\s+/g, ' ').slice(0, 240);
+    const statusMessage = {400:'请求参数有误',401:'登录状态已过期，请重新登录',403:'当前账号无权执行此操作',404:'后端接口不存在，请检查服务版本',409:'数据冲突，请刷新后重试',422:'提交的数据未通过校验',429:'请求过于频繁，请稍后重试',500:'后端服务发生内部错误',502:'后端网关暂时不可用',503:'后端服务未启动或暂不可用',504:'后端服务响应超时'}[response.status];
+    throw new Error((statusMessage || ('请求失败（HTTP ' + response.status + '）')) + (safeMessage && safeMessage !== response.statusText ? '：' + safeMessage : ''));
   }
   backendConnected = true;
   if (storageMode === 'API') setBackendStatus('SQLite 已连接', true);
@@ -5218,6 +5230,15 @@ function tryLSFallback(resolve) {
 }
 async function initStorage() {
   const localMode = await initBrowserStorage();
+  if (!FW_API_CONFIGURED) {
+    backendConnected = false;
+    fwActor = null;
+    // A token from a previous local-backend session must not force login on a static site.
+    try { sessionStorage.removeItem('fw-control-token'); } catch {}
+    setBackendStatus('浏览器本地存储', false);
+    if(!suiteBooks().length) window.FW_FIRST_BOOK=true;
+    return localMode;
+  }
   let health;
   try {
     health = await apiRequest('/api/health');
@@ -13574,6 +13595,11 @@ async function fwDialogAction(dialog,callback,button){
 }
 function fwButton(dialog,id,callback){const button=dialog.querySelector('#'+id);button.onclick=()=>fwDialogAction(dialog,callback,button);return button;}
 function fwControlDialog(required=false){
+  if (!FW_API_CONFIGURED) {
+   const dialog=fwModal('账户与财务权限',`<p class="note-text">当前处于浏览器本地模式。</p><p class="note-text">财务数据仅存储在当前浏览器，无需登录即可使用本地财务功能。账户管理、服务端权限控制和多人协作需要连接后端服务。</p><div class="toolbar"><button id="fw-config-api" class="btn btn-primary">配置后端服务</button></div>`);
+   fwButton(dialog,'fw-config-api',async()=>{const value=prompt('请输入后端 API 地址，例如 https://api.example.com 或 http://127.0.0.1:8000');if(!value)return;try{const url=new URL(value);if(!/^https?:$/.test(url.protocol))throw Error('只支持 HTTP 或 HTTPS 地址');localStorage.setItem('fw-api-base',url.origin+url.pathname.replace(/\/$/,''));location.reload();}catch(error){throw Error('后端地址无效：'+error.message);}});
+   return dialog;
+  }
  const dialog=fwModal('账户与财务权限',`<p id="fw-role-help" class="note-text"></p><div class="form-grid"><label>账号<input id="fw-login-name" autocomplete="username"></label><label>密码<input type="password" id="fw-login-password" autocomplete="current-password" minlength="10" maxlength="256"></label></div><div class="toolbar"><button id="fw-login" class="btn btn-primary">登录</button><button id="fw-setup" class="btn">启用权限并创建管理员</button><button id="fw-new-user" class="btn">创建成员</button><label>新成员角色<select id="fw-new-role"><option value="clerk">制单人</option><option value="reviewer">复核人</option><option value="viewer">只读</option><option value="admin">管理员</option></select></label><button id="fw-logout" class="btn">退出登录</button></div>`);
  if(required){dialog.querySelector('form').hidden=true;dialog.addEventListener('cancel',event=>event.preventDefault());}
  const credentials=()=>({name:val('fw-login-name'),password:byId('fw-login-password').value});
